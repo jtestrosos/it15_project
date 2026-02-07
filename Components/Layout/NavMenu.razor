@@ -1,0 +1,196 @@
+﻿@implements IDisposable
+
+@inject NavigationManager NavigationManager
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">
+            <span style="font-weight: 700; letter-spacing: 1px;">NodeSync</span>
+        </a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <!-- Dashboard - All authenticated users -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-speedometer2" aria-hidden="true"></span> Dashboard
+            </NavLink>
+        </div>
+
+        <!-- Production Section - ProductionManager only -->
+        <AuthorizeView Roles="ProductionManager">
+            <Authorized>
+                <div class="nav-item px-3 mt-2">
+                    <small class="text-muted px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Production</small>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="production/plans">
+                        <span class="bi bi-clipboard-data" aria-hidden="true"></span> Production Plans
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="production/workorders">
+                        <span class="bi bi-list-task" aria-hidden="true"></span> Work Orders
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="production/costs">
+                        <span class="bi bi-currency-exchange" aria-hidden="true"></span> Costing
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+
+        <!-- Inventory Section - ProductionManager only -->
+        <AuthorizeView Roles="ProductionManager">
+            <Authorized>
+                <div class="nav-item px-3 mt-2">
+                    <small class="text-muted px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Inventory</small>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="inventory/components">
+                        <span class="bi bi-box-seam" aria-hidden="true"></span> Components
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="inventory/products">
+                        <span class="bi bi-cpu" aria-hidden="true"></span> Products
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="inventory/bom">
+                        <span class="bi bi-diagram-3" aria-hidden="true"></span> Bill of Materials
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="inventory/transactions">
+                        <span class="bi bi-arrow-left-right" aria-hidden="true"></span> Transactions
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+
+        <!-- Tasks Section - ProductionWorker only (View & Execute Assigned Tasks) -->
+        <AuthorizeView Roles="ProductionWorker">
+            <Authorized>
+                <div class="nav-item px-3 mt-2">
+                    <small class="text-muted px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">My Tasks</small>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="tasks/assigned">
+                        <span class="bi bi-check2-square" aria-hidden="true"></span> Assigned Tasks
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+
+        <!-- Monitoring Section - ProductionWorker and ProductionManager -->
+        <AuthorizeView Roles="ProductionWorker,ProductionManager">
+            <Authorized>
+                <div class="nav-item px-3 mt-2">
+                    <small class="text-muted px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Monitoring</small>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="monitoring/environment">
+                        <span class="bi bi-thermometer-half" aria-hidden="true"></span> Environment
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+
+        <!-- Administration Section - Administrator only -->
+        <AuthorizeView Roles="Administrator">
+            <Authorized>
+                <div class="nav-item px-3 mt-2">
+                    <small class="text-muted px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Administration</small>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/users">
+                        <span class="bi bi-people" aria-hidden="true"></span> User Management
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/logs">
+                        <span class="bi bi-journal-text" aria-hidden="true"></span> Activity Logs
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+
+        <!-- System Configuration Section - Superadmin only -->
+        <AuthorizeView Roles="Superadmin">
+            <Authorized>
+                <div class="nav-item px-3 mt-2">
+                    <small class="text-muted px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">System</small>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="system/facilities">
+                        <span class="bi bi-building" aria-hidden="true"></span> Facilities
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="system/api-config">
+                        <span class="bi bi-gear" aria-hidden="true"></span> API Configuration
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="Account/Register">
+                        <span class="bi bi-person-plus" aria-hidden="true"></span> Register User
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+
+        <!-- User Account Section -->
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3 mt-3">
+                    <NavLink class="nav-link" href="Account/Manage">
+                        <span class="bi bi-person-circle" aria-hidden="true"></span> @context.User.Identity?.Name
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <form action="/Account/Logout" method="post">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                        <button type="submit" class="nav-link">
+                            <span class="bi bi-box-arrow-left" aria-hidden="true"></span> Logout
+                        </button>
+                    </form>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3 mt-3">
+                    <NavLink class="nav-link" href="Account/Login">
+                        <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Login
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+    </nav>
+</div>
+
+@code {
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

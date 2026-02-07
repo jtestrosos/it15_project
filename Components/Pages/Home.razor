@@ -1,0 +1,186 @@
+﻿@page "/"
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@inject ApplicationDbContext DbContext
+
+<PageTitle>NodeSync - Dashboard</PageTitle>
+
+<div class="page-header mb-4">
+    <h1>Dashboard</h1>
+    <p class="mb-0 opacity-75">Welcome to NodeSync Production System</p>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="dashboard-widget">
+            <div class="d-flex align-items-center mb-3">
+                <div class="widget-icon me-3">
+                    <i class="bi bi-clipboard-data"></i>
+                </div>
+                <div>
+                    <div class="widget-value">@activePlans</div>
+                    <div class="widget-label">Active Plans</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="dashboard-widget">
+            <div class="d-flex align-items-center mb-3">
+                <div class="widget-icon me-3">
+                    <i class="bi bi-list-task"></i>
+                </div>
+                <div>
+                    <div class="widget-value">@pendingOrders</div>
+                    <div class="widget-label">Pending Orders</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="dashboard-widget">
+            <div class="d-flex align-items-center mb-3">
+                <div class="widget-icon me-3">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+                <div>
+                    <div class="widget-value">@lowStockCount</div>
+                    <div class="widget-label">Low Stock Items</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="dashboard-widget">
+            <div class="d-flex align-items-center mb-3">
+                <div class="widget-icon me-3">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div>
+                    <div class="widget-value">@completedToday</div>
+                    <div class="widget-label">Completed Today</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Work Orders</h5>
+            </div>
+            <div class="card-body">
+                @if (recentOrders.Any())
+                {
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Quantity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in recentOrders)
+                            {
+                                <tr>
+                                    <td>@order.OrderID</td>
+                                    <td>@order.OrderDescription</td>
+                                    <td>
+                                        <span class="badge @GetStatusClass(order.Status)">@order.Status</span>
+                                    </td>
+                                    <td>@order.BatchQuantity</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-4">No work orders found. Create a production plan to get started.</p>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Low Stock Alerts</h5>
+            </div>
+            <div class="card-body">
+                @if (lowStockComponents.Any())
+                {
+                    @foreach (var component in lowStockComponents)
+                    {
+                        <div class="alert alert-low-stock mb-2">
+                            <strong>@component.ComponentName</strong><br />
+                            <small>Current stock is below minimum level (@component.MinStockLevel units)</small>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted text-center py-3">All stock levels are healthy!</p>
+                }
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <a href="/production/plans" class="btn btn-primary w-100 mb-2">
+                    <i class="bi bi-plus-circle me-2"></i>New Production Plan
+                </a>
+                <a href="/inventory/components" class="btn btn-outline-primary w-100 mb-2">
+                    <i class="bi bi-box-seam me-2"></i>Manage Inventory
+                </a>
+                <a href="/monitoring/environment" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-thermometer-half me-2"></i>Check Environment
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int activePlans = 0;
+    private int pendingOrders = 0;
+    private int lowStockCount = 0;
+    private int completedToday = 0;
+    private List<WorkOrder> recentOrders = new();
+    private List<Component> lowStockComponents = new();
+
+    protected override void OnInitialized()
+    {
+        activePlans = DbContext.ProductionPlans.Count(p => p.Status == "Active");
+        pendingOrders = DbContext.WorkOrders.Count(o => o.Status == "Pending");
+        completedToday = DbContext.WorkOrders.Count(o => o.Status == "Completed" && o.EndTime.HasValue && o.EndTime.Value.Date == DateTime.Today);
+        
+        recentOrders = DbContext.WorkOrders
+            .OrderByDescending(o => o.OrderID)
+            .Take(5)
+            .ToList();
+
+        lowStockComponents = DbContext.Components
+            .Where(c => c.MinStockLevel > 0)
+            .Take(5)
+            .ToList();
+
+        lowStockCount = lowStockComponents.Count;
+    }
+
+    private string GetStatusClass(string status) => status switch
+    {
+        "Pending" => "status-pending",
+        "In Progress" => "status-in-progress",
+        "Completed" => "status-completed",
+        "Quality Check" => "status-quality-check",
+        _ => "bg-secondary"
+    };
+}
