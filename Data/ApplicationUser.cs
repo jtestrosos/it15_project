@@ -27,6 +27,8 @@ namespace manufacturing_system.Data
         
         [ForeignKey("FacilityID")]
         public manufacturing_system.Models.Facility? Facility { get; set; }
+
+        public bool IsArchived { get; set; } = false;
     }
 
 }

@@ -845,6 +845,37 @@
           }
         }
       },
+      "PSC.Blazor.Components.Chartjs/8.0.8": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/PSC.Blazor.Components.Chartjs.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/PSC.Blazor.Components.Chartjs.dll": {
+            "related": ".xml"
+          }
+        },
+        "contentFiles": {
+          "contentFiles/any/net8.0/libman.json": {
+            "buildAction": "Content",
+            "codeLanguage": "any",
+            "copyToOutput": false
+          },
+          "contentFiles/any/net8.0/psc_ico.ico": {
+            "buildAction": "Content",
+            "codeLanguage": "any",
+            "copyToOutput": false
+          }
+        },
+        "build": {
+          "buildTransitive/PSC.Blazor.Components.Chartjs.props": {}
+        },
+        "buildMultiTargeting": {
+          "buildMultiTargeting/PSC.Blazor.Components.Chartjs.props": {}
+        }
+      },
       "System.ClientModel/1.5.1": {
         "type": "package",
         "dependencies": {
@@ -2822,6 +2853,164 @@
         "packageIcon.png"
       ]
     },
+    "PSC.Blazor.Components.Chartjs/8.0.8": {
+      "sha512": "N5P5DaddtBmmdpd96t3PQ2td9VUmTZM0VjMWBAuApJGS6QWjwAavRaKZ/jwcuQVk8uajf1/DmR3lWjyAFABtAQ==",
+      "type": "package",
+      "path": "psc.blazor.components.chartjs/8.0.8",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE",
+        "README.md",
+        "build/Microsoft.AspNetCore.StaticWebAssets.props",
+        "build/PSC.Blazor.Components.Chartjs.props",
+        "buildMultiTargeting/PSC.Blazor.Components.Chartjs.props",
+        "buildTransitive/PSC.Blazor.Components.Chartjs.props",
+        "content/libman.json",
+        "content/psc_ico.ico",
+        "contentFiles/any/net8.0/libman.json",
+        "contentFiles/any/net8.0/psc_ico.ico",
+        "lib/net8.0/PSC.Blazor.Components.Chartjs.dll",
+        "lib/net8.0/PSC.Blazor.Components.Chartjs.xml",
+        "psc.blazor.components.chartjs.8.0.8.nupkg.sha512",
+        "psc.blazor.components.chartjs.nuspec",
+        "psc_logo.png",
+        "staticwebassets/Chart.js",
+        "staticwebassets/PSC.Blazor.Components.Chartjs.bundle.scp.css",
+        "staticwebassets/lib/Chart.js/chart.cjs",
+        "staticwebassets/lib/Chart.js/chart.cjs.map",
+        "staticwebassets/lib/Chart.js/chart.esm.js",
+        "staticwebassets/lib/Chart.js/chart.esm.min.js",
+        "staticwebassets/lib/Chart.js/chart.js",
+        "staticwebassets/lib/Chart.js/chart.js.map",
+        "staticwebassets/lib/Chart.js/chart.min.js",
+        "staticwebassets/lib/Chart.js/chart.mjs",
+        "staticwebassets/lib/Chart.js/chart.umd.js",
+        "staticwebassets/lib/Chart.js/chart.umd.js.map",
+        "staticwebassets/lib/Chart.js/chunks/helpers.segment.cjs",
+        "staticwebassets/lib/Chart.js/chunks/helpers.segment.cjs.map",
+        "staticwebassets/lib/Chart.js/chunks/helpers.segment.js",
+        "staticwebassets/lib/Chart.js/chunks/helpers.segment.js.map",
+        "staticwebassets/lib/Chart.js/controllers/controller.bar.d.ts",
+        "staticwebassets/lib/Chart.js/controllers/controller.bubble.d.ts",
+        "staticwebassets/lib/Chart.js/controllers/controller.doughnut.d.ts",
+        "staticwebassets/lib/Chart.js/controllers/controller.line.d.ts",
+        "staticwebassets/lib/Chart.js/controllers/controller.pie.d.ts",
+        "staticwebassets/lib/Chart.js/controllers/controller.polarArea.d.ts",
+        "staticwebassets/lib/Chart.js/controllers/controller.radar.d.ts",
+        "staticwebassets/lib/Chart.js/controllers/controller.scatter.d.ts",
+        "staticwebassets/lib/Chart.js/controllers/index.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.adapters.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.animation.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.animations.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.animations.defaults.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.animator.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.config.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.controller.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.datasetController.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.defaults.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.element.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.interaction.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.layouts.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.layouts.defaults.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.plugins.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.registry.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.scale.autoskip.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.scale.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.scale.defaults.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.ticks.d.ts",
+        "staticwebassets/lib/Chart.js/core/core.typedRegistry.d.ts",
+        "staticwebassets/lib/Chart.js/core/index.d.ts",
+        "staticwebassets/lib/Chart.js/elements/element.arc.d.ts",
+        "staticwebassets/lib/Chart.js/elements/element.bar.d.ts",
+        "staticwebassets/lib/Chart.js/elements/element.line.d.ts",
+        "staticwebassets/lib/Chart.js/elements/element.point.d.ts",
+        "staticwebassets/lib/Chart.js/elements/index.d.ts",
+        "staticwebassets/lib/Chart.js/helpers.cjs",
+        "staticwebassets/lib/Chart.js/helpers.cjs.map",
+        "staticwebassets/lib/Chart.js/helpers.esm.js",
+        "staticwebassets/lib/Chart.js/helpers.esm.min.js",
+        "staticwebassets/lib/Chart.js/helpers.js",
+        "staticwebassets/lib/Chart.js/helpers.js.map",
+        "staticwebassets/lib/Chart.js/helpers.mjs",
+        "staticwebassets/lib/Chart.js/helpers/helpers.canvas.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.collection.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.color.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.config.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.config.types.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.core.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.curve.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.dom.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.easing.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.extras.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.interpolation.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.intl.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.math.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.options.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.rtl.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/helpers.segment.d.ts",
+        "staticwebassets/lib/Chart.js/helpers/index.d.ts",
+        "staticwebassets/lib/Chart.js/index.d.ts",
+        "staticwebassets/lib/Chart.js/index.umd.d.ts",
+        "staticwebassets/lib/Chart.js/platform/index.d.ts",
+        "staticwebassets/lib/Chart.js/platform/platform.base.d.ts",
+        "staticwebassets/lib/Chart.js/platform/platform.basic.d.ts",
+        "staticwebassets/lib/Chart.js/platform/platform.dom.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/index.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/plugin.colors.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/plugin.decimation.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/plugin.filler/filler.drawing.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/plugin.filler/filler.helper.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/plugin.filler/filler.options.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/plugin.filler/filler.segment.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/plugin.filler/filler.target.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/plugin.filler/filler.target.stack.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/plugin.filler/index.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/plugin.filler/simpleArc.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/plugin.legend.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/plugin.subtitle.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/plugin.title.d.ts",
+        "staticwebassets/lib/Chart.js/plugins/plugin.tooltip.d.ts",
+        "staticwebassets/lib/Chart.js/scales/index.d.ts",
+        "staticwebassets/lib/Chart.js/scales/scale.category.d.ts",
+        "staticwebassets/lib/Chart.js/scales/scale.linear.d.ts",
+        "staticwebassets/lib/Chart.js/scales/scale.linearbase.d.ts",
+        "staticwebassets/lib/Chart.js/scales/scale.logarithmic.d.ts",
+        "staticwebassets/lib/Chart.js/scales/scale.radialLinear.d.ts",
+        "staticwebassets/lib/Chart.js/scales/scale.time.d.ts",
+        "staticwebassets/lib/Chart.js/scales/scale.timeseries.d.ts",
+        "staticwebassets/lib/Chart.js/types.d.ts",
+        "staticwebassets/lib/Chart.js/types/animation.d.ts",
+        "staticwebassets/lib/Chart.js/types/basic.d.ts",
+        "staticwebassets/lib/Chart.js/types/color.d.ts",
+        "staticwebassets/lib/Chart.js/types/geometric.d.ts",
+        "staticwebassets/lib/Chart.js/types/index.d.ts",
+        "staticwebassets/lib/Chart.js/types/layout.d.ts",
+        "staticwebassets/lib/Chart.js/types/utils.d.ts",
+        "staticwebassets/lib/chartjs-adapter-moment/chartjs-adapter-moment.esm.js",
+        "staticwebassets/lib/chartjs-adapter-moment/chartjs-adapter-moment.esm.min.js",
+        "staticwebassets/lib/chartjs-adapter-moment/chartjs-adapter-moment.js",
+        "staticwebassets/lib/chartjs-adapter-moment/chartjs-adapter-moment.min.js",
+        "staticwebassets/lib/chartjs-plugin-autocolors/chartjs-plugin-autocolors.cjs",
+        "staticwebassets/lib/chartjs-plugin-autocolors/chartjs-plugin-autocolors.cjs.map",
+        "staticwebassets/lib/chartjs-plugin-autocolors/chartjs-plugin-autocolors.esm.js",
+        "staticwebassets/lib/chartjs-plugin-autocolors/chartjs-plugin-autocolors.esm.js.map",
+        "staticwebassets/lib/chartjs-plugin-autocolors/chartjs-plugin-autocolors.min.js",
+        "staticwebassets/lib/chartjs-plugin-autocolors/chartjs-plugin-autocolors.min.js.map",
+        "staticwebassets/lib/chartjs-plugin-datalabels/chartjs-plugin-datalabels.esm.js",
+        "staticwebassets/lib/chartjs-plugin-datalabels/chartjs-plugin-datalabels.esm.min.js",
+        "staticwebassets/lib/chartjs-plugin-datalabels/chartjs-plugin-datalabels.js",
+        "staticwebassets/lib/chartjs-plugin-datalabels/chartjs-plugin-datalabels.min.js",
+        "staticwebassets/lib/chartjs-plugin-zoom/chartjs-plugin-zoom.esm.js",
+        "staticwebassets/lib/chartjs-plugin-zoom/chartjs-plugin-zoom.esm.min.js",
+        "staticwebassets/lib/chartjs-plugin-zoom/chartjs-plugin-zoom.js",
+        "staticwebassets/lib/chartjs-plugin-zoom/chartjs-plugin-zoom.min.js",
+        "staticwebassets/lib/hammer.js/hammer.js",
+        "staticwebassets/lib/hammer.js/hammer.min.js",
+        "staticwebassets/lib/hammer.js/hammer.min.js.map",
+        "staticwebassets/lib/hammer.js/hammer.min.map"
+      ]
+    },
     "System.ClientModel/1.5.1": {
       "sha512": "k2jKSO0X45IqhVOT9iQB4xralNN9foRQsRvXBTyRpAVxyzCJlG895T9qYrQWbcJ6OQXxOouJQ37x5nZH5XKK+A==",
       "type": "package",
@@ -3182,7 +3371,8 @@
       "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore >= 10.0.2",
       "Microsoft.AspNetCore.Identity.EntityFrameworkCore >= 10.0.2",
       "Microsoft.EntityFrameworkCore.SqlServer >= 10.0.2",
-      "Microsoft.EntityFrameworkCore.Tools >= 10.0.2"
+      "Microsoft.EntityFrameworkCore.Tools >= 10.0.2",
+      "PSC.Blazor.Components.Chartjs >= 8.0.8"
     ]
   },
   "packageFolders": {
@@ -3256,6 +3446,10 @@
           "Microsoft.EntityFrameworkCore.Tools": {
             "target": "Package",
             "version": "[10.0.2, )"
+          },
+          "PSC.Blazor.Components.Chartjs": {
+            "target": "Package",
+            "version": "[8.0.8, )"
           }
         },
         "imports": [

@@ -45,6 +45,9 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
+// Register WeatherService for OpenWeather API
+builder.Services.AddHttpClient<manufacturing_system.Services.IWeatherService, manufacturing_system.Services.WeatherService>();
+
 var app = builder.Build();
 
 // Seed roles and admin account
