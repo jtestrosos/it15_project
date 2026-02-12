@@ -122,6 +122,7 @@
             </Authorized>
         </AuthorizeView>
 
+
         <!-- System Configuration Section - Superadmin only -->
         <AuthorizeView Roles="Superadmin">
             <Authorized>
@@ -129,12 +130,17 @@
                     <small class="text-muted px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">System</small>
                 </div>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="system/facilities">
+                    <NavLink class="nav-link" href="admin/users">
+                        <span class="bi bi-people" aria-hidden="true"></span> User Management
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/facilities">
                         <span class="bi bi-building" aria-hidden="true"></span> Facilities
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="system/api-config">
+                    <NavLink class="nav-link" href="admin/api-config">
                         <span class="bi bi-gear" aria-hidden="true"></span> API Configuration
                     </NavLink>
                 </div>
@@ -157,7 +163,7 @@
                 <div class="nav-item px-3">
                     <form action="/Account/Logout" method="post">
                         <AntiforgeryToken />
-                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                        <input type="hidden" name="ReturnUrl" value="login" />
                         <button type="submit" class="nav-link">
                             <span class="bi bi-box-arrow-left" aria-hidden="true"></span> Logout
                         </button>

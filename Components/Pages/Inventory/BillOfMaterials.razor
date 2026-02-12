@@ -1,0 +1,171 @@
+@page "/inventory/bom"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+
+@attribute [Authorize(Roles = "ProductionManager")]
+@inject ApplicationDbContext Context
+@inject NavigationManager NavigationManager
+
+<PageTitle>Bill of Materials</PageTitle>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="h3 mb-0 text-gray-800">Bill of Materials</h1>
+        <p class="text-muted">Define component structures for products.</p>
+    </div>
+    <div class="col-md-6 text-end">
+        <button class="btn btn-primary" @onclick="OpenCreateModal">
+            <i class="bi bi-plus-lg me-1"></i> Add BOM Item
+        </button>
+    </div>
+</div>
+
+@if (ShowCreateModal)
+{
+    <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New BOM Item</h5>
+                    <button type="button" class="btn-close" @onclick="CloseCreateModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="NewBOM" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label class="form-label">Product</label>
+                            <InputSelect class="form-select" @bind-Value="NewBOM.ProductID">
+                                <option value="0">-- Select Product --</option>
+                                @foreach (var p in products)
+                                {
+                                    <option value="@p.ProductID">@p.ProductName</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Component</label>
+                            <InputSelect class="form-select" @bind-Value="NewBOM.ComponentID">
+                                <option value="0">-- Select Component --</option>
+                                @foreach (var c in components)
+                                {
+                                    <option value="@c.ComponentID">@c.ComponentName</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Quantity Required</label>
+                                <InputNumber class="form-control" @bind-Value="NewBOM.QuantityRequired" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Unit of Measure</label>
+                                <InputText class="form-control" @bind-Value="NewBOM.UnitOfMeasure" />
+                            </div>
+                        </div>
+                        
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseCreateModal">Cxancel</button>
+                             <button type="submit" class="btn btn-primary">Save BOM Item</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (boms == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Product</th>
+                            <th>Component</th>
+                            <th>Qty Required</th>
+                            <th>UoM</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var bom in boms)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-bold">@bom.Product?.ProductName</td>
+                                <td>@bom.Component?.ComponentName</td>
+                                <td>@bom.QuantityRequired</td>
+                                <td><span class="badge bg-light text-dark border">@bom.UnitOfMeasure</span></td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteBOM(bom)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<BillOfMaterial>? boms;
+    private List<Product> products = new();
+    private List<Component> components = new();
+    private bool ShowCreateModal = false;
+    private BillOfMaterial NewBOM = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        products = await Context.Products.ToListAsync();
+        components = await Context.Components.ToListAsync();
+        boms = await Context.BillOfMaterials
+            .Include(b => b.Product)
+            .Include(b => b.Component)
+            .ToListAsync();
+    }
+
+    private void OpenCreateModal()
+    {
+        NewBOM = new BillOfMaterial();
+        ShowCreateModal = true;
+    }
+
+    private void CloseCreateModal()
+    {
+        ShowCreateModal = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (NewBOM.ProductID == 0 || NewBOM.ComponentID == 0) return; // Validation check
+
+        Context.BillOfMaterials.Add(NewBOM);
+        await Context.SaveChangesAsync();
+        await LoadData();
+        CloseCreateModal();
+    }
+
+    private async Task DeleteBOM(BillOfMaterial bom)
+    {
+        Context.BillOfMaterials.Remove(bom);
+        await Context.SaveChangesAsync();
+        await LoadData();
+    }
+}

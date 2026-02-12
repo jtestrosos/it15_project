@@ -1,0 +1,245 @@
+@page "/admin/users"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+
+@attribute [Authorize(Roles = "Superadmin,Administrator")]
+@inject UserManager<ApplicationUser> UserManager
+@inject ApplicationDbContext Context
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>User Management</PageTitle>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="h3 mb-0 text-gray-800">User Management</h1>
+        <p class="text-muted">Manage user roles, access, and status.</p>
+    </div>
+</div>
+
+@if (ShowEditModal && EditingUser != null)
+{
+    <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit User: @EditingUser.UserName</h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="EditingUser" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">First Name</label>
+                                <InputText class="form-control" @bind-Value="EditingUser.FirstName" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Last Name</label>
+                                <InputText class="form-control" @bind-Value="EditingUser.LastName" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <InputText class="form-control" @bind-Value="EditingUser.PhoneNumber" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Role</label>
+                            <select class="form-select" @bind="SelectedRole" disabled="@(IsAdmin && EditingUser.Role == "Superadmin")">
+                                @if (!IsAdmin)
+                                {
+                                    <option value="Superadmin">Superadmin</option>
+                                }
+                                <option value="Administrator">Administrator</option>
+                                <option value="ProductionManager">Production Manager</option>
+                                <option value="ProductionWorker">Production Worker</option>
+                            </select>
+                            <div class="form-text">Changing this will update the user's system role.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Assigned Facility</label>
+                            <select class="form-select" @bind="EditingUser.FacilityID">
+                                <option value="">-- None --</option>
+                                @foreach (var f in facilities)
+                                {
+                                    <option value="@f.FacilityID">@f.FacilityName</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <InputCheckbox class="form-check-input" @bind-Value="EditingUser.IsArchived" id="archiveSwitch" disabled="@(EditingUser.Id == currentUserId)" />
+                            <label class="form-check-label" for="archiveSwitch">
+                                Archive User (Disable Access)
+                                @if(EditingUser.Id == currentUserId)
+                                {
+                                    <span class="text-danger small ms-2">(Cannot archive yourself)</span>
+                                }
+                            </label>
+                        </div>
+                        
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseEditModal">Cancel</button>
+                             <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (users == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Facility</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in users)
+                        {
+                            <tr class="@(user.IsArchived ? "table-secondary text-muted" : "")">
+                                <td class="ps-4">
+                                    <div class="fw-bold">@user.FirstName @user.LastName</div>
+                                    <div class="small text-muted">@user.UserName</div>
+                                </td>
+                                <td>@user.Email</td>
+                                <td><span class="badge bg-info text-dark">@GetReadableRole(user.Role)</span></td>
+                                <td>@(user.Facility?.FacilityName ?? "None")</td>
+                                <td>
+                                    @if (user.IsArchived)
+                                    {
+                                        <span class="badge bg-secondary">Archived</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => EditUser(user)" disabled="@(IsAdmin && user.Role == "Superadmin")">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<ApplicationUser>? users;
+    private List<Facility> facilities = new();
+    private bool ShowEditModal = false;
+    private ApplicationUser? EditingUser;
+    private string SelectedRole = "";
+    private string? currentUserId;
+    private bool IsAdmin => currentUserRole == "Administrator";
+    private string? currentUserRole;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        currentUserId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        currentUserRole = user.IsInRole("Superadmin") ? "Superadmin" : (user.IsInRole("Administrator") ? "Administrator" : "");
+        
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        facilities = await Context.Facilities.ToListAsync();
+        users = await UserManager.Users
+            .Include(u => u.Facility)
+            .ToListAsync();
+    }
+
+    private void EditUser(ApplicationUser user)
+    {
+        if (IsAdmin && user.Role == "Superadmin") return; // Admin cannot edit Superadmin
+
+        // Clone or re-fetch to avoid tracking issues if we cancel?
+        // simple approach: use the same object but reload list on cancel/save
+        EditingUser = user;
+        SelectedRole = user.Role; // Initialize with current role property
+        if (string.IsNullOrEmpty(SelectedRole)) SelectedRole = "ProductionWorker"; // Default
+        ShowEditModal = true;
+    }
+
+    private void CloseEditModal()
+    {
+        ShowEditModal = false;
+        EditingUser = null;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (EditingUser == null) return;
+
+        // 1. Update basic properties
+        var user = await UserManager.FindByIdAsync(EditingUser.Id);
+        if (user == null) return;
+
+        user.FirstName = EditingUser.FirstName;
+        user.LastName = EditingUser.LastName;
+        user.PhoneNumber = EditingUser.PhoneNumber;
+        user.FacilityID = EditingUser.FacilityID;
+        user.IsArchived = EditingUser.IsArchived;
+        
+        // 2. Update Role
+        // Check if role changed
+        if (user.Role != SelectedRole)
+        {
+            // Remove from old role
+            if (!string.IsNullOrEmpty(user.Role))
+            {
+                await UserManager.RemoveFromRoleAsync(user, user.Role);
+            }
+            
+            // Add to new role
+            await UserManager.AddToRoleAsync(user, SelectedRole);
+            
+            // Update the Role string property
+            user.Role = SelectedRole;
+        }
+
+        await UserManager.UpdateAsync(user);
+        
+        await LoadData();
+        CloseEditModal();
+    }
+    private string GetReadableRole(string role)
+    {
+        return role switch
+        {
+            "ProductionManager" => "Production Manager",
+            "ProductionWorker" => "Production Worker",
+            _ => role
+        };
+    }
+}

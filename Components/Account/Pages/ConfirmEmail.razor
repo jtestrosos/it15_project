@@ -10,8 +10,18 @@
 
 <PageTitle>Confirm email</PageTitle>
 
-<h1>Confirm email</h1>
-<StatusMessage Message="@statusMessage" />
+<div class="login-content">
+    <div class="login-header">
+        <h1>Confirm Email</h1>
+        <p>Email confirmation status.</p>
+    </div>
+
+    <StatusMessage Message="@statusMessage" />
+    
+    <div class="login-footer">
+        <a href="Account/Login" class="footer-link">Go to Login</a>
+    </div>
+</div>
 
 @code {
     private string? statusMessage;

@@ -1,0 +1,174 @@
+@page "/production/costs"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+
+@attribute [Authorize(Roles = "ProductionManager")]
+@inject ApplicationDbContext Context
+
+<PageTitle>Costing</PageTitle>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="h3 mb-0 text-gray-800">Production Costs</h1>
+        <p class="text-muted">Track material and labor expenses.</p>
+    </div>
+    <div class="col-md-6 text-end">
+        <button class="btn btn-primary" @onclick="OpenCreateModal">
+            <i class="bi bi-plus-lg me-1"></i> Record Cost
+        </button>
+    </div>
+</div>
+
+@if (ShowCreateModal)
+{
+    <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Record New Cost</h5>
+                    <button type="button" class="btn-close" @onclick="CloseCreateModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="NewCost" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label class="form-label">Related Work Order</label>
+                            <InputSelect class="form-select" @bind-Value="NewCost.OrderID">
+                                <option value="">-- General / Overhead --</option>
+                                @foreach (var o in orders)
+                                {
+                                    <option value="@o.OrderID">Order #@o.OrderID - @o.OrderDescription</option>
+                                }
+                            </InputSelect>
+                        </div>
+                         <div class="mb-3">
+                            <label class="form-label">Related Component (Optional)</label>
+                            <InputSelect class="form-select" @bind-Value="NewCost.ComponentID">
+                                <option value="">-- None --</option>
+                                @foreach (var c in components)
+                                {
+                                    <option value="@c.ComponentID">@c.ComponentName</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Cost Type</label>
+                            <InputSelect class="form-select" @bind-Value="NewCost.CostType">
+                                <option value="Material">Material</option>
+                                <option value="Labor">Labor</option>
+                                <option value="Overhead">Overhead</option>
+                            </InputSelect>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Amount (PHP)</label>
+                                <InputNumber class="form-control" @bind-Value="NewCost.Amount" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Currency Rate</label>
+                                <InputNumber class="form-control" @bind-Value="NewCost.CurrencyRate" />
+                            </div>
+                        </div>
+                        
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseCreateModal">Cxancel</button>
+                             <button type="submit" class="btn btn-primary">Save Record</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (costs == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Date</th>
+                            <th>Type</th>
+                            <th>Reference</th>
+                            <th>Amount</th>
+                            <th>Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var cost in costs)
+                        {
+                            <tr>
+                                <td class="ps-4">@cost.RecordedDate.ToShortDateString()</td>
+                                <td>@cost.CostType</td>
+                                <td class="text-muted small">
+                                    @if(cost.OrderID != null) { <span>Order #@cost.OrderID</span> }
+                                    @if(cost.ComponentID != null) { <span> | @cost.Component?.ComponentName</span> }
+                                </td>
+                                <td class="fw-bold">@cost.Amount.ToString("C2")</td>
+                                <td class="text-muted small">@cost.CurrencyRate</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Cost>? costs;
+    private List<WorkOrder> orders = new();
+    private List<Component> components = new();
+    private bool ShowCreateModal = false;
+    private Cost NewCost = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        orders = await Context.WorkOrders.OrderByDescending(o => o.OrderID).ToListAsync();
+        components = await Context.Components.ToListAsync();
+        costs = await Context.Costs
+            .Include(c => c.Order)
+            .Include(c => c.Component)
+            .OrderByDescending(c => c.RecordedDate)
+            .ToListAsync();
+    }
+
+    private void OpenCreateModal()
+    {
+        NewCost = new Cost 
+        { 
+            RecordedDate = DateTime.Now,
+            CurrencyRate = 1.0m,
+            CostType = "Material"
+        };
+        ShowCreateModal = true;
+    }
+
+    private void CloseCreateModal()
+    {
+        ShowCreateModal = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        Context.Costs.Add(NewCost);
+        await Context.SaveChangesAsync();
+        await LoadData();
+        CloseCreateModal();
+    }
+}

@@ -1,0 +1,108 @@
+@page "/admin/api-config"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+
+@attribute [Authorize(Roles = "Superadmin")]
+@inject ApplicationDbContext Context
+
+<PageTitle>API Configuration</PageTitle>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="h3 mb-0 text-gray-800">API Configuration</h1>
+        <p class="text-muted">Manage external integrations and keys.</p>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-body">
+        <label class="form-label fw-bold">Select Facility to Configure</label>
+        <select class="form-select mb-4" @bind="SelectedFacilityId">
+            <option value="0">-- Select Facility --</option>
+            @foreach (var f in facilities)
+            {
+                <option value="@f.FacilityID">@f.FacilityName (@f.Location)</option>
+            }
+        </select>
+
+        @if (selectedFacility != null)
+        {
+            <hr class="my-4" />
+            <h5 class="mb-3">Configuration for: @selectedFacility.FacilityName</h5>
+            
+            <EditForm Model="selectedFacility" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">OpenWeather API Key</label>
+                        <InputText class="form-control" @bind-Value="selectedFacility.APIKeyOpenWeather" placeholder="Enter API Key" />
+                        <div class="form-text">Used for environmental monitoring data.</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Exchange Rate API Key</label>
+                        <InputText class="form-control" @bind-Value="selectedFacility.APIKeyExchangeRate" placeholder="Enter API Key" />
+                        <div class="form-text">Used for currency conversion in costing.</div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save me-1"></i> Save Configuration
+                    </button>
+                    @if (showSuccess)
+                    {
+                        <span class="text-success ms-3"><i class="bi bi-check-circle"></i> Saved successfully!</span>
+                    }
+                </div>
+            </EditForm>
+        }
+    </div>
+</div>
+
+@code {
+    private List<Facility> facilities = new();
+    private Facility? selectedFacility;
+    private int _selectedFacilityId;
+    private bool showSuccess = false;
+
+    private int SelectedFacilityId
+    {
+        get => _selectedFacilityId;
+        set
+        {
+            _selectedFacilityId = value;
+            if (_selectedFacilityId > 0)
+            {
+                selectedFacility = facilities.FirstOrDefault(f => f.FacilityID == _selectedFacilityId);
+                showSuccess = false;
+            }
+            else
+            {
+                selectedFacility = null;
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        facilities = await Context.Facilities.ToListAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (selectedFacility == null) return;
+
+        Context.Facilities.Update(selectedFacility);
+        await Context.SaveChangesAsync();
+        showSuccess = true;
+        
+        // Hide success message after 3 seconds
+        await Task.Delay(3000);
+        showSuccess = false;
+        StateHasChanged();
+    }
+}

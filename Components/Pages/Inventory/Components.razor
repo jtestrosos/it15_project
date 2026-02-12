@@ -1,0 +1,149 @@
+@page "/inventory/components"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+
+@attribute [Authorize(Roles = "ProductionManager")]
+@inject ApplicationDbContext Context
+@inject NavigationManager NavigationManager
+
+<PageTitle>Components</PageTitle>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="h3 mb-0 text-gray-800">Components Inventory</h1>
+        <p class="text-muted">Manage raw materials and parts stock.</p>
+    </div>
+    <div class="col-md-6 text-end">
+        <button class="btn btn-primary" @onclick="OpenCreateModal">
+            <i class="bi bi-plus-lg me-1"></i> Add Component
+        </button>
+    </div>
+</div>
+
+@if (ShowCreateModal)
+{
+    <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Component</h5>
+                    <button type="button" class="btn-close" @onclick="CloseCreateModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="NewComponent" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label class="form-label">Component Name</label>
+                            <InputText class="form-control" @bind-Value="NewComponent.ComponentName" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <InputTextArea class="form-control" @bind-Value="NewComponent.Description" />
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Unit Cost (PHP)</label>
+                                <InputNumber class="form-control" @bind-Value="NewComponent.UnitCost" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Min Stock Level</label>
+                                <InputNumber class="form-control" @bind-Value="NewComponent.MinStockLevel" />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Supplier Info</label>
+                            <InputText class="form-control" @bind-Value="NewComponent.SupplierInfo" />
+                        </div>
+                        
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseCreateModal">Cxancel</button>
+                             <button type="submit" class="btn btn-primary">Save Component</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (components == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Component Name</th>
+                            <th>Description</th>
+                            <th>Unit Cost</th>
+                            <th>Min Stock</th>
+                            <th>Supplier</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var comp in components)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-bold">@comp.ComponentName</td>
+                                <td class="text-muted small">@comp.Description</td>
+                                <td>@comp.UnitCost.ToString("C2")</td>
+                                <td><span class="badge bg-secondary">@comp.MinStockLevel</span></td>
+                                <td class="text-muted small">@comp.SupplierInfo</td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Component>? components;
+    private bool ShowCreateModal = false;
+    private Component NewComponent = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadComponents();
+    }
+
+    private async Task LoadComponents()
+    {
+        components = await Context.Components.ToListAsync();
+    }
+
+    private void OpenCreateModal()
+    {
+        NewComponent = new Component();
+        ShowCreateModal = true;
+    }
+
+    private void CloseCreateModal()
+    {
+        ShowCreateModal = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        Context.Components.Add(NewComponent);
+        await Context.SaveChangesAsync();
+        await LoadComponents();
+        CloseCreateModal();
+    }
+}

@@ -198,6 +198,22 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xBcHAucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Admin/ActivityLogs.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxBY3Rpdml0eUxvZ3MucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Admin/ApiConfiguration.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxBcGlDb25maWd1cmF0aW9uLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Admin/Facilities.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxGYWNpbGl0aWVzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Admin/Users.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxVc2Vycy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Auth.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBdXRoLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -214,12 +230,44 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xIb21lLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Inventory/BillOfMaterials.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xJbnZlbnRvcnlcQmlsbE9mTWF0ZXJpYWxzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Inventory/Components.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xJbnZlbnRvcnlcQ29tcG9uZW50cy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Inventory/Products.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xJbnZlbnRvcnlcUHJvZHVjdHMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Inventory/Transactions.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xJbnZlbnRvcnlcVHJhbnNhY3Rpb25zLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Monitoring/Environment.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xNb25pdG9yaW5nXEVudmlyb25tZW50LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/NotFound.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xOb3RGb3VuZC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Production/Costs.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm9kdWN0aW9uXENvc3RzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Production/ProductionPlans.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm9kdWN0aW9uXFByb2R1Y3Rpb25QbGFucy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Production/WorkOrders.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xQcm9kdWN0aW9uXFdvcmtPcmRlcnMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Tasks/AssignedTasks.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUYXNrc1xBc3NpZ25lZFRhc2tzLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Weather.razor]

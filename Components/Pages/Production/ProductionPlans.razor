@@ -1,0 +1,188 @@
+@page "/production/plans"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+
+@attribute [Authorize(Roles = "ProductionManager")]
+@inject ApplicationDbContext Context
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Production Plans</PageTitle>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="h3 mb-0 text-gray-800">Production Schedules</h1>
+        <p class="text-muted">Plan manufacturing batches.</p>
+    </div>
+    <div class="col-md-6 text-end">
+        <button class="btn btn-primary" @onclick="OpenCreateModal">
+            <i class="bi bi-plus-lg me-1"></i> New Plan
+        </button>
+    </div>
+</div>
+
+@if (ShowCreateModal)
+{
+    <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Production Plan</h5>
+                    <button type="button" class="btn-close" @onclick="CloseCreateModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="NewPlan" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label class="form-label">Product to Build</label>
+                            <InputSelect class="form-select" @bind-Value="NewPlan.ProductID">
+                                <option value="0">-- Select Product --</option>
+                                @foreach (var p in products)
+                                {
+                                    <option value="@p.ProductID">@p.ProductName</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Quantity</label>
+                            <InputNumber class="form-control" @bind-Value="NewPlan.BatchQuantity" />
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Start Date</label>
+                                <InputDate class="form-control" @bind-Value="NewPlan.PlannedStartDate" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">End Date</label>
+                                <InputDate class="form-control" @bind-Value="NewPlan.PlannedEndDate" />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Status</label>
+                             <InputSelect class="form-select" @bind-Value="NewPlan.Status">
+                                <option value="Draft">Draft</option>
+                                <option value="Active">Active</option>
+                                <option value="Archived">Archived</option>
+                            </InputSelect>
+                        </div>
+                        
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseCreateModal">Cxancel</button>
+                             <button type="submit" class="btn btn-primary">Create Plan</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (plans == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var plan in plans)
+        {
+            <div class="col-md-6 col-xl-4">
+                <div class="card h-100 shadow-sm border-0 border-start border-4 @GetStatusBorder(plan.Status)">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                             <h5 class="card-title fw-bold mb-0">@plan.Product?.ProductName</h5>
+                             <span class="badge @GetStatusBadge(plan.Status)">@plan.Status</span>
+                        </div>
+                        <p class="text-muted small mb-3">#@plan.PlanID created by @plan.User?.UserName</p>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="bi bi-boxes me-1 text-muted"></i> Quantity:</span>
+                            <span class="fw-bold">@plan.BatchQuantity</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                             <span><i class="bi bi-calendar-event me-1 text-muted"></i> Start:</span>
+                             <span>@plan.PlannedStartDate.ToShortDateString()</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                             <span><i class="bi bi-calendar-check me-1 text-muted"></i> End:</span>
+                             <span>@plan.PlannedEndDate.ToShortDateString()</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<ProductionPlan>? plans;
+    private List<Product> products = new();
+    private bool ShowCreateModal = false;
+    private ProductionPlan NewPlan = new();
+    private string? currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        products = await Context.Products.ToListAsync();
+        plans = await Context.ProductionPlans
+            .Include(p => p.Product)
+            .Include(p => p.User)
+            .OrderByDescending(p => p.PlanID)
+            .ToListAsync();
+    }
+
+    private void OpenCreateModal()
+    {
+        NewPlan = new ProductionPlan 
+        { 
+            PlannedStartDate = DateTime.Today,
+            PlannedEndDate = DateTime.Today.AddDays(7),
+            Status = "Draft"
+        };
+        ShowCreateModal = true;
+    }
+
+    private void CloseCreateModal()
+    {
+        ShowCreateModal = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (NewPlan.ProductID == 0 || string.IsNullOrEmpty(currentUserId)) return;
+
+        NewPlan.UserID = currentUserId;
+        Context.ProductionPlans.Add(NewPlan);
+        await Context.SaveChangesAsync();
+        await LoadData();
+        CloseCreateModal();
+    }
+
+    private string GetStatusBorder(string status) => status switch
+    {
+        "Active" => "border-success",
+        "Draft" => "border-secondary",
+        "Archived" => "border-warning",
+        _ => "border-primary"
+    };
+
+    private string GetStatusBadge(string status) => status switch
+    {
+        "Active" => "bg-success",
+        "Draft" => "bg-secondary",
+        "Archived" => "bg-warning text-dark",
+        _ => "bg-primary"
+    };
+}

@@ -46,6 +46,15 @@ namespace manufacturing_system.Data
                     await userManager.AddToRoleAsync(adminUser, "Administrator");
                 }
             }
+            else
+            {
+               // Ensure password is "password" for existing user
+               await userManager.SetLockoutEndDateAsync(existingAdmin, null);
+               await userManager.ResetAccessFailedCountAsync(existingAdmin);
+               
+               var token = await userManager.GeneratePasswordResetTokenAsync(existingAdmin);
+               await userManager.ResetPasswordAsync(existingAdmin, token, adminPassword);
+            }
 
             // Create default Manager account
             var managerEmail = "manager@nodesync.com";
@@ -117,6 +126,15 @@ namespace manufacturing_system.Data
                 {
                     await userManager.AddToRoleAsync(superadminUser, "Superadmin");
                 }
+            }
+            else
+            {
+               // Ensure password is "password" for existing user
+               await userManager.SetLockoutEndDateAsync(existingSuperadmin, null);
+               await userManager.ResetAccessFailedCountAsync(existingSuperadmin);
+               
+               var token = await userManager.GeneratePasswordResetTokenAsync(existingSuperadmin);
+               await userManager.ResetPasswordAsync(existingSuperadmin, token, superadminPassword);
             }
         }
     }

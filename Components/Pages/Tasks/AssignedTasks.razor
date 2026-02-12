@@ -1,0 +1,197 @@
+@page "/tasks/assigned"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+
+@attribute [Authorize(Roles = "ProductionWorker")]
+@inject ApplicationDbContext Context
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>Assigned Tasks</PageTitle>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">My Assigned Tasks</h1>
+            <p class="text-muted">Manage your daily production work orders.</p>
+        </div>
+        <div>
+            <span class="badge bg-primary rounded-pill px-3 py-2">
+                <i class="bi bi-person-fill me-1"></i> Production Worker
+            </span>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (!workOrders.Any())
+    {
+        <div class="alert alert-info shadow-sm border-0 d-flex align-items-center">
+            <i class="bi bi-info-circle-fill me-3 fs-4"></i>
+            <div>
+                <strong>No tasks assigned!</strong>
+                <p class="mb-0">You currently don't have any active work orders. Please check with your manager.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var order in workOrders)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm task-card @GetStatusClass(order.Status)">
+                        <div class="card-header bg-transparent border-0 pt-3 pb-0 d-flex justify-content-between align-items-start">
+                            <span class="badge @GetBadgeClass(order.Status) rounded-pill">@order.Status</span>
+                            <small class="text-muted fw-bold">#@order.OrderID</small>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title fw-bold mb-1">@order.Plan?.Product?.ProductName</h5>
+                            <p class="text-muted small mb-3">@order.OrderDescription</p>
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted small"><i class="bi bi-building me-1"></i> Batch Qty:</span>
+                                <span class="fw-bold">@order.BatchQuantity Units</span>
+                            </div>
+                            
+                             @if (order.StartTime.HasValue)
+                            {
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted small"><i class="bi bi-clock me-1"></i> Started:</span>
+                                    <span class="text-dark small">@order.StartTime.Value.ToString("g")</span>
+                                </div>
+                            }
+                            
+                            @if (order.EndTime.HasValue)
+                            {
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted small"><i class="bi bi-check-circle me-1"></i> Ended:</span>
+                                    <span class="text-dark small">@order.EndTime.Value.ToString("g")</span>
+                                </div>
+                            }
+                        </div>
+                        <div class="card-footer bg-transparent border-0 pb-3 pt-0">
+                            @if (order.Status == "Pending")
+                            {
+                                <button class="btn btn-primary w-100" @onclick="() => StartTask(order)">
+                                    <i class="bi bi-play-fill me-1"></i> Start Work
+                                </button>
+                            }
+                            else if (order.Status == "In Progress")
+                            {
+                                <button class="btn btn-success w-100" @onclick="() => CompleteTask(order)">
+                                    <i class="bi bi-check-lg me-1"></i> Complete Task
+                                </button>
+                            }
+                            else if (order.Status == "Completed")
+                            {
+                                <button class="btn btn-outline-secondary w-100" disabled>
+                                    <i class="bi bi-check2-all me-1"></i> Completed
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .task-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+    }
+    .task-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+    .task-card.status-pending { border-top: 4px solid #0d6efd; }
+    .task-card.status-inprogress { border-top: 4px solid #198754; }
+    .task-card.status-completed { border-top: 4px solid #6c757d; }
+</style>
+
+@code {
+    private List<WorkOrder> workOrders = new();
+    private bool isLoading = true;
+    private string? userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            await LoadTasks();
+        }
+        else
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadTasks()
+    {
+        if (string.IsNullOrEmpty(userId)) return;
+
+        isLoading = true;
+        try 
+        {
+            workOrders = await Context.WorkOrders
+                .Include(w => w.Plan)
+                .ThenInclude(p => p.Product)
+                .Where(w => w.UserID == userId)
+                .OrderByDescending(w => w.Status == "In Progress") // Show In Progress first
+                .ThenByDescending(w => w.Status == "Pending")
+                .ThenByDescending(w => w.OrderID)
+                .ToListAsync();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task StartTask(WorkOrder order)
+    {
+        order.Status = "In Progress";
+        order.StartTime = DateTime.Now;
+        Context.Update(order);
+        await Context.SaveChangesAsync();
+    }
+
+    private async Task CompleteTask(WorkOrder order)
+    {
+        order.Status = "Completed";
+        order.EndTime = DateTime.Now;
+        Context.Update(order);
+        await Context.SaveChangesAsync();
+        await LoadTasks(); // Reload to re-sort
+    }
+
+    private string GetStatusClass(string status) => status switch
+    {
+        "Pending" => "status-pending",
+        "In Progress" => "status-inprogress",
+        "Completed" => "status-completed",
+        _ => ""
+    };
+
+    private string GetBadgeClass(string status) => status switch
+    {
+        "Pending" => "bg-primary bg-opacity-10 text-primary",
+        "In Progress" => "bg-success bg-opacity-10 text-success",
+        "Completed" => "bg-secondary bg-opacity-10 text-secondary",
+        _ => "bg-secondary"
+    };
+}

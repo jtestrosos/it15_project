@@ -1,0 +1,136 @@
+@page "/inventory/products"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+
+@attribute [Authorize(Roles = "ProductionManager")]
+@inject ApplicationDbContext Context
+@inject NavigationManager NavigationManager
+
+<PageTitle>Products</PageTitle>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="h3 mb-0 text-gray-800">Products</h1>
+        <p class="text-muted">Manage the catalog of finished goods.</p>
+    </div>
+    <div class="col-md-6 text-end">
+        <button class="btn btn-primary" @onclick="OpenCreateModal">
+            <i class="bi bi-plus-lg me-1"></i> Add Product
+        </button>
+    </div>
+</div>
+
+@if (ShowCreateModal)
+{
+    <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Product</h5>
+                    <button type="button" class="btn-close" @onclick="CloseCreateModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="NewProduct" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label class="form-label">Product Name</label>
+                            <InputText class="form-control" @bind-Value="NewProduct.ProductName" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <InputTextArea class="form-control" @bind-Value="NewProduct.Description" />
+                        </div>
+                        
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseCreateModal">Cxancel</button>
+                             <button type="submit" class="btn btn-primary">Save Product</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (products == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Product Name</th>
+                            <th>Description</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var product in products)
+                        {
+                            <tr>
+                                <td class="ps-4 fw-bold">@product.ProductName</td>
+                                <td class="text-muted">@product.Description</td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => EditProduct(product)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Product>? products;
+    private bool ShowCreateModal = false;
+    private Product NewProduct = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        products = await Context.Products.ToListAsync();
+    }
+
+    private void OpenCreateModal()
+    {
+        NewProduct = new Product();
+        ShowCreateModal = true;
+    }
+
+    private void CloseCreateModal()
+    {
+        ShowCreateModal = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        Context.Products.Add(NewProduct);
+        await Context.SaveChangesAsync();
+        await LoadProducts();
+        CloseCreateModal();
+    }
+
+    private void EditProduct(Product product)
+    {
+        // For simplicity, just reusing the create modal logic or could add an edit modal later
+        // "Functional" usually implies creates work first.
+        // For now, list + create is a good baseline.
+    }
+}

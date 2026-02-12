@@ -193,7 +193,6 @@ C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compres
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\bwbmcagh82-{0}-tzvmcv6hdj-tzvmcv6hdj.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\xuz06kjuf4-{0}-zpmbi24sgh-zpmbi24sgh.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\gezfqygmjx-{0}-cg501lde2e-cg501lde2e.gz
-C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\04m9zdu2dm-{0}-nqrjcglxi0-nqrjcglxi0.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\4dg9eku6c0-{0}-bqjiyaj88i-bqjiyaj88i.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\9ew21nj00u-{0}-c2jlpeoesf-c2jlpeoesf.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\f2o19g41tf-{0}-erw9l3u2r3-erw9l3u2r3.gz
@@ -241,8 +240,6 @@ C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compres
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\8xnaopre47-{0}-zhp0l7gd3m-zhp0l7gd3m.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\hi4koowcq8-{0}-pr21mg9rrw-pr21mg9rrw.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\fxanedgxk4-{0}-abdmv1u4y3-abdmv1u4y3.gz
-C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\t0nbrx9ti6-{0}-2i0r6wwb69-2i0r6wwb69.gz
-C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\djttn11rmd-{0}-iz83ucvm53-iz83ucvm53.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\wbtgb4fg76-{0}-l4cajhyz70-l4cajhyz70.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\p109q0or39-{0}-6fbv1nqyrr-6fbv1nqyrr.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\atf3az2mss-{0}-daivx799fm-daivx799fm.gz
@@ -257,4 +254,8 @@ C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\refint\
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\production_system.pdb
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\production_system.genruntimeconfig.cache
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\ref\production_system.dll
+C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\04m9zdu2dm-{0}-gskyzqtrq9-gskyzqtrq9.gz
+C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\t0nbrx9ti6-{0}-ax6tuj8tun-ax6tuj8tun.gz
+C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\djttn11rmd-{0}-zr4b1gdhaw-zr4b1gdhaw.gz
+C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\i7hlojl6xb-{0}-9fglm6o7n8-9fglm6o7n8.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

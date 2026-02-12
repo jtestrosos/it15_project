@@ -1,0 +1,92 @@
+@page "/inventory/transactions"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+
+@attribute [Authorize(Roles = "ProductionManager")]
+@inject ApplicationDbContext Context
+
+<PageTitle>Inventory Transactions</PageTitle>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="h3 mb-0 text-gray-800">Inventory Logs</h1>
+        <p class="text-muted">Track history of stock movements.</p>
+    </div>
+</div>
+
+@if (transactions == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Date</th>
+                            <th>Type</th>
+                            <th>Component</th>
+                            <th>Qty</th>
+                            <th>User</th>
+                            <th>Reference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var txn in transactions)
+                        {
+                            <tr>
+                                <td class="ps-4">@txn.TransactionDate.ToString("g")</td>
+                                <td>
+                                    <span class="badge @GetBadgeClass(txn.TransactionType)">@txn.TransactionType</span>
+                                </td>
+                                <td class="fw-bold">@txn.Component?.ComponentName</td>
+                                <td class="@GetQtyClass(txn.TransactionType)">
+                                    @txn.Quantity
+                                </td>
+                                <td class="text-muted small">@txn.User?.UserName</td>
+                                <td class="text-muted small">
+                                    @if (txn.OrderID != null)
+                                    {
+                                        <span>Order #@txn.OrderID</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Manual</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<InventoryTransaction>? transactions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        transactions = await Context.InventoryTransactions
+            .Include(t => t.Component)
+            .Include(t => t.User)
+            .OrderByDescending(t => t.TransactionDate)
+            .ToListAsync();
+    }
+
+    private string GetBadgeClass(string type) => type switch
+    {
+        "Inbound" => "bg-success",
+        "Outbound" => "bg-danger",
+        "Adjustment" => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
+
+    private string GetQtyClass(string type) => type == "Inbound" ? "text-success fw-bold" : "text-danger fw-bold";
+}

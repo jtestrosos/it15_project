@@ -1,0 +1,150 @@
+@page "/admin/facilities"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+
+@attribute [Authorize(Roles = "Superadmin")]
+@inject ApplicationDbContext Context
+
+<PageTitle>Manage Facilities</PageTitle>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="h3 mb-0 text-gray-800">Facilities</h1>
+        <p class="text-muted">Manage production facilities and sites.</p>
+    </div>
+    <div class="col-md-6 text-end">
+        <button class="btn btn-primary" @onclick="OpenCreateModal">
+            <i class="bi bi-plus-lg me-1"></i> New Facility
+        </button>
+    </div>
+</div>
+
+@if (ShowCreateModal)
+{
+    <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Facility</h5>
+                    <button type="button" class="btn-close" @onclick="CloseCreateModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="NewFacility" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label class="form-label">Facility Name</label>
+                            <InputText class="form-control" @bind-Value="NewFacility.FacilityName" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Location</label>
+                            <InputText class="form-control" @bind-Value="NewFacility.Location" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Status</label>
+                            <InputSelect class="form-select" @bind-Value="NewFacility.SubscriptionStatus">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                                <option value="Suspended">Suspended</option>
+                            </InputSelect>
+                        </div>
+                        
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseCreateModal">Cxancel</button>
+                             <button type="submit" class="btn btn-primary">Create Facility</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (facilities == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Name</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var f in facilities)
+                        {
+                            <tr>
+                                <td class="ps-4 text-muted small">#@f.FacilityID</td>
+                                <td class="fw-bold">@f.FacilityName</td>
+                                <td>@f.Location</td>
+                                <td>
+                                    <span class="badge @GetStatusBadge(f.SubscriptionStatus)">@f.SubscriptionStatus</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <button class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Facility>? facilities;
+    private bool ShowCreateModal = false;
+    private Facility NewFacility = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFacilities();
+    }
+
+    private async Task LoadFacilities()
+    {
+        facilities = await Context.Facilities.ToListAsync();
+    }
+
+    private void OpenCreateModal()
+    {
+        NewFacility = new Facility { SubscriptionStatus = "Active" };
+        ShowCreateModal = true;
+    }
+
+    private void CloseCreateModal()
+    {
+        ShowCreateModal = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        Context.Facilities.Add(NewFacility);
+        await Context.SaveChangesAsync();
+        await LoadFacilities();
+        CloseCreateModal();
+    }
+
+    private string GetStatusBadge(string status) => status switch
+    {
+        "Active" => "bg-success",
+        "Inactive" => "bg-secondary",
+        "Suspended" => "bg-danger",
+        _ => "bg-light text-dark border"
+    };
+}
