@@ -3,9 +3,10 @@
 @using Microsoft.EntityFrameworkCore
 @using manufacturing_system.Data
 @using manufacturing_system.Models
+@using Microsoft.Extensions.DependencyInjection
 
-@attribute [Authorize(Roles = "ProductionManager")]
-@inject ApplicationDbContext Context
+@attribute [Authorize(Roles = "ProductionManager,ProductionWorker")]
+@inject IServiceScopeFactory ScopeFactory
 @inject NavigationManager NavigationManager
 
 <PageTitle>Components</PageTitle>
@@ -16,9 +17,13 @@
         <p class="text-muted">Manage raw materials and parts stock.</p>
     </div>
     <div class="col-md-6 text-end">
-        <button class="btn btn-primary" @onclick="OpenCreateModal">
-            <i class="bi bi-plus-lg me-1"></i> Add Component
-        </button>
+        <AuthorizeView Roles="ProductionManager">
+            <Authorized>
+                <button class="btn btn-primary" @onclick="OpenCreateModal">
+                    <i class="bi bi-plus-lg me-1"></i> Add Component
+                </button>
+            </Authorized>
+        </AuthorizeView>
     </div>
 </div>
 
@@ -28,7 +33,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">New Component</h5>
+                    <h5 class="modal-title">@(IsEditing ? "Edit Component" : "New Component")</h5>
                     <button type="button" class="btn-close" @onclick="CloseCreateModal"></button>
                 </div>
                 <div class="modal-body">
@@ -76,6 +81,13 @@
 }
 else
 {
+    <div class="d-flex justify-content-end mb-3">
+        <button class="btn btn-outline-secondary btn-sm" @onclick="ToggleArchivedView">
+            <i class="bi @(ShowArchived ? "bi-eye-slash" : "bi-eye") me-1"></i>
+            @(ShowArchived ? "Show Active" : "Show Archived")
+        </button>
+    </div>
+
     <div class="card shadow mb-4">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -87,23 +99,46 @@ else
                             <th>Unit Cost</th>
                             <th>Min Stock</th>
                             <th>Supplier</th>
-                            <th class="text-end pe-4">Actions</th>
+                            <AuthorizeView Roles="ProductionManager">
+                                <Authorized>
+                                    <th class="text-end pe-4">Actions</th>
+                                </Authorized>
+                            </AuthorizeView>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var comp in components)
+                        @foreach (var comp in components.Where(c => c.IsArchived == ShowArchived))
                         {
-                            <tr>
+                            <tr class="@(comp.IsArchived ? "table-secondary text-muted" : "")">
                                 <td class="ps-4 fw-bold">@comp.ComponentName</td>
                                 <td class="text-muted small">@comp.Description</td>
                                 <td>@comp.UnitCost.ToString("C2")</td>
                                 <td><span class="badge bg-secondary">@comp.MinStockLevel</span></td>
                                 <td class="text-muted small">@comp.SupplierInfo</td>
-                                <td class="text-end pe-4">
-                                    <button class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                </td>
+                                <AuthorizeView Roles="ProductionManager">
+                                    <Authorized>
+                                        <td class="text-end pe-4">
+                                            @if (!comp.IsArchived)
+                                            {
+                                                <!-- Edit Button -->
+                                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => OpenEditModal(comp)" title="Edit">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <!-- Archive Button -->
+                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => ArchiveComponent(comp)" title="Archive">
+                                                    <i class="bi bi-archive"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <!-- Restore Button -->
+                                                <button class="btn btn-sm btn-outline-success" @onclick="() => RestoreComponent(comp)" title="Restore">
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                </button>
+                                            }
+                                        </td>
+                                    </Authorized>
+                                </AuthorizeView>
                             </tr>
                         }
                     </tbody>
@@ -117,6 +152,8 @@ else
     private List<Component>? components;
     private bool ShowCreateModal = false;
     private Component NewComponent = new();
+    private bool ShowArchived = false; // Toggle state
+    private bool IsEditing = false; // Track if we are editing
 
     protected override async Task OnInitializedAsync()
     {
@@ -125,12 +162,37 @@ else
 
     private async Task LoadComponents()
     {
-        components = await Context.Components.ToListAsync();
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        components = await context.Components.AsNoTracking().ToListAsync();
+    }
+
+    private void ToggleArchivedView()
+    {
+        ShowArchived = !ShowArchived;
     }
 
     private void OpenCreateModal()
     {
         NewComponent = new Component();
+        IsEditing = false;
+        ShowCreateModal = true;
+    }
+
+    private void OpenEditModal(Component component)
+    {
+        // Create a copy to avoid editing the list item directly before saving
+        NewComponent = new Component
+        {
+            ComponentID = component.ComponentID,
+            ComponentName = component.ComponentName,
+            Description = component.Description,
+            UnitCost = component.UnitCost,
+            MinStockLevel = component.MinStockLevel,
+            SupplierInfo = component.SupplierInfo,
+            IsArchived = component.IsArchived
+        };
+        IsEditing = true;
         ShowCreateModal = true;
     }
 
@@ -141,9 +203,59 @@ else
 
     private async Task HandleValidSubmit()
     {
-        Context.Components.Add(NewComponent);
-        await Context.SaveChangesAsync();
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        
+        if (IsEditing)
+        {
+            // Update existing component
+            var existing = await context.Components.FindAsync(NewComponent.ComponentID);
+            if (existing != null)
+            {
+                existing.ComponentName = NewComponent.ComponentName;
+                existing.Description = NewComponent.Description;
+                existing.UnitCost = NewComponent.UnitCost;
+                existing.MinStockLevel = NewComponent.MinStockLevel;
+                existing.SupplierInfo = NewComponent.SupplierInfo;
+                // IsArchived is not changed here typically
+            }
+        }
+        else
+        {
+            // Create new component
+            context.Components.Add(NewComponent);
+        }
+
+        await context.SaveChangesAsync();
         await LoadComponents();
         CloseCreateModal();
+    }
+
+    private async Task ArchiveComponent(Component component)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        
+        var existing = await context.Components.FindAsync(component.ComponentID);
+        if (existing != null)
+        {
+            existing.IsArchived = true;
+            await context.SaveChangesAsync();
+            await LoadComponents();
+        }
+    }
+
+    private async Task RestoreComponent(Component component)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        
+        var existing = await context.Components.FindAsync(component.ComponentID);
+        if (existing != null)
+        {
+            existing.IsArchived = false;
+            await context.SaveChangesAsync();
+            await LoadComponents();
+        }
     }
 }

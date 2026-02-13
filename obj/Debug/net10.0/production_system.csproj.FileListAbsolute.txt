@@ -241,8 +241,6 @@ C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compres
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\hi4koowcq8-{0}-pr21mg9rrw-pr21mg9rrw.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\fxanedgxk4-{0}-abdmv1u4y3-abdmv1u4y3.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\wbtgb4fg76-{0}-l4cajhyz70-l4cajhyz70.gz
-C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\p109q0or39-{0}-6fbv1nqyrr-6fbv1nqyrr.gz
-C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\atf3az2mss-{0}-daivx799fm-daivx799fm.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\staticwebassets.build.json
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\staticwebassets.build.json.cache
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\staticwebassets.development.json
@@ -258,4 +256,6 @@ C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compres
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\t0nbrx9ti6-{0}-ax6tuj8tun-ax6tuj8tun.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\djttn11rmd-{0}-zr4b1gdhaw-zr4b1gdhaw.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\i7hlojl6xb-{0}-9fglm6o7n8-9fglm6o7n8.gz
+C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\p109q0or39-{0}-j5i02wa0vx-j5i02wa0vx.gz
+C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\atf3az2mss-{0}-ctimz28jjp-ctimz28jjp.gz
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

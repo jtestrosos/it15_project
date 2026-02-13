@@ -25,5 +25,6 @@ namespace manufacturing_system.Models
 
         [StringLength(100)]
         public string? SupplierInfo { get; set; }
+        public bool IsArchived { get; set; } = false;
     }
 }

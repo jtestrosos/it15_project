@@ -22,5 +22,7 @@ namespace manufacturing_system.Models
 
         [StringLength(25)]
         public string UnitOfMeasure { get; set; } = "Units";
+
+        public bool IsArchived { get; set; }
     }
 }

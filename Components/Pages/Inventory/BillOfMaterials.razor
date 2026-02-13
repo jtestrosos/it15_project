@@ -16,7 +16,11 @@
         <p class="text-muted">Define component structures for products.</p>
     </div>
     <div class="col-md-6 text-end">
-        <button class="btn btn-primary" @onclick="OpenCreateModal">
+        <button class="btn btn-outline-secondary me-2" @onclick="ToggleArchivedView">
+            <i class="bi @(ShowArchived ? "bi-eye-slash" : "bi-archive") me-1"></i> 
+            @(ShowArchived ? "Show Active" : "Show Archived")
+        </button>
+        <button class="btn btn-primary" @onclick="OpenCreateModal" disabled="@ShowArchived">
             <i class="bi bi-plus-lg me-1"></i> Add BOM Item
         </button>
     </div>
@@ -85,6 +89,9 @@
 else
 {
     <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 fw-bold text-primary">@(ShowArchived ? "Archived Items" : "Active Items")</h6>
+        </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -100,15 +107,24 @@ else
                     <tbody>
                         @foreach (var bom in boms)
                         {
-                            <tr>
+                            <tr class="@(bom.IsArchived ? "table-light text-muted" : "")">
                                 <td class="ps-4 fw-bold">@bom.Product?.ProductName</td>
                                 <td>@bom.Component?.ComponentName</td>
                                 <td>@bom.QuantityRequired</td>
                                 <td><span class="badge bg-light text-dark border">@bom.UnitOfMeasure</span></td>
                                 <td class="text-end pe-4">
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteBOM(bom)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    @if (!bom.IsArchived)
+                                    {
+                                        <button class="btn btn-sm btn-outline-warning" @onclick="() => ArchiveBOM(bom)" title="Archive">
+                                            <i class="bi bi-archive"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-outline-success" @onclick="() => RestoreBOM(bom)" title="Restore">
+                                            <i class="bi bi-arrow-counterclockwise"></i>
+                                        </button>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -124,6 +140,7 @@ else
     private List<Product> products = new();
     private List<Component> components = new();
     private bool ShowCreateModal = false;
+    private bool ShowArchived = false;
     private BillOfMaterial NewBOM = new();
 
     protected override async Task OnInitializedAsync()
@@ -135,10 +152,22 @@ else
     {
         products = await Context.Products.ToListAsync();
         components = await Context.Components.ToListAsync();
-        boms = await Context.BillOfMaterials
+        
+        var query = Context.BillOfMaterials
             .Include(b => b.Product)
             .Include(b => b.Component)
-            .ToListAsync();
+            .AsQueryable();
+
+        if (ShowArchived)
+        {
+            query = query.Where(b => b.IsArchived);
+        }
+        else
+        {
+            query = query.Where(b => !b.IsArchived);
+        }
+
+        boms = await query.ToListAsync();
     }
 
     private void OpenCreateModal()
@@ -156,16 +185,32 @@ else
     {
         if (NewBOM.ProductID == 0 || NewBOM.ComponentID == 0) return; // Validation check
 
+        NewBOM.IsArchived = false; // Ensure new items are active
         Context.BillOfMaterials.Add(NewBOM);
         await Context.SaveChangesAsync();
         await LoadData();
         CloseCreateModal();
     }
 
-    private async Task DeleteBOM(BillOfMaterial bom)
+    private async Task ArchiveBOM(BillOfMaterial bom)
     {
-        Context.BillOfMaterials.Remove(bom);
+        bom.IsArchived = true;
+        Context.BillOfMaterials.Update(bom);
         await Context.SaveChangesAsync();
+        await LoadData();
+    }
+
+    private async Task RestoreBOM(BillOfMaterial bom)
+    {
+        bom.IsArchived = false;
+        Context.BillOfMaterials.Update(bom);
+        await Context.SaveChangesAsync();
+        await LoadData();
+    }
+
+    private async Task ToggleArchivedView()
+    {
+        ShowArchived = !ShowArchived;
         await LoadData();
     }
 }

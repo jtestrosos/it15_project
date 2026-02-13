@@ -1,9 +1,14 @@
 ﻿@page "/"
 @using manufacturing_system.Data
 @using manufacturing_system.Models
+@using manufacturing_system.Services
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
 @attribute [Authorize]
 @inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IWeatherService WeatherService
 
 <PageTitle>NodeSync - Dashboard</PageTitle>
 
@@ -12,175 +17,527 @@
     <p class="mb-0 opacity-75">Welcome to NodeSync Production System</p>
 </div>
 
-<div class="row g-4 mb-4">
-    <div class="col-md-6 col-lg-3">
-        <div class="dashboard-widget">
-            <div class="d-flex align-items-center mb-3">
-                <div class="widget-icon me-3">
-                    <i class="bi bi-clipboard-data"></i>
+<!-- ========================================== -->
+<!-- PRODUCTION WORKER DASHBOARD                -->
+<!-- ========================================== -->
+<AuthorizeView Roles="ProductionWorker" Context="workerContext">
+    <div class="row g-4 mb-4">
+        <!-- Pending Tasks -->
+        <div class="col-md-4">
+            <div class="dashboard-widget">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="widget-icon me-3 bg-warning text-dark">
+                        <i class="bi bi-list-task"></i>
+                    </div>
+                    <div>
+                        <div class="widget-value">@workerPendingTasks</div>
+                        <div class="widget-label">My Pending Tasks</div>
+                    </div>
                 </div>
-                <div>
-                    <div class="widget-value">@activePlans</div>
-                    <div class="widget-label">Active Plans</div>
+            </div>
+        </div>
+        <!-- Performance -->
+        <div class="col-md-4">
+            <div class="dashboard-widget">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="widget-icon me-3 bg-success text-white">
+                        <i class="bi bi-check2-circle"></i>
+                    </div>
+                    <div>
+                        <div class="widget-value">@workerCompletedToday</div>
+                        <div class="widget-label">Completed Today</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Environment (Using placeholder data if service fails/unconfigured) -->
+        <div class="col-md-4">
+            <div class="dashboard-widget">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="widget-icon me-3 bg-info text-white">
+                        <i class="bi bi-thermometer-half"></i>
+                    </div>
+                    <div>
+                        <div class="widget-value">@currentTemp °C</div>
+                        <div class="widget-label">ESD Safety: @(isSafe ? "Safe" : "Risk")</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-6 col-lg-3">
-        <div class="dashboard-widget">
-            <div class="d-flex align-items-center mb-3">
-                <div class="widget-icon me-3">
-                    <i class="bi bi-list-task"></i>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">My Work Orders</h5>
                 </div>
-                <div>
-                    <div class="widget-value">@pendingOrders</div>
-                    <div class="widget-label">Pending Orders</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-        <div class="dashboard-widget">
-            <div class="d-flex align-items-center mb-3">
-                <div class="widget-icon me-3">
-                    <i class="bi bi-box-seam"></i>
-                </div>
-                <div>
-                    <div class="widget-value">@lowStockCount</div>
-                    <div class="widget-label">Low Stock Items</div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-lg-3">
-        <div class="dashboard-widget">
-            <div class="d-flex align-items-center mb-3">
-                <div class="widget-icon me-3">
-                    <i class="bi bi-check-circle"></i>
-                </div>
-                <div>
-                    <div class="widget-value">@completedToday</div>
-                    <div class="widget-label">Completed Today</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-4">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Recent Work Orders</h5>
-            </div>
-            <div class="card-body">
-                @if (recentOrders.Any())
-                {
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Order ID</th>
-                                <th>Description</th>
-                                <th>Status</th>
-                                <th>Quantity</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var order in recentOrders)
-                            {
-                                <tr>
-                                    <td>@order.OrderID</td>
-                                    <td>@order.OrderDescription</td>
-                                    <td>
-                                        <span class="badge @GetStatusClass(order.Status)">@order.Status</span>
-                                    </td>
-                                    <td>@order.BatchQuantity</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
-                else
-                {
-                    <p class="text-muted text-center py-4">No work orders found. Create a production plan to get started.</p>
-                }
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Low Stock Alerts</h5>
-            </div>
-            <div class="card-body">
-                @if (lowStockComponents.Any())
-                {
-                    @foreach (var component in lowStockComponents)
+                <div class="card-body">
+                    @if (workerOrders.Any())
                     {
-                        <div class="alert alert-low-stock mb-2">
-                            <strong>@component.ComponentName</strong><br />
-                            <small>Current stock is below minimum level (@component.MinStockLevel units)</small>
+                         <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var order in workerOrders)
+                                    {
+                                        <tr>
+                                            <td>@order.OrderID</td>
+                                            <td>@order.OrderDescription</td>
+                                            <td><span class="badge @GetStatusClass(order.Status)">@order.Status</span></td>
+                                            <td>
+                                                <a href="tasks/assigned" class="btn btn-sm btn-primary">View</a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
                         </div>
                     }
-                }
-                else
-                {
-                    <p class="text-muted text-center py-3">All stock levels are healthy!</p>
-                }
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Quick Actions</h5>
-            </div>
-            <div class="card-body">
-                <a href="/production/plans" class="btn btn-primary w-100 mb-2">
-                    <i class="bi bi-plus-circle me-2"></i>New Production Plan
-                </a>
-                <a href="/inventory/components" class="btn btn-outline-primary w-100 mb-2">
-                    <i class="bi bi-box-seam me-2"></i>Manage Inventory
-                </a>
-                <a href="/monitoring/environment" class="btn btn-outline-primary w-100">
-                    <i class="bi bi-thermometer-half me-2"></i>Check Environment
-                </a>
+                    else
+                    {
+                        <p class="text-muted text-center py-4">No pending work assigned to you.</p>
+                    }
+                </div>
             </div>
         </div>
     </div>
-</div>
+</AuthorizeView>
+
+<!-- ========================================== -->
+<!-- PRODUCTION MANAGER DASHBOARD               -->
+<!-- ========================================== -->
+<AuthorizeView Roles="ProductionManager" Context="managerContext">
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="dashboard-widget">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="widget-icon me-3">
+                        <i class="bi bi-clipboard-data"></i>
+                    </div>
+                    <div>
+                        <div class="widget-value">@managerActivePlans</div>
+                        <div class="widget-label">Active Plans</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+             <div class="dashboard-widget">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="widget-icon me-3 bg-danger text-white">
+                         <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        <div class="widget-value">@managerBottlenecks</div>
+                        <div class="widget-label">Bottlenecks</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="dashboard-widget">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="widget-icon me-3 @(lowStockCount > 0 ? "bg-warning text-dark" : "bg-success text-white")">
+                         <i class="bi bi-box-seam"></i>
+                    </div>
+                    <div>
+                        <div class="widget-value">@lowStockCount</div>
+                        <div class="widget-label">Low Stock Items</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="dashboard-widget">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="widget-icon me-3 bg-success text-white">
+                         <i class="bi bi-currency-dollar"></i>
+                    </div>
+                    <div>
+                        <div class="widget-value">@todayCost.ToString("C0")</div>
+                        <div class="widget-label">Costs Today</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Production Overview</h5>
+                </div>
+                <div class="card-body">
+                    <h5>Recent Orders</h5>
+                     @if (managerRecentOrders.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Description</th>
+                                        <th>Status</th>
+                                        <th>User</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var order in managerRecentOrders)
+                                    {
+                                        <tr>
+                                            <td>@order.OrderID</td>
+                                            <td>@order.OrderDescription</td>
+                                            <td><span class="badge @GetStatusClass(order.Status)">@order.Status</span></td>
+                                            <td>@order.User?.UserName</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                         <p class="text-muted text-center py-2">No recent production activity.</p>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+             <div class="card mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Low Stock Alerts</h5>
+                </div>
+                <div class="card-body">
+                    @if (lowStockComponents.Any())
+                    {
+                        @foreach (var component in lowStockComponents)
+                        {
+                            <div class="alert alert-warning mb-2 p-2">
+                                <strong>@component.ComponentName</strong><br />
+                                <small>Current: @component.CurrentStock / Min: @component.MinStockLevel</small>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center text-success py-3">
+                            <i class="bi bi-check-circle-fill fs-1"></i>
+                            <p class="mb-0">Inventory Healthy</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</AuthorizeView>
+
+<!-- ========================================== -->
+<!-- ADMINISTRATOR DASHBOARD                    -->
+<!-- ========================================== -->
+<AuthorizeView Roles="Administrator" Context="adminContext">
+     <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="dashboard-widget">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="widget-icon me-3 bg-primary text-white">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <div>
+                        <div class="widget-value">@adminTotalUsers</div>
+                        <div class="widget-label">Total Users</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+         <div class="col-md-4">
+            <div class="dashboard-widget">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="widget-icon me-3 bg-warning text-dark">
+                        <i class="bi bi-person-exclamation"></i>
+                    </div>
+                    <div>
+                        <div class="widget-value">@adminArchivedUsers</div>
+                        <div class="widget-label">Archived Users</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="dashboard-widget">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="widget-icon me-3 bg-info text-white">
+                        <i class="bi bi-activity"></i>
+                    </div>
+                    <div>
+                        <div class="widget-value">@adminRecentLogsCount</div>
+                        <div class="widget-label">Activities (24h)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+         <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent System Activity</h5>
+                </div>
+                <div class="card-body">
+                     @if (adminRecentLogs.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Action</th>
+                                        <th>Details</th>
+                                        <th>Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var log in adminRecentLogs)
+                                    {
+                                        <tr>
+                                            <td>@log.User?.UserName</td>
+                                            <td><span class="badge bg-secondary">@log.ActionType</span></td>
+                                            <td>@log.Details</td>
+                                            <td class="text-muted small">@log.Timestamp.ToString("g")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center py-4">No recent activity logs found.</p>
+                    }
+                </div>
+            </div>
+         </div>
+    </div>
+</AuthorizeView>
+
+
+<!-- ========================================== -->
+<!-- SUPERADMIN DASHBOARD                       -->
+<!-- ========================================== -->
+<AuthorizeView Roles="Superadmin" Context="superContext">
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-lg-4">
+            <div class="card bg-dark text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-server fs-1 mb-3"></i>
+                    <h3>System Status</h3>
+                    <p class="mb-0 text-success fw-bold">ONLINE</p>
+                    <small>Database Connected</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-cloud-arrow-up fs-1 mb-3"></i>
+                    <h3>API Status</h3>
+                    <p class="mb-0">Active</p>
+                    <small>OpenWeather & ExchangeRate</small>
+                </div>
+            </div>
+        </div>
+         <div class="col-md-6 col-lg-4">
+            <div class="card bg-secondary text-white h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-building fs-1 mb-3"></i>
+                    <h3>Facilities</h3>
+                    <p class="mb-0 fs-4">@superFacilityCount</p>
+                    <small>Registered Facilities</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</AuthorizeView>
 
 @code {
-    private int activePlans = 0;
-    private int pendingOrders = 0;
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
+
+    // Worker Stats
+    private int workerPendingTasks = 0;
+    private int workerCompletedToday = 0;
+    private List<WorkOrder> workerOrders = new();
+    private string currentTemp = "--";
+    private bool isSafe = true;
+
+    // Manager Stats
+    private int managerActivePlans = 0;
+    private int managerBottlenecks = 0;
     private int lowStockCount = 0;
-    private int completedToday = 0;
-    private List<WorkOrder> recentOrders = new();
-    private List<Component> lowStockComponents = new();
+    private decimal todayCost = 0;
+    private List<WorkOrder> managerRecentOrders = new();
+    private List<ComponentStockInfo> lowStockComponents = new();
 
-    protected override void OnInitialized()
+    // Admin Stats
+    private int adminTotalUsers = 0;
+    private int adminArchivedUsers = 0;
+    private int adminRecentLogsCount = 0;
+    private List<ActivityLog> adminRecentLogs = new();
+
+    // Superadmin Stats
+    private int superFacilityCount = 0;
+
+    private class ComponentStockInfo
     {
-        activePlans = DbContext.ProductionPlans.Count(p => p.Status == "Active");
-        pendingOrders = DbContext.WorkOrders.Count(o => o.Status == "Pending");
-        completedToday = DbContext.WorkOrders.Count(o => o.Status == "Completed" && o.EndTime.HasValue && o.EndTime.Value.Date == DateTime.Today);
+        public string ComponentName { get; set; } = "";
+        public int MinStockLevel { get; set; }
+        public int CurrentStock { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateTask;
+        var user = authState.User;
         
-        recentOrders = DbContext.WorkOrders
-            .OrderByDescending(o => o.OrderID)
-            .Take(5)
-            .ToList();
+        if (!user.Identity?.IsAuthenticated ?? true) return;
 
-        lowStockComponents = DbContext.Components
-            .Where(c => c.MinStockLevel > 0)
-            .Take(5)
-            .ToList();
+        if (user.IsInRole("ProductionWorker"))
+        {
+            await LoadWorkerData(user);
+        }
+        else if (user.IsInRole("ProductionManager"))
+        {
+            await LoadManagerData();
+        }
+        else if (user.IsInRole("Administrator"))
+        {
+            await LoadAdminData();
+        }
+        else if (user.IsInRole("Superadmin"))
+        {
+            await LoadSuperAdminData();
+        }
+    }
 
+    private async Task LoadWorkerData(ClaimsPrincipal user)
+    {
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userId == null) return;
+
+        workerPendingTasks = await DbContext.WorkOrders
+            .CountAsync(o => o.UserID == userId && (o.Status == "Pending" || o.Status == "In Progress"));
+            
+        workerCompletedToday = await DbContext.WorkOrders
+            .CountAsync(o => o.UserID == userId && o.Status == "Completed" && o.EndTime != null && o.EndTime.Value.Date == DateTime.Today);
+
+        workerOrders = await DbContext.WorkOrders
+            .Where(o => o.UserID == userId && (o.Status == "Pending" || o.Status == "In Progress"))
+            .OrderBy(o => o.OrderID)
+            .Take(5)
+            .ToListAsync();
+
+        // Fetch Weather
+        try 
+        {
+             // Hardcoded facility location for now, or fetch from user's facility if available
+             var weather = await WeatherService.GetCurrentWeatherAsync("Manila,PH");
+             if (weather != null)
+             {
+                 currentTemp = weather.Temperature.ToString("F1");
+                 isSafe = weather.Humidity >= 40 && weather.Humidity <= 60; // ESD safe range
+             }
+        }
+        catch
+        {
+            currentTemp = "N/A";
+        }
+    }
+
+    private async Task LoadManagerData()
+    {
+        managerActivePlans = await DbContext.ProductionPlans.CountAsync(p => p.Status == "Active");
+        managerBottlenecks = await DbContext.WorkOrders.CountAsync(w => w.Status == "Pending" || w.Status == "Quality Check");
+        todayCost = await DbContext.Costs
+            .Where(c => c.RecordedDate.Date == DateTime.Today)
+            .SumAsync(c => c.Amount);
+
+        managerRecentOrders = await DbContext.WorkOrders
+            .Include(w => w.User)
+            .OrderByDescending(w => w.OrderID)
+            .Take(5)
+            .ToListAsync();
+
+        await CheckLowStock();
+    }
+
+    private async Task CheckLowStock()
+    {
+         var components = await DbContext.Components
+            .Where(c => !c.IsArchived && c.MinStockLevel > 0)
+            .ToListAsync();
+            
+        var allTransactions = await DbContext.InventoryTransactions.ToListAsync(); // Inefficient for large DBs, optimize later
+        
+        lowStockComponents.Clear();
+
+        foreach (var comp in components)
+        {
+            var compTransactions = allTransactions.Where(t => t.ComponentID == comp.ComponentID).ToList();
+            
+            var inbound = compTransactions.Where(t => t.TransactionType == "Inbound").Sum(t => t.Quantity);
+            var outbound = compTransactions.Where(t => t.TransactionType == "Outbound").Sum(t => t.Quantity);
+            var adjustments = compTransactions.Where(t => t.TransactionType == "Adjustment").Sum(t => t.Quantity); // Treating as additive
+            
+            var currentStock = (inbound + adjustments) - outbound;
+
+            if (currentStock < comp.MinStockLevel)
+            {
+                lowStockComponents.Add(new ComponentStockInfo
+                {
+                    ComponentName = comp.ComponentName,
+                    MinStockLevel = comp.MinStockLevel,
+                    CurrentStock = currentStock
+                });
+            }
+        }
         lowStockCount = lowStockComponents.Count;
+    }
+
+    private async Task LoadAdminData()
+    {
+         adminTotalUsers = await DbContext.Users.CountAsync();
+         adminArchivedUsers = await DbContext.Users.CountAsync(u => u.IsArchived);
+         
+         var yesterday = DateTime.Now.AddHours(-24);
+         adminRecentLogsCount = await DbContext.ActivityLogs.CountAsync(l => l.Timestamp >= yesterday);
+         
+         adminRecentLogs = await DbContext.ActivityLogs
+            .Include(l => l.User)
+            .OrderByDescending(l => l.Timestamp)
+            .Take(10)
+            .ToListAsync();
+    }
+
+    private async Task LoadSuperAdminData()
+    {
+        superFacilityCount = await DbContext.Facilities.CountAsync();
     }
 
     private string GetStatusClass(string status) => status switch
     {
-        "Pending" => "status-pending",
-        "In Progress" => "status-in-progress",
-        "Completed" => "status-completed",
-        "Quality Check" => "status-quality-check",
-        _ => "bg-secondary"
+        "Pending" => "bg-secondary",
+        "In Progress" => "bg-primary",
+        "Completed" => "bg-success",
+        "Quality Check" => "bg-warning text-dark",
+        _ => "bg-light text-dark"
     };
 }
