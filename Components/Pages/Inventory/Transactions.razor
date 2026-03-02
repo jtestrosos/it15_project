@@ -5,24 +5,31 @@
 @using manufacturing_system.Models
 
 @attribute [Authorize(Roles = "ProductionManager")]
-@inject ApplicationDbContext Context
+@inject IServiceScopeFactory ScopeFactory
 
 <PageTitle>Inventory Transactions</PageTitle>
 
-<div class="row mb-4">
-    <div class="col-md-6">
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
         <h1 class="h3 mb-0 text-gray-800">Inventory Logs</h1>
-        <p class="text-muted">Track history of stock movements.</p>
+        <p class="text-muted mb-0">Track history of stock movements.</p>
     </div>
 </div>
 
 @if (transactions == null)
 {
-    <p><em>Loading...</em></p>
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3 text-muted">Loading transactions...</p>
+    </div>
 }
 else
 {
-    <div class="card shadow mb-4">
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-arrow-left-right me-1"></i> Transaction History</span>
+            <span class="badge bg-light text-dark border">@transactions.Count record(s)</span>
+        </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -70,12 +77,29 @@ else
 
 @code {
     private List<InventoryTransaction>? transactions;
+    private int? userFacilityId;
+    private bool isSuperAdmin;
+
+    [Inject] private manufacturing_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
-        transactions = await Context.InventoryTransactions
+        isSuperAdmin = await FacilityAccess.IsSuperAdminAsync();
+        userFacilityId = await FacilityAccess.GetCurrentUserFacilityIdAsync();
+
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var query = context.InventoryTransactions
             .Include(t => t.Component)
             .Include(t => t.User)
+            .AsQueryable();
+
+        if (!isSuperAdmin && userFacilityId.HasValue)
+        {
+            query = query.Where(t => t.FacilityID == userFacilityId.Value);
+        }
+
+        transactions = await query
             .OrderByDescending(t => t.TransactionDate)
             .ToListAsync();
     }

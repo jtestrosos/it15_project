@@ -26,5 +26,10 @@ namespace manufacturing_system.Models
         [StringLength(100)]
         public string? SupplierInfo { get; set; }
         public bool IsArchived { get; set; } = false;
+
+        public int? FacilityID { get; set; }
+
+        [ForeignKey("FacilityID")]
+        public Facility? Facility { get; set; }
     }
 }

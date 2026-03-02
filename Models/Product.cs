@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace manufacturing_system.Models
 {
@@ -13,5 +14,12 @@ namespace manufacturing_system.Models
 
         [StringLength(100)]
         public string Description { get; set; } = string.Empty;
+
+        public int? FacilityID { get; set; }
+
+        public bool IsArchived { get; set; } = false;
+
+        [ForeignKey("FacilityID")]
+        public Facility? Facility { get; set; }
     }
 }

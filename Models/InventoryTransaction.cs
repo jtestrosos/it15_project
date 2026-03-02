@@ -29,5 +29,10 @@ namespace manufacturing_system.Models
         public int Quantity { get; set; }
 
         public DateTime TransactionDate { get; set; }
+
+        public int? FacilityID { get; set; }
+
+        [ForeignKey("FacilityID")]
+        public Facility? Facility { get; set; }
     }
 }

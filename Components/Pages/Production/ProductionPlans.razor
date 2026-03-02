@@ -6,17 +6,17 @@
 @using manufacturing_system.Models
 
 @attribute [Authorize(Roles = "ProductionManager")]
-@inject ApplicationDbContext Context
+@inject IServiceScopeFactory ScopeFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Production Plans</PageTitle>
 
-<div class="row mb-4">
-    <div class="col-md-6">
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
         <h1 class="h3 mb-0 text-gray-800">Production Schedules</h1>
-        <p class="text-muted">Plan manufacturing batches.</p>
+        <p class="text-muted mb-0">Plan manufacturing batches.</p>
     </div>
-    <div class="col-md-6 text-end">
+    <div class="d-flex gap-2">
         <button class="btn btn-primary" @onclick="OpenCreateModal">
             <i class="bi bi-plus-lg me-1"></i> New Plan
         </button>
@@ -71,7 +71,7 @@
                         </div>
                         
                         <div class="modal-footer px-0 pb-0">
-                            <button type="button" class="btn btn-secondary" @onclick="CloseCreateModal">Cxancel</button>
+                            <button type="button" class="btn btn-secondary" @onclick="CloseCreateModal">Cancel</button>
                              <button type="submit" class="btn btn-primary">Create Plan</button>
                         </div>
                     </EditForm>
@@ -83,7 +83,10 @@
 
 @if (plans == null)
 {
-    <p><em>Loading...</em></p>
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3 text-muted">Loading plans...</p>
+    </div>
 }
 else
 {
@@ -124,23 +127,45 @@ else
     private bool ShowCreateModal = false;
     private ProductionPlan NewPlan = new();
     private string? currentUserId;
+    private int? userFacilityId;
+    private bool isSuperAdmin;
+
+    [Inject] private manufacturing_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
+        isSuperAdmin = await FacilityAccess.IsSuperAdminAsync();
+        userFacilityId = await FacilityAccess.GetCurrentUserFacilityIdAsync();
+
         await LoadData();
     }
 
     private async Task LoadData()
     {
-        products = await Context.Products.ToListAsync();
-        plans = await Context.ProductionPlans
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var productQuery = context.Products.AsQueryable();
+        if (!isSuperAdmin && userFacilityId.HasValue)
+        {
+            productQuery = productQuery.Where(p => p.FacilityID == userFacilityId.Value);
+        }
+        products = await productQuery.ToListAsync();
+
+        var planQuery = context.ProductionPlans
             .Include(p => p.Product)
             .Include(p => p.User)
             .OrderByDescending(p => p.PlanID)
-            .ToListAsync();
+            .AsQueryable();
+
+        if (!isSuperAdmin && userFacilityId.HasValue)
+        {
+            planQuery = planQuery.Where(p => p.FacilityID == userFacilityId.Value);
+        }
+
+        plans = await planQuery.ToListAsync();
     }
 
     private void OpenCreateModal()
@@ -163,9 +188,12 @@ else
     {
         if (NewPlan.ProductID == 0 || string.IsNullOrEmpty(currentUserId)) return;
 
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         NewPlan.UserID = currentUserId;
-        Context.ProductionPlans.Add(NewPlan);
-        await Context.SaveChangesAsync();
+        NewPlan.FacilityID = userFacilityId;
+        context.ProductionPlans.Add(NewPlan);
+        await context.SaveChangesAsync();
         await LoadData();
         CloseCreateModal();
     }

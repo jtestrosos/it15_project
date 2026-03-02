@@ -28,5 +28,10 @@ namespace manufacturing_system.Models
 
         [StringLength(25)]
         public string Status { get; set; } = "Draft";
+
+        public int? FacilityID { get; set; }
+
+        [ForeignKey("FacilityID")]
+        public Facility? Facility { get; set; }
     }
 }

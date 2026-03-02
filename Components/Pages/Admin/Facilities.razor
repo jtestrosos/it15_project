@@ -5,16 +5,16 @@
 @using manufacturing_system.Models
 
 @attribute [Authorize(Roles = "Superadmin")]
-@inject ApplicationDbContext Context
+@inject IServiceScopeFactory ScopeFactory
 
 <PageTitle>Manage Facilities</PageTitle>
 
-<div class="row mb-4">
-    <div class="col-md-6">
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
         <h1 class="h3 mb-0 text-gray-800">Facilities</h1>
-        <p class="text-muted">Manage production facilities and sites.</p>
+        <p class="text-muted mb-0">Manage production facilities and sites.</p>
     </div>
-    <div class="col-md-6 text-end">
+    <div class="d-flex gap-2">
         <button class="btn btn-primary" @onclick="OpenCreateModal">
             <i class="bi bi-plus-lg me-1"></i> New Facility
         </button>
@@ -53,7 +53,7 @@
                         </div>
                         
                         <div class="modal-footer px-0 pb-0">
-                            <button type="button" class="btn btn-secondary" @onclick="CloseCreateModal">Cxancel</button>
+                            <button type="button" class="btn btn-secondary" @onclick="CloseCreateModal">Cancel</button>
                              <button type="submit" class="btn btn-primary">Create Facility</button>
                         </div>
                     </EditForm>
@@ -65,11 +65,18 @@
 
 @if (facilities == null)
 {
-    <p><em>Loading...</em></p>
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3 text-muted">Loading facilities...</p>
+    </div>
 }
 else
 {
-    <div class="card shadow mb-4">
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-building me-1"></i> Facilities</span>
+            <span class="badge bg-light text-dark border">@facilities.Count site(s)</span>
+        </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
@@ -79,7 +86,7 @@ else
                             <th>Name</th>
                             <th>Location</th>
                             <th>Status</th>
-                            <th class="text-end pe-4">Actions</th>
+                            <th class="text-center" style="width: 140px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -92,7 +99,7 @@ else
                                 <td>
                                     <span class="badge @GetStatusBadge(f.SubscriptionStatus)">@f.SubscriptionStatus</span>
                                 </td>
-                                <td class="text-end pe-4">
+                                <td class="text-center">
                                     <button class="btn btn-sm btn-outline-secondary">
                                         <i class="bi bi-pencil"></i>
                                     </button>
@@ -118,7 +125,9 @@ else
 
     private async Task LoadFacilities()
     {
-        facilities = await Context.Facilities.ToListAsync();
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        facilities = await context.Facilities.ToListAsync();
     }
 
     private void OpenCreateModal()
@@ -134,8 +143,10 @@ else
 
     private async Task HandleValidSubmit()
     {
-        Context.Facilities.Add(NewFacility);
-        await Context.SaveChangesAsync();
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        context.Facilities.Add(NewFacility);
+        await context.SaveChangesAsync();
         await LoadFacilities();
         CloseCreateModal();
     }

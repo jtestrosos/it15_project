@@ -5,7 +5,7 @@
 @using manufacturing_system.Models
 
 @attribute [Authorize(Roles = "Superadmin")]
-@inject ApplicationDbContext Context
+@inject IServiceScopeFactory ScopeFactory
 
 <PageTitle>API Configuration</PageTitle>
 
@@ -89,15 +89,20 @@
 
     protected override async Task OnInitializedAsync()
     {
-        facilities = await Context.Facilities.ToListAsync();
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        facilities = await context.Facilities.AsNoTracking().ToListAsync();
     }
 
     private async Task HandleValidSubmit()
     {
         if (selectedFacility == null) return;
 
-        Context.Facilities.Update(selectedFacility);
-        await Context.SaveChangesAsync();
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        
+        context.Facilities.Update(selectedFacility);
+        await context.SaveChangesAsync();
         showSuccess = true;
         
         // Hide success message after 3 seconds

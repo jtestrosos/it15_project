@@ -23,5 +23,10 @@ namespace manufacturing_system.Models
 
         [StringLength(15)]
         public string IPAddress { get; set; } = string.Empty;
+
+        public int? FacilityID { get; set; }
+
+        [ForeignKey("FacilityID")]
+        public Facility? Facility { get; set; }
     }
 }

@@ -236,10 +236,6 @@ namespace manufacturing_system.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(25)");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -283,6 +279,9 @@ namespace manufacturing_system.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<int?>("FacilityID")
+                        .HasColumnType("int");
+
                     b.Property<string>("IPAddress")
                         .IsRequired()
                         .HasMaxLength(15)
@@ -296,6 +295,8 @@ namespace manufacturing_system.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("LogID");
+
+                    b.HasIndex("FacilityID");
 
                     b.HasIndex("UserID");
 
@@ -355,6 +356,9 @@ namespace manufacturing_system.Migrations
                     b.Property<int>("ComponentID")
                         .HasColumnType("int");
 
+                    b.Property<int?>("FacilityID")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsArchived")
                         .HasColumnType("bit");
 
@@ -372,6 +376,8 @@ namespace manufacturing_system.Migrations
                     b.HasKey("BOMID");
 
                     b.HasIndex("ComponentID");
+
+                    b.HasIndex("FacilityID");
 
                     b.HasIndex("ProductID");
 
@@ -401,6 +407,9 @@ namespace manufacturing_system.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("FacilityID")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsArchived")
                         .HasColumnType("bit");
 
@@ -415,6 +424,8 @@ namespace manufacturing_system.Migrations
                         .HasColumnType("decimal(10,2)");
 
                     b.HasKey("ComponentID");
+
+                    b.HasIndex("FacilityID");
 
                     b.ToTable("Components");
                 });
@@ -441,6 +452,9 @@ namespace manufacturing_system.Migrations
                     b.Property<decimal>("CurrencyRate")
                         .HasColumnType("decimal(10,4)");
 
+                    b.Property<int?>("FacilityID")
+                        .HasColumnType("int");
+
                     b.Property<int?>("OrderID")
                         .HasColumnType("int");
 
@@ -450,6 +464,8 @@ namespace manufacturing_system.Migrations
                     b.HasKey("CostID");
 
                     b.HasIndex("ComponentID");
+
+                    b.HasIndex("FacilityID");
 
                     b.HasIndex("OrderID");
 
@@ -537,6 +553,9 @@ namespace manufacturing_system.Migrations
                     b.Property<int>("ComponentID")
                         .HasColumnType("int");
 
+                    b.Property<int?>("FacilityID")
+                        .HasColumnType("int");
+
                     b.Property<int?>("OrderID")
                         .HasColumnType("int");
 
@@ -559,6 +578,8 @@ namespace manufacturing_system.Migrations
 
                     b.HasIndex("ComponentID");
 
+                    b.HasIndex("FacilityID");
+
                     b.HasIndex("OrderID");
 
                     b.HasIndex("UserID");
@@ -579,12 +600,20 @@ namespace manufacturing_system.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("FacilityID")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
+
                     b.Property<string>("ProductName")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("ProductID");
+
+                    b.HasIndex("FacilityID");
 
                     b.ToTable("Products");
                 });
@@ -598,6 +627,9 @@ namespace manufacturing_system.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PlanID"));
 
                     b.Property<int>("BatchQuantity")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("FacilityID")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("PlannedEndDate")
@@ -620,6 +652,8 @@ namespace manufacturing_system.Migrations
 
                     b.HasKey("PlanID");
 
+                    b.HasIndex("FacilityID");
+
                     b.HasIndex("ProductID");
 
                     b.HasIndex("UserID");
@@ -640,6 +674,9 @@ namespace manufacturing_system.Migrations
 
                     b.Property<DateTime?>("EndTime")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("FacilityID")
+                        .HasColumnType("int");
 
                     b.Property<string>("OrderDescription")
                         .IsRequired()
@@ -662,6 +699,8 @@ namespace manufacturing_system.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("OrderID");
+
+                    b.HasIndex("FacilityID");
 
                     b.HasIndex("PlanID");
 
@@ -783,11 +822,17 @@ namespace manufacturing_system.Migrations
 
             modelBuilder.Entity("manufacturing_system.Models.ActivityLog", b =>
                 {
+                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                        .WithMany()
+                        .HasForeignKey("FacilityID");
+
                     b.HasOne("manufacturing_system.Data.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Facility");
 
                     b.Navigation("User");
                 });
@@ -809,6 +854,10 @@ namespace manufacturing_system.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                        .WithMany()
+                        .HasForeignKey("FacilityID");
+
                     b.HasOne("manufacturing_system.Models.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductID")
@@ -817,7 +866,18 @@ namespace manufacturing_system.Migrations
 
                     b.Navigation("Component");
 
+                    b.Navigation("Facility");
+
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("manufacturing_system.Models.Component", b =>
+                {
+                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                        .WithMany()
+                        .HasForeignKey("FacilityID");
+
+                    b.Navigation("Facility");
                 });
 
             modelBuilder.Entity("manufacturing_system.Models.Cost", b =>
@@ -826,11 +886,17 @@ namespace manufacturing_system.Migrations
                         .WithMany()
                         .HasForeignKey("ComponentID");
 
+                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                        .WithMany()
+                        .HasForeignKey("FacilityID");
+
                     b.HasOne("manufacturing_system.Models.WorkOrder", "Order")
                         .WithMany()
                         .HasForeignKey("OrderID");
 
                     b.Navigation("Component");
+
+                    b.Navigation("Facility");
 
                     b.Navigation("Order");
                 });
@@ -854,6 +920,10 @@ namespace manufacturing_system.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                        .WithMany()
+                        .HasForeignKey("FacilityID");
+
                     b.HasOne("manufacturing_system.Models.WorkOrder", "Order")
                         .WithMany()
                         .HasForeignKey("OrderID");
@@ -866,13 +936,28 @@ namespace manufacturing_system.Migrations
 
                     b.Navigation("Component");
 
+                    b.Navigation("Facility");
+
                     b.Navigation("Order");
 
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("manufacturing_system.Models.Product", b =>
+                {
+                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                        .WithMany()
+                        .HasForeignKey("FacilityID");
+
+                    b.Navigation("Facility");
+                });
+
             modelBuilder.Entity("manufacturing_system.Models.ProductionPlan", b =>
                 {
+                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                        .WithMany()
+                        .HasForeignKey("FacilityID");
+
                     b.HasOne("manufacturing_system.Models.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductID")
@@ -885,6 +970,8 @@ namespace manufacturing_system.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Facility");
+
                     b.Navigation("Product");
 
                     b.Navigation("User");
@@ -892,6 +979,10 @@ namespace manufacturing_system.Migrations
 
             modelBuilder.Entity("manufacturing_system.Models.WorkOrder", b =>
                 {
+                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                        .WithMany()
+                        .HasForeignKey("FacilityID");
+
                     b.HasOne("manufacturing_system.Models.ProductionPlan", "Plan")
                         .WithMany()
                         .HasForeignKey("PlanID")
@@ -903,6 +994,8 @@ namespace manufacturing_system.Migrations
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Facility");
 
                     b.Navigation("Plan");
 

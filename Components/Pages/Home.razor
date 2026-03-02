@@ -6,7 +6,7 @@
 @using Microsoft.EntityFrameworkCore
 @using System.Security.Claims
 @attribute [Authorize]
-@inject ApplicationDbContext DbContext
+@inject IServiceScopeFactory ScopeFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IWeatherService WeatherService
 
@@ -162,7 +162,7 @@
                          <i class="bi bi-currency-dollar"></i>
                     </div>
                     <div>
-                        <div class="widget-value">@todayCost.ToString("C0")</div>
+                        <div class="widget-value">₱@todayCost.ToString("N0")</div>
                         <div class="widget-label">Costs Today</div>
                     </div>
                 </div>
@@ -372,6 +372,12 @@
     [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
 
+    [Inject] private manufacturing_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
+
+    // Facility access
+    private int? userFacilityId;
+    private bool userIsSuperAdmin;
+
     // Worker Stats
     private int workerPendingTasks = 0;
     private int workerCompletedToday = 0;
@@ -410,6 +416,9 @@
         
         if (!user.Identity?.IsAuthenticated ?? true) return;
 
+        userIsSuperAdmin = await FacilityAccess.IsSuperAdminAsync();
+        userFacilityId = await FacilityAccess.GetCurrentUserFacilityIdAsync();
+
         if (user.IsInRole("ProductionWorker"))
         {
             await LoadWorkerData(user);
@@ -433,13 +442,17 @@
         var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userId == null) return;
 
-        workerPendingTasks = await DbContext.WorkOrders
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        workerPendingTasks = await context.WorkOrders
             .CountAsync(o => o.UserID == userId && (o.Status == "Pending" || o.Status == "In Progress"));
             
-        workerCompletedToday = await DbContext.WorkOrders
-            .CountAsync(o => o.UserID == userId && o.Status == "Completed" && o.EndTime != null && o.EndTime.Value.Date == DateTime.Today);
+        var todayStart = DateTime.Today;
+        var todayEnd = todayStart.AddDays(1);
+        workerCompletedToday = await context.WorkOrders
+            .CountAsync(o => o.UserID == userId && o.Status == "Completed" && o.EndTime != null && o.EndTime >= todayStart && o.EndTime < todayEnd);
 
-        workerOrders = await DbContext.WorkOrders
+        workerOrders = await context.WorkOrders
             .Where(o => o.UserID == userId && (o.Status == "Pending" || o.Status == "In Progress"))
             .OrderBy(o => o.OrderID)
             .Take(5)
@@ -448,12 +461,11 @@
         // Fetch Weather
         try 
         {
-             // Hardcoded facility location for now, or fetch from user's facility if available
              var weather = await WeatherService.GetCurrentWeatherAsync("Manila,PH");
              if (weather != null)
              {
                  currentTemp = weather.Temperature.ToString("F1");
-                 isSafe = weather.Humidity >= 40 && weather.Humidity <= 60; // ESD safe range
+                 isSafe = weather.Humidity >= 40 && weather.Humidity <= 60;
              }
         }
         catch
@@ -464,28 +476,45 @@
 
     private async Task LoadManagerData()
     {
-        managerActivePlans = await DbContext.ProductionPlans.CountAsync(p => p.Status == "Active");
-        managerBottlenecks = await DbContext.WorkOrders.CountAsync(w => w.Status == "Pending" || w.Status == "Quality Check");
-        todayCost = await DbContext.Costs
-            .Where(c => c.RecordedDate.Date == DateTime.Today)
-            .SumAsync(c => c.Amount);
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var planQuery = context.ProductionPlans.Where(p => p.Status == "Active").AsQueryable();
+        if (userFacilityId.HasValue)
+            planQuery = planQuery.Where(p => p.FacilityID == userFacilityId.Value);
+        managerActivePlans = await planQuery.CountAsync();
 
-        managerRecentOrders = await DbContext.WorkOrders
-            .Include(w => w.User)
-            .OrderByDescending(w => w.OrderID)
-            .Take(5)
-            .ToListAsync();
+        var bottleneckQuery = context.WorkOrders.Where(w => w.Status == "Pending" || w.Status == "Quality Check").AsQueryable();
+        if (userFacilityId.HasValue)
+            bottleneckQuery = bottleneckQuery.Where(w => w.FacilityID == userFacilityId.Value);
+        managerBottlenecks = await bottleneckQuery.CountAsync();
 
-        await CheckLowStock();
+        var todayStart = DateTime.Today;
+        var todayEnd = todayStart.AddDays(1);
+        var costQuery = context.Costs.Where(c => c.RecordedDate >= todayStart && c.RecordedDate < todayEnd).AsQueryable();
+        if (userFacilityId.HasValue)
+            costQuery = costQuery.Where(c => c.FacilityID == userFacilityId.Value);
+        var costNullable = await costQuery.SumAsync(c => (decimal?)c.Amount);
+        todayCost = costNullable ?? 0m;
+
+        var orderQuery = context.WorkOrders.Include(w => w.User).OrderByDescending(w => w.OrderID).AsQueryable();
+        if (userFacilityId.HasValue)
+            orderQuery = orderQuery.Where(w => w.FacilityID == userFacilityId.Value);
+        managerRecentOrders = await orderQuery.Take(5).ToListAsync();
+
+        await CheckLowStock(context);
     }
 
-    private async Task CheckLowStock()
+    private async Task CheckLowStock(ApplicationDbContext context)
     {
-         var components = await DbContext.Components
-            .Where(c => !c.IsArchived && c.MinStockLevel > 0)
-            .ToListAsync();
+        var componentQuery = context.Components.Where(c => !c.IsArchived && c.MinStockLevel > 0).AsQueryable();
+        if (userFacilityId.HasValue)
+            componentQuery = componentQuery.Where(c => c.FacilityID == userFacilityId.Value);
+        var components = await componentQuery.ToListAsync();
             
-        var allTransactions = await DbContext.InventoryTransactions.ToListAsync(); // Inefficient for large DBs, optimize later
+        var txnQuery = context.InventoryTransactions.AsQueryable();
+        if (userFacilityId.HasValue)
+            txnQuery = txnQuery.Where(t => t.FacilityID == userFacilityId.Value);
+        var allTransactions = await txnQuery.ToListAsync();
         
         lowStockComponents.Clear();
 
@@ -495,7 +524,7 @@
             
             var inbound = compTransactions.Where(t => t.TransactionType == "Inbound").Sum(t => t.Quantity);
             var outbound = compTransactions.Where(t => t.TransactionType == "Outbound").Sum(t => t.Quantity);
-            var adjustments = compTransactions.Where(t => t.TransactionType == "Adjustment").Sum(t => t.Quantity); // Treating as additive
+            var adjustments = compTransactions.Where(t => t.TransactionType == "Adjustment").Sum(t => t.Quantity);
             
             var currentStock = (inbound + adjustments) - outbound;
 
@@ -514,22 +543,36 @@
 
     private async Task LoadAdminData()
     {
-         adminTotalUsers = await DbContext.Users.CountAsync();
-         adminArchivedUsers = await DbContext.Users.CountAsync(u => u.IsArchived);
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        if (userFacilityId.HasValue)
+        {
+            adminTotalUsers = await context.Users.CountAsync(u => u.FacilityID == userFacilityId.Value);
+            adminArchivedUsers = await context.Users.CountAsync(u => u.FacilityID == userFacilityId.Value && u.IsArchived);
+        }
+        else
+        {
+            adminTotalUsers = await context.Users.CountAsync();
+            adminArchivedUsers = await context.Users.CountAsync(u => u.IsArchived);
+        }
          
-         var yesterday = DateTime.Now.AddHours(-24);
-         adminRecentLogsCount = await DbContext.ActivityLogs.CountAsync(l => l.Timestamp >= yesterday);
+        var yesterday = DateTime.Now.AddHours(-24);
+        var logQuery = context.ActivityLogs.Where(l => l.Timestamp >= yesterday).AsQueryable();
+        if (userFacilityId.HasValue)
+            logQuery = logQuery.Where(l => l.FacilityID == userFacilityId.Value);
+        adminRecentLogsCount = await logQuery.CountAsync();
          
-         adminRecentLogs = await DbContext.ActivityLogs
-            .Include(l => l.User)
-            .OrderByDescending(l => l.Timestamp)
-            .Take(10)
-            .ToListAsync();
+        var logsDetailQuery = context.ActivityLogs.Include(l => l.User).OrderByDescending(l => l.Timestamp).AsQueryable();
+        if (userFacilityId.HasValue)
+            logsDetailQuery = logsDetailQuery.Where(l => l.FacilityID == userFacilityId.Value);
+        adminRecentLogs = await logsDetailQuery.Take(10).ToListAsync();
     }
 
     private async Task LoadSuperAdminData()
     {
-        superFacilityCount = await DbContext.Facilities.CountAsync();
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        superFacilityCount = await context.Facilities.CountAsync();
     }
 
     private string GetStatusClass(string status) => status switch

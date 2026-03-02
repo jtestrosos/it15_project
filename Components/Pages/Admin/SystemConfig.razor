@@ -1,0 +1,243 @@
+@page "/admin/system-config"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+
+@attribute [Authorize(Roles = "Superadmin")]
+@inject IConfiguration Configuration
+@inject IServiceScopeFactory ScopeFactory
+
+<PageTitle>NodeSync | System Configuration</PageTitle>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="h3 mb-0 text-gray-800">System Configuration</h1>
+        <p class="text-muted">View system settings and connection information.</p>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert @statusAlertClass alert-dismissible fade show" role="alert">
+        <i class="bi @statusIcon me-2"></i>@statusMessage
+        <button type="button" class="btn-close" @onclick="() => statusMessage = null"></button>
+    </div>
+}
+
+<!-- App Info -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-app-indicator fs-1 text-primary"></i>
+                <h5 class="card-title mt-2">Application</h5>
+                <p class="mb-0 fw-bold">NodeSync</p>
+                <small class="text-muted">Integrated Production System</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-hdd-rack fs-1 text-info"></i>
+                <h5 class="card-title mt-2">Environment</h5>
+                <p class="mb-0 fw-bold">@environment</p>
+                <small class="text-muted">Runtime environment</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-building fs-1 text-success"></i>
+                <h5 class="card-title mt-2">Facilities</h5>
+                <p class="mb-0 fw-bold">@facilityCount</p>
+                <small class="text-muted">Registered facilities</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Connection String (masked) -->
+<div class="card shadow mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-plug me-2"></i>Database Connection</h5>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label fw-bold">Connection String</label>
+            <div class="input-group">
+                <input type="@(showConnectionString ? "text" : "password")" class="form-control font-monospace" value="@connectionString" readonly />
+                <button class="btn btn-outline-secondary" @onclick="() => showConnectionString = !showConnectionString">
+                    <i class="bi @(showConnectionString ? "bi-eye-slash" : "bi-eye")"></i>
+                </button>
+            </div>
+            <div class="form-text">Read-only. Update in <code>appsettings.json</code> and restart the app.</div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Server</label>
+                <input type="text" class="form-control" value="@dbServer" readonly />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Database</label>
+                <input type="text" class="form-control" value="@dbCatalog" readonly />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- API Keys Overview -->
+<div class="card shadow mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-key me-2"></i>API Keys Overview</h5>
+        <a href="admin/api-config" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-pencil me-1"></i>Manage Keys
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Facility</th>
+                        <th>OpenWeather Key</th>
+                        <th>Exchange Rate Key</th>
+                        <th class="text-end pe-4">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in facilities)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-medium">@f.FacilityName</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(f.APIKeyOpenWeather))
+                                {
+                                    <code>@MaskKey(f.APIKeyOpenWeather)</code>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Not set</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(f.APIKeyExchangeRate))
+                                {
+                                    <code>@MaskKey(f.APIKeyExchangeRate)</code>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Not set</span>
+                                }
+                            </td>
+                            <td class="text-end pe-4">
+                                @if (!string.IsNullOrEmpty(f.APIKeyOpenWeather) && !string.IsNullOrEmpty(f.APIKeyExchangeRate))
+                                {
+                                    <span class="badge bg-success">Configured</span>
+                                }
+                                else if (!string.IsNullOrEmpty(f.APIKeyOpenWeather) || !string.IsNullOrEmpty(f.APIKeyExchangeRate))
+                                {
+                                    <span class="badge bg-warning text-dark">Partial</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Not configured</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Global Settings from appsettings.json -->
+<div class="card shadow mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Global API Settings</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted small">These are the global fallback API settings from <code>appsettings.json</code>. They are read-only here.</p>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">OpenWeather Base URL</label>
+                <input type="text" class="form-control" value="@openWeatherBaseUrl" readonly />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Exchange Rate Base URL</label>
+                <input type="text" class="form-control" value="@exchangeRateBaseUrl" readonly />
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? statusMessage;
+    private string statusAlertClass = "alert-info";
+    private string statusIcon = "bi-info-circle";
+
+    private string environment = "Unknown";
+    private int facilityCount = 0;
+    private string connectionString = "";
+    private string dbServer = "";
+    private string dbCatalog = "";
+    private bool showConnectionString = false;
+    private string openWeatherBaseUrl = "";
+    private string exchangeRateBaseUrl = "";
+    private List<Facility> facilities = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Environment
+        environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+
+        // Connection info
+        connectionString = Configuration.GetConnectionString("DefaultConnection") ?? "Not configured";
+        ParseConnectionString();
+
+        // API settings from appsettings
+        openWeatherBaseUrl = Configuration["ApiSettings:OpenWeatherBaseUrl"] ?? "Not set";
+        exchangeRateBaseUrl = Configuration["ApiSettings:ExchangeRateBaseUrl"] ?? "Not set";
+
+        // Facilities
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        facilities = await context.Facilities.ToListAsync();
+        facilityCount = facilities.Count;
+    }
+
+    private void ParseConnectionString()
+    {
+        try
+        {
+            var parts = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var part in parts)
+            {
+                var kv = part.Split('=', 2);
+                if (kv.Length != 2) continue;
+                var key = kv[0].Trim().ToLower();
+                var val = kv[1].Trim();
+
+                if (key == "server" || key == "data source")
+                    dbServer = val;
+                else if (key == "database" || key == "initial catalog")
+                    dbCatalog = val;
+            }
+        }
+        catch
+        {
+            dbServer = "Unknown";
+            dbCatalog = "Unknown";
+        }
+    }
+
+    private string MaskKey(string key)
+    {
+        if (string.IsNullOrEmpty(key) || key.Length <= 6) return "••••••";
+        return key[..3] + "••••••" + key[^3..];
+    }
+}

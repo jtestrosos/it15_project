@@ -2,17 +2,20 @@
 @using manufacturing_system.Data
 @using manufacturing_system.Services
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
 @attribute [Authorize]
 @inject IWeatherService WeatherService
-@inject ApplicationDbContext DbContext
+@inject IServiceScopeFactory ScopeFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @rendermode InteractiveServer
 
 <PageTitle>NodeSync | Environment Monitoring</PageTitle>
 
-<div class="page-header mb-4">
-    <h1>Environment Monitoring</h1>
-    <p class="mb-0 opacity-75">Real-time temperature and humidity readings</p>
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">Environment Monitoring</h1>
+        <p class="text-muted mb-0">Real-time temperature and humidity readings</p>
+    </div>
 </div>
 
 <div class="row g-4">
@@ -102,8 +105,9 @@
 
         <div class="col-12">
             <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Recent Readings</h5>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-clock-history me-1"></i> Recent Readings</span>
+                    <span class="badge bg-light text-dark border">@recentReadings.Count reading(s)</span>
                 </div>
                 <div class="card-body">
                     @if (recentReadings.Any())
@@ -156,45 +160,45 @@
 
 <style>
     .environment-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 16px;
+        background: linear-gradient(135deg, #8F00FF 0%, #A020FF 100%);
+        border-radius: 0.75rem;
         padding: 1.5rem;
         color: white;
         display: flex;
         align-items: center;
         gap: 1rem;
-        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 4px 12px rgba(143, 0, 255, 0.2);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     .environment-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(143, 0, 255, 0.3);
     }
 
     .temperature-card {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        box-shadow: 0 10px 30px rgba(245, 87, 108, 0.3);
+        background: linear-gradient(135deg, #C77DFF 0%, #9B30FF 100%);
+        box-shadow: 0 4px 12px rgba(199, 125, 255, 0.3);
     }
 
     .humidity-card {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);
+        background: linear-gradient(135deg, #7800D6 0%, #5A00A0 100%);
+        box-shadow: 0 4px 12px rgba(120, 0, 214, 0.3);
     }
 
     .status-card.status-normal {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        box-shadow: 0 10px 30px rgba(56, 239, 125, 0.3);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
     }
 
     .status-card.status-warning {
-        background: linear-gradient(135deg, #f093fb 0%, #f5af19 100%);
-        box-shadow: 0 10px 30px rgba(245, 175, 25, 0.3);
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
     }
 
     .status-card.status-critical {
-        background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
-        box-shadow: 0 10px 30px rgba(235, 51, 73, 0.3);
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
     }
 
     .card-icon {
@@ -246,7 +250,7 @@
     {
         await LoadFacilityLocation();
         await RefreshWeather();
-        LoadRecentReadings();
+        await LoadRecentReadings();
     }
 
     private async Task LoadFacilityLocation()
@@ -258,10 +262,12 @@
             
             if (!string.IsNullOrEmpty(userId))
             {
-                var user = DbContext.Users
+                using var scope = ScopeFactory.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                var user = await context.Users
                     .Where(u => u.Id == userId)
                     .Select(u => u.Facility)
-                    .FirstOrDefault();
+                    .FirstOrDefaultAsync();
 
                 if (user != null && !string.IsNullOrEmpty(user.Location))
                 {
@@ -295,9 +301,12 @@
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             
-            var user = DbContext.Users
+            using var scope = ScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            
+            var user = await context.Users
                 .Where(u => u.Id == userId)
-                .FirstOrDefault();
+                .FirstOrDefaultAsync();
 
             var reading = new manufacturing_system.Models.EnvironmentalMonitor
             {
@@ -308,11 +317,11 @@
                 AlertStatus = weatherData.GetAlertStatus()
             };
 
-            DbContext.EnvironmentalMonitors.Add(reading);
-            await DbContext.SaveChangesAsync();
+            context.EnvironmentalMonitors.Add(reading);
+            await context.SaveChangesAsync();
             
             statusMessage = "Reading logged successfully!";
-            LoadRecentReadings();
+            await LoadRecentReadings();
         }
         catch (Exception ex)
         {
@@ -320,12 +329,32 @@
         }
     }
 
-    private void LoadRecentReadings()
+    private async Task LoadRecentReadings()
     {
-        recentReadings = DbContext.EnvironmentalMonitors
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var query = context.EnvironmentalMonitors.AsQueryable();
+        
+        // The user's facility is already loaded in LoadFacilityLocation
+        // Filter by facility faor non-superadmin users
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (!authState.User.IsInRole("Superadmin"))
+        {
+            var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+                if (user?.FacilityID != null)
+                {
+                    query = query.Where(r => r.FacilityID == user.FacilityID);
+                }
+            }
+        }
+        
+        recentReadings = await query
             .OrderByDescending(r => r.RecordedDate)
             .Take(10)
-            .ToList();
+            .ToListAsync();
     }
 
     private string GetStatusClass() => weatherData?.GetAlertStatus() switch

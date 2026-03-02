@@ -75,6 +75,12 @@
         // Ensure the user has gone through the username & password screen first
         user = await SignInManager.GetTwoFactorAuthenticationUserAsync() ??
             throw new InvalidOperationException("Unable to load two-factor authentication user.");
+
+        if (user.IsArchived)
+        {
+            Logger.LogWarning("Archived user with ID '{UserId}' tried to log in with 2fa.", await UserManager.GetUserIdAsync(user));
+            RedirectManager.RedirectTo("login");
+        }
     }
 
     private async Task OnValidSubmitAsync()

@@ -122,11 +122,29 @@
         if (!string.IsNullOrEmpty(Input.Passkey?.CredentialJson))
         {
             result = await SignInManager.PasskeySignInAsync(Input.Passkey.CredentialJson);
+            
+            if (result.Succeeded)
+            {
+                var user = await UserManager.FindByEmailAsync(Input.Email);
+                if (user != null && user.IsArchived)
+                {
+                    await SignInManager.SignOutAsync();
+                    errorMessage = "Error: Your account has been archived. Please contact an administrator.";
+                    return;
+                }
+            }
         }
         else
         {
             if (!editContext.Validate())
             {
+                return;
+            }
+
+            var user = await UserManager.FindByEmailAsync(Input.Email);
+            if (user != null && user.IsArchived)
+            {
+                errorMessage = "Error: Your account has been archived. Please contact an administrator.";
                 return;
             }
 
@@ -136,7 +154,7 @@
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
-            RedirectManager.RedirectTo(ReturnUrl);
+            RedirectManager.RedirectTo(ReturnUrl ?? "/");
         }
         else if (result.RequiresTwoFactor)
         {

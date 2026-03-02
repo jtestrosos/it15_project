@@ -19,10 +19,6 @@ namespace manufacturing_system.Data
         [Column(TypeName = "nvarchar(20)")]
         public string? MiddleName { get; set; }
 
-        // While Identity has Roles, this property is explicitly requested in the dictionary.
-        [Column(TypeName = "nvarchar(25)")]
-        public string Role { get; set; } = string.Empty;
-
         public int? FacilityID { get; set; }
         
         [ForeignKey("FacilityID")]

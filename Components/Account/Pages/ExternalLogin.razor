@@ -117,6 +117,14 @@
 
         if (result.Succeeded)
         {
+            var user = await UserManager.FindByLoginAsync(externalLoginInfo.LoginProvider, externalLoginInfo.ProviderKey);
+            if (user != null && user.IsArchived)
+            {
+                await SignInManager.SignOutAsync();
+                RedirectManager.RedirectToWithStatus("login", "Error: Your account has been archived. Please contact an administrator.", HttpContext);
+                return;
+            }
+
             Logger.LogInformation(
                 "{Name} logged in with {LoginProvider} provider.",
                 externalLoginInfo.Principal.Identity?.Name,

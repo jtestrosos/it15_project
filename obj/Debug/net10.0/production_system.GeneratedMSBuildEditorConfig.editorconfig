@@ -206,8 +206,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxBcGlDb25maWd1cmF0aW9uLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Admin/DbTools.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxEYlRvb2xzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Admin/Facilities.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxGYWNpbGl0aWVzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Admin/SystemConfig.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBZG1pblxTeXN0ZW1Db25maWcucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Admin/Users.razor]
@@ -216,10 +224,6 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Auth.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xBdXRoLnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
-[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Counter.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xDb3VudGVyLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Error.razor]
@@ -270,10 +274,6 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xUYXNrc1xBc3NpZ25lZFRhc2tzLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Weather.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xXZWF0aGVyLnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
 [C:/Users/james/codingRepos/it15Repos/production_system/Components/Routes.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xSb3V0ZXMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
@@ -293,3 +293,7 @@ build_metadata.AdditionalFiles.CssScope = b-3nr08vm7lu
 [C:/Users/james/codingRepos/it15Repos/production_system/Components/Layout/ReconnectModal.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xMYXlvdXRcUmVjb25uZWN0TW9kYWwucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-rco9p1k2zr
+
+[C:/Users/james/codingRepos/it15Repos/production_system/Components/Pages/Reports.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50c1xQYWdlc1xSZXBvcnRzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-tnpj1ei5az

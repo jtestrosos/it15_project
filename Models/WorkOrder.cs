@@ -29,5 +29,10 @@ namespace manufacturing_system.Models
         public DateTime? EndTime { get; set; }
 
         public int BatchQuantity { get; set; }
+
+        public int? FacilityID { get; set; }
+
+        [ForeignKey("FacilityID")]
+        public Facility? Facility { get; set; }
     }
 }

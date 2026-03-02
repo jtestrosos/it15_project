@@ -1,0 +1,222 @@
+/* ── Tab Navigation ─────────────────────────────── */
+.rpt-tabs {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 2px solid rgba(143, 0, 255, 0.15);
+    padding-bottom: 0;
+    flex-wrap: wrap;
+}
+
+.rpt-tab {
+    background: none;
+    border: none;
+    padding: 0.65rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    border-radius: 0.5rem 0.5rem 0 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+
+.rpt-tab:hover {
+    color: #8F00FF;
+    background: rgba(143, 0, 255, 0.05);
+}
+
+.rpt-tab.active {
+    color: #8F00FF;
+    border-bottom-color: #8F00FF;
+    background: rgba(143, 0, 255, 0.06);
+    font-weight: 600;
+}
+
+/* ── KPI Cards ──────────────────────────────────── */
+.rpt-kpi {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.07);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.rpt-kpi:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.rpt-kpi-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.rpt-kpi-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.rpt-kpi-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+}
+
+.rpt-kpi-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.2rem;
+    opacity: 0.75;
+}
+
+/* KPI colour variants */
+.rpt-kpi-purple {
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    border: 1px solid rgba(143, 0, 255, 0.15);
+}
+.rpt-kpi-purple .rpt-kpi-icon { background: linear-gradient(135deg, #8F00FF, #A020FF); }
+.rpt-kpi-purple .rpt-kpi-value { color: #8F00FF; }
+.rpt-kpi-purple .rpt-kpi-label { color: #7800D6; }
+
+.rpt-kpi-green {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 1px solid rgba(16, 185, 129, 0.15);
+}
+.rpt-kpi-green .rpt-kpi-icon { background: linear-gradient(135deg, #10b981, #059669); }
+.rpt-kpi-green .rpt-kpi-value { color: #059669; }
+.rpt-kpi-green .rpt-kpi-label { color: #047857; }
+
+.rpt-kpi-amber {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+}
+.rpt-kpi-amber .rpt-kpi-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.rpt-kpi-amber .rpt-kpi-value { color: #d97706; }
+.rpt-kpi-amber .rpt-kpi-label { color: #b45309; }
+
+.rpt-kpi-blue {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+}
+.rpt-kpi-blue .rpt-kpi-icon { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.rpt-kpi-blue .rpt-kpi-value { color: #2563eb; }
+.rpt-kpi-blue .rpt-kpi-label { color: #1d4ed8; }
+
+.rpt-kpi-red {
+    background: linear-gradient(135deg, #fff1f2 0%, #fee2e2 100%);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+}
+.rpt-kpi-red .rpt-kpi-icon { background: linear-gradient(135deg, #ef4444, #dc2626); }
+.rpt-kpi-red .rpt-kpi-value { color: #dc2626; }
+.rpt-kpi-red .rpt-kpi-label { color: #b91c1c; }
+
+/* ── Bar Charts ─────────────────────────────────── */
+.rpt-bar-track {
+    height: 10px;
+    background: rgba(143, 0, 255, 0.08);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.rpt-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 4px;
+}
+
+.rpt-bar-purple { background: linear-gradient(90deg, #8F00FF, #A020FF); }
+.rpt-bar-green  { background: linear-gradient(90deg, #10b981, #059669); }
+.rpt-bar-amber  { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.rpt-bar-blue   { background: linear-gradient(90deg, #3b82f6, #2563eb); }
+.rpt-bar-red    { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+/* ── Cost Summary Panel ─────────────────────────── */
+.rpt-cost-summary {
+    background: rgba(143, 0, 255, 0.04);
+    border: 1px solid rgba(143, 0, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+}
+
+.rpt-cost-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0;
+    font-size: 0.875rem;
+}
+
+.rpt-cost-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dot-purple { background: #8F00FF; }
+.dot-green  { background: #10b981; }
+.dot-amber  { background: #f59e0b; }
+.dot-blue   { background: #3b82f6; }
+
+.rpt-cost-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+}
+
+/* ── Misc Helpers ───────────────────────────────── */
+.rpt-empty {
+    padding: 2.5rem;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.9rem;
+}
+
+.fw-500 { font-weight: 500; }
+.fw-600 { font-weight: 600; }
+.fw-700 { font-weight: 700; }
+
+.table-danger-soft {
+    background-color: rgba(239, 68, 68, 0.05) !important;
+}
+
+/* ── Date filter inputs ─────────────────────────── */
+.rpt-date-input {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+    width: 140px;
+}
+
+.rpt-date-input:focus {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.5);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.15);
+    color: white;
+}
+
+/* ── Print styles ───────────────────────────────── */
+@media print {
+    .sidebar, .rpt-tabs, .page-header button, .rpt-date-input { display: none !important; }
+    main { margin-left: 0 !important; }
+    .card { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+}

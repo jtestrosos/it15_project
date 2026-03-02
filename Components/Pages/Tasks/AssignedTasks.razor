@@ -6,7 +6,7 @@
 @using manufacturing_system.Models
 
 @attribute [Authorize(Roles = "ProductionWorker")]
-@inject ApplicationDbContext Context
+@inject IServiceScopeFactory ScopeFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 
@@ -142,14 +142,7 @@
         isLoading = true;
         try 
         {
-            workOrders = await Context.WorkOrders
-                .Include(w => w.Plan)
-                .ThenInclude(p => p.Product)
-                .Where(w => w.UserID == userId)
-                .OrderByDescending(w => w.Status == "In Progress") // Show In Progress first
-                .ThenByDescending(w => w.Status == "Pending")
-                .ThenByDescending(w => w.OrderID)
-                .ToListAsync();
+            workOrders = await LoadOrdersFromDb();
         }
         finally
         {
@@ -157,21 +150,43 @@
         }
     }
 
+    private async Task<List<WorkOrder>> LoadOrdersFromDb()
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        return await context.WorkOrders
+            .Include(w => w.Plan)
+            .ThenInclude(p => p.Product)
+            .Where(w => w.UserID == userId)
+            .OrderByDescending(w => w.Status == "In Progress")
+            .ThenByDescending(w => w.Status == "Pending")
+            .ThenByDescending(w => w.OrderID)
+            .ToListAsync();
+    }
+
     private async Task StartTask(WorkOrder order)
     {
-        order.Status = "In Progress";
-        order.StartTime = DateTime.Now;
-        Context.Update(order);
-        await Context.SaveChangesAsync();
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbOrder = await context.WorkOrders.FindAsync(order.OrderID);
+        if (dbOrder == null) return;
+        dbOrder.Status = "In Progress";
+        dbOrder.StartTime = DateTime.Now;
+        await context.SaveChangesAsync();
+        order.Status = dbOrder.Status;
+        order.StartTime = dbOrder.StartTime;
     }
 
     private async Task CompleteTask(WorkOrder order)
     {
-        order.Status = "Completed";
-        order.EndTime = DateTime.Now;
-        Context.Update(order);
-        await Context.SaveChangesAsync();
-        await LoadTasks(); // Reload to re-sort
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbOrder = await context.WorkOrders.FindAsync(order.OrderID);
+        if (dbOrder == null) return;
+        dbOrder.Status = "Completed";
+        dbOrder.EndTime = DateTime.Now;
+        await context.SaveChangesAsync();
+        workOrders = await LoadOrdersFromDb();
     }
 
     private string GetStatusClass(string status) => status switch

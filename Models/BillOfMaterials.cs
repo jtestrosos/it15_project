@@ -24,5 +24,10 @@ namespace manufacturing_system.Models
         public string UnitOfMeasure { get; set; } = "Units";
 
         public bool IsArchived { get; set; }
+
+        public int? FacilityID { get; set; }
+
+        [ForeignKey("FacilityID")]
+        public Facility? Facility { get; set; }
     }
 }

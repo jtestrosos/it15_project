@@ -30,7 +30,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString, sqlOptions => sqlOptions.EnableRetryOnFailure()));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
@@ -54,20 +54,28 @@ builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSe
 // Register WeatherService for OpenWeather API
 builder.Services.AddHttpClient<manufacturing_system.Services.IWeatherService, manufacturing_system.Services.WeatherService>();
 
+// Register ExchangeRateService for currency conversion API
+builder.Services.AddHttpClient<manufacturing_system.Services.IExchangeRateService, manufacturing_system.Services.ExchangeRateService>();
+
+// Register FacilityAccessService for facility-scoped data access
+builder.Services.AddScoped<manufacturing_system.Services.FacilityAccessService>();
+
 var app = builder.Build();
 
 // Seed roles and admin account
 await DbInitializer.SeedRolesAndAdminAsync(app.Services);
 
 // Configure the HTTP request pipeline.
+app.UseDeveloperExceptionPage();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
 }
 else
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    // Ensure we don't mask any detailed errors on the deployed website right now
+    // app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);

@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="page">
     <div class="sidebar">
@@ -6,6 +7,51 @@
     </div>
 
     <main>
+        <!-- Top Bar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <!-- Page breadcrumb area (empty, reserved for future use) -->
+            </div>
+            <div class="topbar-right">
+                <AuthorizeView>
+                    <Authorized>
+                        <div class="tb-profile-wrapper">
+                            <div class="tb-avatar" @onclick="ToggleDropdown">
+                                <span class="bi bi-person-fill"></span>
+                            </div>
+
+                            @if (_open)
+                            {
+                                <div class="tb-dropdown">
+                                    <div class="tb-dropdown-header">
+                                        <div class="tb-dropdown-avatar">
+                                            <span class="bi bi-person-fill"></span>
+                                        </div>
+                                        <div class="tb-dropdown-info">
+                                            <span class="tb-dropdown-name">@_displayName</span>
+                                            <span class="tb-dropdown-email">@_userEmail</span>
+                                        </div>
+                                    </div>
+                                    <div class="tb-dropdown-divider"></div>
+                                    <a class="tb-dropdown-item" href="Account/Manage">
+                                        <span class="bi bi-person-gear"></span> Profile Settings
+                                    </a>
+                                    <div class="tb-dropdown-divider"></div>
+                                    <form action="Account/Logout" method="post" class="tb-logout-form">
+                                        <AntiforgeryToken />
+                                        <input type="hidden" name="ReturnUrl" value="" />
+                                        <button type="submit" class="tb-dropdown-item tb-logout-btn">
+                                            <span class="bi bi-box-arrow-left"></span> Logout
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+                        </div>
+                    </Authorized>
+                </AuthorizeView>
+            </div>
+        </div>
+
         <article class="content px-4">
             @Body
         </article>
@@ -17,3 +63,26 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private bool _open = false;
+    private string _displayName = "User";
+    private string _userEmail = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            _userEmail = user.Identity.Name ?? "";
+            var givenName = user.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value;
+            var surname   = user.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value;
+            _displayName  = (!string.IsNullOrWhiteSpace(givenName) || !string.IsNullOrWhiteSpace(surname))
+                ? $"{givenName} {surname}".Trim()
+                : _userEmail.Split('@')[0];
+        }
+    }
+
+    private void ToggleDropdown() => _open = !_open;
+}
