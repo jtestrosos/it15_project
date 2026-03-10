@@ -28,7 +28,8 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/Account/AccessDenied";
 });
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionStringName = builder.Environment.IsDevelopment() ? "DefaultConnection" : "OnlineConnection";
+var connectionString = builder.Configuration.GetConnectionString(connectionStringName) ?? builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException($"Connection string '{connectionStringName}' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString, sqlOptions => sqlOptions.EnableRetryOnFailure()));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -59,6 +60,9 @@ builder.Services.AddHttpClient<manufacturing_system.Services.IExchangeRateServic
 
 // Register FacilityAccessService for facility-scoped data access
 builder.Services.AddScoped<manufacturing_system.Services.FacilityAccessService>();
+
+// Register NotificationService for system alerts
+builder.Services.AddSingleton<manufacturing_system.Services.NotificationService>();
 
 var app = builder.Build();
 

@@ -18,6 +18,7 @@ namespace manufacturing_system.Models
         [ForeignKey("ComponentID")]
         public Component Component { get; set; } = null!;
 
+        [Range(1, int.MaxValue, ErrorMessage = "Quantity required must be at least 1.")]
         public int QuantityRequired { get; set; }
 
         [StringLength(25)]

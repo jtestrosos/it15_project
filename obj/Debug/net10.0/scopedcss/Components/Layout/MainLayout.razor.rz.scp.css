@@ -12,7 +12,6 @@ main[b-75fqhctc9a] {
 
 .sidebar[b-75fqhctc9a] {
     background: var(--ns-card-bg);
-    border-right: 1px solid var(--ns-border);
 }
 
 /* ── Top Bar ──────────────────────────────── */
@@ -189,6 +188,180 @@ main[b-75fqhctc9a] {
 .tb-logout-btn:hover[b-75fqhctc9a] {
     background: rgba(239, 68, 68, 0.06) !important;
     color: #dc2626 !important;
+}
+
+/* ── Notification Bell ────────────────────── */
+.tb-notif-wrapper[b-75fqhctc9a] {
+    position: relative;
+}
+
+.tb-notif-bell[b-75fqhctc9a] {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ns-text-secondary);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    position: relative;
+    border: none;
+}
+
+.tb-notif-bell:hover[b-75fqhctc9a] {
+    background: #f6f7f8;
+    color: var(--ns-primary);
+}
+
+.tb-notif-bell .bi[b-75fqhctc9a] {
+    line-height: 1;
+}
+
+.tb-notif-badge[b-75fqhctc9a] {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #D10000;
+    color: white;
+    font-size: 0.5625rem;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    border: 2px solid var(--ns-card-bg);
+    animation: notifPulse-b-75fqhctc9a 2s ease infinite;
+}
+
+@keyframes notifPulse-b-75fqhctc9a {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* ── Notification Dropdown ───────────────── */
+.tb-notif-dropdown[b-75fqhctc9a] {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: -2rem;
+    width: 320px;
+    background: var(--ns-card-bg);
+    border: 1px solid var(--ns-border);
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-xl);
+    animation: tbDropIn-b-75fqhctc9a 0.1s ease;
+    z-index: 300;
+    overflow: hidden;
+}
+
+.tb-notif-header[b-75fqhctc9a] {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--ns-border);
+    font-size: 0.8125rem;
+}
+
+.tb-notif-clear[b-75fqhctc9a] {
+    background: none;
+    border: none;
+    color: var(--ns-primary);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: background 0.1s ease;
+}
+
+.tb-notif-clear:hover[b-75fqhctc9a] {
+    background: rgba(143, 0, 255, 0.06);
+}
+
+.tb-notif-body[b-75fqhctc9a] {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.tb-notif-empty[b-75fqhctc9a] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 2rem 1rem;
+    color: var(--ns-text-secondary);
+    font-size: 0.8125rem;
+}
+
+.tb-notif-empty .bi[b-75fqhctc9a] {
+    font-size: 1.5rem;
+    opacity: 0.4;
+}
+
+.tb-notif-item[b-75fqhctc9a] {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    transition: background 0.1s ease;
+}
+
+.tb-notif-item:last-child[b-75fqhctc9a] {
+    border-bottom: none;
+}
+
+.tb-notif-item:hover[b-75fqhctc9a] {
+    background: #fafbfc;
+}
+
+.tb-notif-icon-wrap[b-75fqhctc9a] {
+    width: 32px;
+    height: 32px;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.875rem;
+}
+
+.tb-notif-icon-wrap .bi[b-75fqhctc9a] {
+    margin-right: 0;
+    width: auto;
+    height: auto;
+}
+
+.notif-bg-danger[b-75fqhctc9a]  { background: rgba(209, 0, 0, 0.1);  color: #D10000; }
+.notif-bg-warning[b-75fqhctc9a] { background: rgba(242, 133, 0, 0.1); color: #F28500; }
+.notif-bg-info[b-75fqhctc9a]    { background: rgba(92, 92, 255, 0.1);  color: #5C5CFF; }
+.notif-bg-success[b-75fqhctc9a] { background: rgba(0, 209, 0, 0.1);  color: #00D100; }
+
+.tb-notif-content[b-75fqhctc9a] {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tb-notif-title[b-75fqhctc9a] {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--ns-text-dark);
+    line-height: 1.3;
+}
+
+.tb-notif-desc[b-75fqhctc9a] {
+    font-size: 0.6875rem;
+    color: var(--ns-text-secondary);
+    line-height: 1.4;
+    margin-top: 0.125rem;
 }
 
 /* ── Layout ───────────────────────────────── */

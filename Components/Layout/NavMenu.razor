@@ -4,16 +4,16 @@
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand d-flex align-items-center gap-2" href="">
-            <img src="favicon.png" alt="NodeSync" width="32" height="32" style="object-fit: contain;" />
-            <span style="font-weight: 700; letter-spacing: 1px;">NodeSync</span>
-        </a>
+        <div class="navbar-brand d-flex align-items-center gap-2" style="cursor: default;">
+            <img src="favicon.png" alt="NodeSync" width="48" height="48" style="object-fit: contain;" />
+            <span style="font-weight: 800; letter-spacing: 1px;">NodeSync</span>
+        </div>
     </div>
 </div>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+<div class="nav-scrollable mt-4" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="nav flex-column">
         <!-- Dashboard - All authenticated users -->
         <div class="nav-item px-3">
@@ -40,7 +40,7 @@
                 </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="monitoring/environment">
-                        <span class="bi bi-thermometer-half" aria-hidden="true"></span> Environment
+                        <span class="bi bi-thermometer-half" aria-hidden="true"></span> Environment Monitor
                     </NavLink>
                 </div>
 
@@ -54,52 +54,63 @@
                     <small class="text-muted px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Production Control</small>
                 </div>
                 <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="production/workorders">
+                        <span class="bi bi-list-task" aria-hidden="true"></span> Work Orders
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
                     <NavLink class="nav-link" href="production/plans">
                         <span class="bi bi-clipboard-data" aria-hidden="true"></span> Production Plans
                     </NavLink>
                 </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="production/workorders">
-                        <span class="bi bi-list-task" aria-hidden="true"></span> Work Order Manager
-                    </NavLink>
-                </div>
-                
                 <div class="nav-item px-3 mt-2">
                     <small class="text-muted px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Inventory & Costs</small>
+                </div>
+                                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="inventory/components">
+                        <span class="bi bi-box-seam" aria-hidden="true"></span> Component Inventory
+                    </NavLink>
+                </div>
+                                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="inventory/transactions">
+                        <span class="bi bi-arrow-left-right" aria-hidden="true"></span> Stock Transactions
+                    </NavLink>
                 </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="inventory/products">
                         <span class="bi bi-grid" aria-hidden="true"></span> Product Catalog
                     </NavLink>
                 </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="inventory/components">
-                        <span class="bi bi-box-seam" aria-hidden="true"></span> Inventory Management
-                    </NavLink>
-                </div>
+
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="inventory/bom">
-                        <span class="bi bi-diagram-3" aria-hidden="true"></span> BOM Management
+                        <span class="bi bi-diagram-3" aria-hidden="true"></span> Bill of Materials
                     </NavLink>
                 </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="inventory/transactions">
-                        <span class="bi bi-arrow-left-right" aria-hidden="true"></span> Stock Transactions
-                    </NavLink>
-                </div>
+
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="production/costs">
-                        <span class="bi bi-currency-dollar" aria-hidden="true"></span> Costing
+                        <span class="bi bi-currency-dollar" aria-hidden="true"></span> Production Costs
                     </NavLink>
                 </div>
                  <div class="nav-item px-3">
                     <NavLink class="nav-link" href="monitoring/environment">
-                        <span class="bi bi-thermometer-half" aria-hidden="true"></span> Environment
+                        <span class="bi bi-thermometer-half" aria-hidden="true"></span> Environment Monitor
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="reports">
-                        <span class="bi bi-file-earmark-bar-graph" aria-hidden="true"></span> Reports
+                        <span class="bi bi-file-earmark-bar-graph" aria-hidden="true"></span> Reports & Analytics
+                    </NavLink>
+                </div>
+
+                <!-- Manager: Read-Only User Directory -->
+                <div class="nav-item px-3 mt-2">
+                    <small class="text-muted px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Directory</small>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/users">
+                        <span class="bi bi-person-lines-fill" aria-hidden="true"></span> User Directory
                     </NavLink>
                 </div>
             </Authorized>
@@ -116,34 +127,105 @@
                         <span class="bi bi-people" aria-hidden="true"></span> User Management
                     </NavLink>
                 </div>
+                                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/facilities">
+                        <span class="bi bi-building" aria-hidden="true"></span> Facilities
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/logs">
+                        <span class="bi bi-journal-text" aria-hidden="true"></span> Audit Logs
+                    </NavLink>
+                </div>
+     
+            </Authorized>
+        </AuthorizeView>
+
+        <!-- Superadmin Section (God Mode - inherits all menus) -->
+        <AuthorizeView Roles="Superadmin">
+            <Authorized>
+                <!-- Production Control -->
+                <div class="nav-item px-3 mt-2">
+                    <small class="text-muted px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Production Control</small>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="production/workorders">
+                        <span class="bi bi-list-task" aria-hidden="true"></span> Work Orders
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="production/plans">
+                        <span class="bi bi-clipboard-data" aria-hidden="true"></span> Production Plans
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="tasks/assigned">
+                        <span class="bi bi-check2-square" aria-hidden="true"></span> Worker Tasks
+                    </NavLink>
+                </div>
+
+                <!-- Inventory & Costs -->
+                <div class="nav-item px-3 mt-2">
+                    <small class="text-muted px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Inventory & Costs</small>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="inventory/components">
+                        <span class="bi bi-box-seam" aria-hidden="true"></span> Component Inventory
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="inventory/transactions">
+                        <span class="bi bi-arrow-left-right" aria-hidden="true"></span> Stock Transactions
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="inventory/products">
+                        <span class="bi bi-grid" aria-hidden="true"></span> Product Catalog
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="inventory/bom">
+                        <span class="bi bi-diagram-3" aria-hidden="true"></span> Bill of Materials
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="production/costs">
+                        <span class="bi bi-currency-dollar" aria-hidden="true"></span> Production Costs
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="monitoring/environment">
+                        <span class="bi bi-thermometer-half" aria-hidden="true"></span> Environment Monitor
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="reports">
+                        <span class="bi bi-file-earmark-bar-graph" aria-hidden="true"></span> Reports & Analytics
+                    </NavLink>
+                </div>
+
+                <!-- Administration -->
+                <div class="nav-item px-3 mt-2">
+                    <small class="text-muted px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Administration</small>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/users">
+                        <span class="bi bi-shield-lock" aria-hidden="true"></span> User Management
+                    </NavLink>
+                </div>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="admin/logs">
                         <span class="bi bi-journal-text" aria-hidden="true"></span> Audit Logs
                     </NavLink>
                 </div>
 
-            </Authorized>
-        </AuthorizeView>
-
-        <!-- Superadmin Section -->
-        <AuthorizeView Roles="Superadmin">
-            <Authorized>
+                <!-- System Core -->
                 <div class="nav-item px-3 mt-2">
                     <small class="text-muted px-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">System Core</small>
                 </div>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="admin/system-config">
-                        <span class="bi bi-sliders" aria-hidden="true"></span> System Configuration
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="admin/api-config">
-                        <span class="bi bi-cloud-arrow-up" aria-hidden="true"></span> API Management
-                    </NavLink>
-                </div>
-                <div class="nav-item px-3">
                     <NavLink class="nav-link" href="admin/facilities">
-                        <span class="bi bi-building" aria-hidden="true"></span> Facility Management
+                        <span class="bi bi-building" aria-hidden="true"></span> Facilities
                     </NavLink>
                 </div>
                 <div class="nav-item px-3">
@@ -151,11 +233,17 @@
                         <span class="bi bi-database" aria-hidden="true"></span> Database Tools
                     </NavLink>
                 </div>
-                 <div class="nav-item px-3">
-                     <NavLink class="nav-link" href="admin/users">
-                        <span class="bi bi-shield-lock" aria-hidden="true"></span> Access All Areas
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/api-config">
+                        <span class="bi bi-cloud-arrow-up" aria-hidden="true"></span> API Configuration
                     </NavLink>
                 </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="admin/system-config">
+                        <span class="bi bi-sliders" aria-hidden="true"></span> System Configuration
+                    </NavLink>
+                </div>
+
             </Authorized>
         </AuthorizeView>
 

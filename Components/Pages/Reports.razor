@@ -9,31 +9,37 @@
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<PageTitle>Reports – NodeSync</PageTitle>
+<PageTitle>NodeSync | Reports</PageTitle>
 
-<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
-    <div>
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="bi bi-file-earmark-bar-graph me-2"></i>Reports &amp; Analytics
-        </h1>
-        <p class="text-muted mb-0">
-            Live operational data across production, inventory &amp; costs
-        </p>
-    </div>
-    <div class="d-flex gap-2 flex-wrap align-items-center">
-        <div class="d-flex align-items-center gap-2">
-            <label class="text-muted small mb-0">From</label>
-            <input type="date" class="form-control form-control-sm"
-                   @bind="FilterFrom" @bind:event="oninput" @onchange="ApplyFilters" />
+<!-- Report Header -->
+<div class="rpt-header">
+    <div class="rpt-header-content">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rpt-header-icon">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <div>
+                    <h1 class="h3 mb-0 fw-bold">Reports &amp; Analytics</h1>
+                    <p>Live operational data across production, inventory &amp; costs</p>
+                </div>
+            </div>
+            <div class="rpt-filters">
+                <div class="rpt-filter-group">
+                    <span class="rpt-filter-label">From</span>
+                    <input type="date" class="rpt-filter-input"
+                           @bind="FilterFrom" @bind:event="oninput" @onchange="ApplyFilters" />
+                </div>
+                <div class="rpt-filter-group">
+                    <span class="rpt-filter-label">To</span>
+                    <input type="date" class="rpt-filter-input"
+                           @bind="FilterTo" @bind:event="oninput" @onchange="ApplyFilters" />
+                </div>
+                <button class="rpt-print-btn" @onclick="PrintReport">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <label class="text-muted small mb-0">To</label>
-            <input type="date" class="form-control form-control-sm"
-                   @bind="FilterTo" @bind:event="oninput" @onchange="ApplyFilters" />
-        </div>
-        <button class="btn btn-sm btn-outline-secondary" @onclick="PrintReport">
-            <i class="bi bi-printer me-1"></i>Print
-        </button>
     </div>
 </div>
 
@@ -47,38 +53,31 @@
 else
 {
     <!-- Tab Navigation -->
-    <ul class="nav rpt-tabs mb-4">
-        <li class="nav-item">
-            <button class="rpt-tab @(ActiveTab == "production" ? "active" : "")"
-                    @onclick='() => ActiveTab = "production"'>
-                <i class="bi bi-clipboard-data me-2"></i>Production
-            </button>
-        </li>
-        <li class="nav-item">
-            <button class="rpt-tab @(ActiveTab == "workorders" ? "active" : "")"
-                    @onclick='() => ActiveTab = "workorders"'>
-                <i class="bi bi-list-task me-2"></i>Work Orders
-            </button>
-        </li>
-        <li class="nav-item">
-            <button class="rpt-tab @(ActiveTab == "inventory" ? "active" : "")"
-                    @onclick='() => ActiveTab = "inventory"'>
-                <i class="bi bi-box-seam me-2"></i>Inventory
-            </button>
-        </li>
-        <li class="nav-item">
-            <button class="rpt-tab @(ActiveTab == "costs" ? "active" : "")"
-                    @onclick='() => ActiveTab = "costs"'>
-                <i class="bi bi-currency-dollar me-2"></i>Costs
-            </button>
-        </li>
-    </ul>
+    <div class="rpt-tabs mb-4">
+        <button class="rpt-tab @(ActiveTab == "production" ? "active" : "")"
+                @onclick='() => ActiveTab = "production"'>
+            <i class="bi bi-clipboard-data"></i> Production
+        </button>
+        <button class="rpt-tab @(ActiveTab == "workorders" ? "active" : "")"
+                @onclick='() => ActiveTab = "workorders"'>
+            <i class="bi bi-list-task"></i> Work Orders
+        </button>
+        <button class="rpt-tab @(ActiveTab == "inventory" ? "active" : "")"
+                @onclick='() => ActiveTab = "inventory"'>
+            <i class="bi bi-box-seam"></i> Inventory
+        </button>
+        <button class="rpt-tab @(ActiveTab == "costs" ? "active" : "")"
+                @onclick='() => ActiveTab = "costs"'>
+            <i class="bi bi-currency-dollar"></i> Costs
+        </button>
+    </div>
 
     <!-- ═══════════════════════════════════════════════════
          TAB: PRODUCTION
     ═══════════════════════════════════════════════════ -->
     @if (ActiveTab == "production")
     {
+        <div class="rpt-section">
         <!-- KPI Row -->
         <div class="row g-3 mb-4">
             <div class="col-6 col-xl-3">
@@ -120,15 +119,15 @@ else
         </div>
 
         <!-- Chart.js: Production by Product -->
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-bar-chart me-2"></i>Production by Product (Chart.js)</span>
-                <span class="badge bg-light text-dark">@FilteredPlans.Count records</span>
+        <div class="rpt-chart-card mb-4">
+            <div class="rpt-chart-header">
+                <span class="rpt-chart-title"><i class="bi bi-bar-chart-line"></i> Production by Product</span>
+                <span class="badge bg-light text-dark border">@FilteredPlans.Count records</span>
             </div>
-            <div class="card-body">
+            <div class="rpt-chart-body">
                 @if (!FilteredPlans.Any())
                 {
-                    <div class="rpt-empty">No production plans in selected range.</div>
+                    <div class="rpt-empty"><i class="bi bi-bar-chart"></i>No production plans in selected range.</div>
                 }
                 else
                 {
@@ -140,20 +139,23 @@ else
         </div>
 
         <!-- Plans Table -->
-        <div class="card">
-            <div class="card-header"><i class="bi bi-table me-2"></i>Production Plan Details</div>
-            <div class="card-body p-0">
+        <div class="rpt-table-card">
+            <div class="rpt-table-header">
+                <span class="rpt-table-title"><i class="bi bi-table"></i> Production Plan Details</span>
+                <span class="badge bg-light text-dark border">@FilteredPlans.Count total</span>
+            </div>
+            <div style="padding: 0;">
                 @if (!FilteredPlans.Any())
                 {
-                    <div class="rpt-empty">No records found.</div>
+                    <div class="rpt-empty"><i class="bi bi-inbox"></i>No records found.</div>
                 }
                 else
                 {
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
-                            <thead>
+                            <thead class="bg-light">
                                 <tr>
-                                    <th>#</th>
+                                    <th class="ps-3">#</th>
                                     <th>Product</th>
                                     <th>Qty</th>
                                     <th>Start</th>
@@ -166,7 +168,7 @@ else
                                 @foreach (var p in FilteredPlans)
                                 {
                                     <tr>
-                                        <td class="text-muted small">@p.PlanID</td>
+                                        <td class="text-muted small ps-3">@p.PlanID</td>
                                         <td class="fw-500">@(p.Product?.ProductName ?? "—")</td>
                                         <td>@p.BatchQuantity.ToString("N0")</td>
                                         <td>@p.PlannedStartDate.ToString("MMM d, yyyy")</td>
@@ -181,6 +183,7 @@ else
                 }
             </div>
         </div>
+        </div>
     }
 
     <!-- ═══════════════════════════════════════════════════
@@ -188,6 +191,7 @@ else
     ═══════════════════════════════════════════════════ -->
     @if (ActiveTab == "workorders")
     {
+        <div class="rpt-section">
         <!-- KPI Row -->
         <div class="row g-3 mb-4">
             <div class="col-6 col-xl-3">
@@ -229,12 +233,14 @@ else
         </div>
 
         <!-- Chart.js: Order Status Breakdown -->
-        <div class="card mb-4">
-            <div class="card-header"><i class="bi bi-pie-chart me-2"></i>Order Status Breakdown (Chart.js)</div>
-            <div class="card-body">
+        <div class="rpt-chart-card mb-4">
+            <div class="rpt-chart-header">
+                <span class="rpt-chart-title"><i class="bi bi-pie-chart"></i> Order Status Breakdown</span>
+            </div>
+            <div class="rpt-chart-body">
                 @if (!FilteredOrders.Any())
                 {
-                    <div class="rpt-empty">No work orders in selected range.</div>
+                    <div class="rpt-empty"><i class="bi bi-pie-chart"></i>No work orders in selected range.</div>
                 }
                 else
                 {
@@ -246,20 +252,23 @@ else
         </div>
 
         <!-- Work Orders Table -->
-        <div class="card">
-            <div class="card-header"><i class="bi bi-table me-2"></i>Work Order Details</div>
-            <div class="card-body p-0">
+        <div class="rpt-table-card">
+            <div class="rpt-table-header">
+                <span class="rpt-table-title"><i class="bi bi-table"></i> Work Order Details</span>
+                <span class="badge bg-light text-dark border">@FilteredOrders.Count total</span>
+            </div>
+            <div style="padding: 0;">
                 @if (!FilteredOrders.Any())
                 {
-                    <div class="rpt-empty">No records found.</div>
+                    <div class="rpt-empty"><i class="bi bi-inbox"></i>No records found.</div>
                 }
                 else
                 {
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
-                            <thead>
+                            <thead class="bg-light">
                                 <tr>
-                                    <th>#</th>
+                                    <th class="ps-3">#</th>
                                     <th>Description</th>
                                     <th>Qty</th>
                                     <th>Start</th>
@@ -276,7 +285,7 @@ else
                                         ? (o.EndTime.Value - o.StartTime.Value).TotalHours.ToString("F1") + "h"
                                         : "—";
                                     <tr>
-                                        <td class="text-muted small">@o.OrderID</td>
+                                        <td class="text-muted small ps-3">@o.OrderID</td>
                                         <td class="fw-500">@o.OrderDescription</td>
                                         <td>@o.BatchQuantity.ToString("N0")</td>
                                         <td>@(o.StartTime?.ToString("MMM d, yyyy") ?? "—")</td>
@@ -292,6 +301,7 @@ else
                 }
             </div>
         </div>
+        </div>
     }
 
     <!-- ═══════════════════════════════════════════════════
@@ -299,6 +309,7 @@ else
     ═══════════════════════════════════════════════════ -->
     @if (ActiveTab == "inventory")
     {
+        <div class="rpt-section">
         <!-- KPI Row -->
         <div class="row g-3 mb-4">
             <div class="col-6 col-xl-3">
@@ -340,20 +351,20 @@ else
         </div>
 
         <!-- Component Stock Table -->
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-boxes me-2"></i>Component Stock Levels</span>
+        <div class="rpt-table-card mb-4">
+            <div class="rpt-table-header">
+                <span class="rpt-table-title"><i class="bi bi-boxes"></i> Component Stock Levels</span>
                 @if (LowStockCount > 0)
                 {
                     <span class="badge bg-danger">@LowStockCount below minimum</span>
                 }
             </div>
-            <div class="card-body p-0">
+            <div style="padding: 0;">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
-                        <thead>
+                        <thead class="bg-light">
                             <tr>
-                                <th>Component</th>
+                                <th class="ps-3">Component</th>
                                 <th>Supplier</th>
                                 <th>Unit Cost</th>
                                 <th>Min Stock</th>
@@ -373,7 +384,7 @@ else
                                 var net = inbound - outbound;
                                 var isLow = net < comp.MinStockLevel;
                                 <tr class="@(isLow ? "table-danger-soft" : "")">
-                                    <td class="fw-500">@comp.ComponentName</td>
+                                    <td class="fw-500 ps-3">@comp.ComponentName</td>
                                     <td class="text-muted small">@(comp.SupplierInfo ?? "—")</td>
                                     <td>@comp.CurrencyCode @comp.UnitCost.ToString("N2")</td>
                                     <td>@comp.MinStockLevel</td>
@@ -397,20 +408,23 @@ else
         </div>
 
         <!-- Transaction History -->
-        <div class="card">
-            <div class="card-header"><i class="bi bi-clock-history me-2"></i>Transaction History (Filtered Period)</div>
-            <div class="card-body p-0">
+        <div class="rpt-table-card">
+            <div class="rpt-table-header">
+                <span class="rpt-table-title"><i class="bi bi-clock-history"></i> Transaction History</span>
+                <span class="badge bg-light text-dark border">@FilteredTransactions.Count transactions</span>
+            </div>
+            <div style="padding: 0;">
                 @if (!FilteredTransactions.Any())
                 {
-                    <div class="rpt-empty">No transactions in selected range.</div>
+                    <div class="rpt-empty"><i class="bi bi-inbox"></i>No transactions in selected range.</div>
                 }
                 else
                 {
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
-                            <thead>
+                            <thead class="bg-light">
                                 <tr>
-                                    <th>Date</th>
+                                    <th class="ps-3">Date</th>
                                     <th>Component</th>
                                     <th>Type</th>
                                     <th>Qty</th>
@@ -422,7 +436,7 @@ else
                                 @foreach (var t in FilteredTransactions.OrderByDescending(x => x.TransactionDate))
                                 {
                                     <tr>
-                                        <td class="text-muted small">@t.TransactionDate.ToString("MMM d, yyyy")</td>
+                                        <td class="text-muted small ps-3">@t.TransactionDate.ToString("MMM d, yyyy")</td>
                                         <td class="fw-500">@(t.Component?.ComponentName ?? "—")</td>
                                         <td>
                                             <span class="badge @(t.TransactionType == "Inbound" ? "bg-success" : t.TransactionType == "Outbound" ? "bg-warning" : "bg-secondary")">
@@ -440,6 +454,7 @@ else
                 }
             </div>
         </div>
+        </div>
     }
 
     <!-- ═══════════════════════════════════════════════════
@@ -447,6 +462,7 @@ else
     ═══════════════════════════════════════════════════ -->
     @if (ActiveTab == "costs")
     {
+        <div class="rpt-section">
         <!-- KPI Row -->
         <div class="row g-3 mb-4">
             <div class="col-6 col-xl-3">
@@ -488,12 +504,14 @@ else
         </div>
 
         <!-- Chart.js: Cost Type Breakdown -->
-        <div class="card mb-4">
-            <div class="card-header"><i class="bi bi-pie-chart me-2"></i>Cost Type Breakdown (Chart.js)</div>
-            <div class="card-body">
+        <div class="rpt-chart-card mb-4">
+            <div class="rpt-chart-header">
+                <span class="rpt-chart-title"><i class="bi bi-pie-chart"></i> Cost Type Breakdown</span>
+            </div>
+            <div class="rpt-chart-body">
                 @if (!FilteredCosts.Any())
                 {
-                    <div class="rpt-empty">No cost records in selected range.</div>
+                    <div class="rpt-empty"><i class="bi bi-pie-chart"></i>No cost records in selected range.</div>
                 }
                 else
                 {
@@ -535,20 +553,23 @@ else
         </div>
 
         <!-- Cost Records Table -->
-        <div class="card">
-            <div class="card-header"><i class="bi bi-table me-2"></i>Cost Records</div>
-            <div class="card-body p-0">
+        <div class="rpt-table-card">
+            <div class="rpt-table-header">
+                <span class="rpt-table-title"><i class="bi bi-table"></i> Cost Records</span>
+                <span class="badge bg-light text-dark border">@FilteredCosts.Count records</span>
+            </div>
+            <div style="padding: 0;">
                 @if (!FilteredCosts.Any())
                 {
-                    <div class="rpt-empty">No cost records found.</div>
+                    <div class="rpt-empty"><i class="bi bi-inbox"></i>No cost records found.</div>
                 }
                 else
                 {
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
-                            <thead>
+                            <thead class="bg-light">
                                 <tr>
-                                    <th>Date</th>
+                                    <th class="ps-3">Date</th>
                                     <th>Type</th>
                                     <th>Component</th>
                                     <th>Work Order</th>
@@ -560,7 +581,7 @@ else
                                 @foreach (var c in FilteredCosts.OrderByDescending(x => x.RecordedDate))
                                 {
                                     <tr>
-                                        <td class="text-muted small">@c.RecordedDate.ToString("MMM d, yyyy")</td>
+                                        <td class="text-muted small ps-3">@c.RecordedDate.ToString("MMM d, yyyy")</td>
                                         <td><span class="badge @GetCostBadge(c.CostType)">@c.CostType</span></td>
                                         <td class="text-muted small">@(c.Component?.ComponentName ?? "—")</td>
                                         <td class="text-muted small">@(c.OrderID.HasValue ? $"#{c.OrderID}" : "—")</td>
@@ -573,6 +594,7 @@ else
                     </div>
                 }
             </div>
+        </div>
         </div>
     }
 }
@@ -725,10 +747,12 @@ else
     // Badge helpers
     private string GetPlanBadge(string s) => s switch
     {
-        "Active"   => "bg-success",
-        "Draft"    => "bg-secondary",
-        "Archived" => "bg-warning",
-        _          => "bg-primary"
+        "Completed" => "bg-success",
+        "Active"    => "bg-primary",
+        "Draft"     => "bg-secondary",
+        "Archived"  => "bg-warning",
+        "Canceled"  => "bg-danger",
+        _           => "bg-primary"
     };
 
     private string GetOrderBadge(string s) => s switch

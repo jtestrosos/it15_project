@@ -9,11 +9,11 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @rendermode InteractiveServer
 
-<PageTitle>NodeSync | Environment Monitoring</PageTitle>
+<PageTitle>NodeSync | Environment Monitor</PageTitle>
 
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
-        <h1 class="h3 mb-0 text-gray-800">Environment Monitoring</h1>
+        <h1 class="h3 mb-0 text-gray-800">Environment Monitor</h1>
         <p class="text-muted mb-0">Real-time temperature and humidity readings</p>
     </div>
 </div>
@@ -31,7 +31,7 @@
     else if (weatherData != null)
     {
         <div class="col-lg-4">
-            <div class="environment-card temperature-card">
+            <div class="environment-card @GetTempClass()">
                 <div class="card-icon">
                     <i class="bi bi-thermometer-half"></i>
                 </div>
@@ -44,7 +44,7 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="environment-card humidity-card">
+            <div class="environment-card @GetHumidityClass()">
                 <div class="card-icon">
                     <i class="bi bi-droplet-half"></i>
                 </div>
@@ -64,7 +64,7 @@
                 <div class="card-content">
                     <span class="card-label">Alert Status</span>
                     <span class="card-value">@weatherData.GetAlertStatus()</span>
-                    <span class="card-sublabel">Wind: @weatherData.WindSpeed m/s</span>
+                    <span class="card-sublabel">@weatherData.GetAlertSubtitle()</span>
                 </div>
             </div>
         </div>
@@ -81,10 +81,10 @@
                             </div>
                         </div>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-primary" @onclick="RefreshWeather" disabled="@isLoading">
+                            <button class="btn btn-primary text-nowrap" @onclick="RefreshWeather" disabled="@isLoading">
                                 <i class="bi bi-arrow-clockwise me-2"></i>Refresh
                             </button>
-                            <button class="btn btn-outline-primary" @onclick="LogReading" disabled="@isLoading">
+                            <button class="btn btn-outline-primary text-nowrap" @onclick="LogReading" disabled="@isLoading">
                                 <i class="bi bi-database-add me-2"></i>Log Reading
                             </button>
                         </div>
@@ -160,7 +160,7 @@
 
 <style>
     .environment-card {
-        background: linear-gradient(135deg, #8F00FF 0%, #A020FF 100%);
+        background: linear-gradient(135deg, #8F00FF 0%, #8F00FF 100%);
         border-radius: 0.75rem;
         padding: 1.5rem;
         color: white;
@@ -176,29 +176,49 @@
         box-shadow: 0 8px 24px rgba(143, 0, 255, 0.3);
     }
 
-    .temperature-card {
-        background: linear-gradient(135deg, #C77DFF 0%, #9B30FF 100%);
-        box-shadow: 0 4px 12px rgba(199, 125, 255, 0.3);
+    .temp-optimal {
+        background: linear-gradient(135deg, #F28500 0%, #F28500 100%); /* Orange */
+        box-shadow: 0 4px 12px rgba(242, 133, 0, 0.3);
+    }
+    
+    .temp-warning {
+        background: linear-gradient(135deg, #F28500 0%, #F28500 100%); /* Amber */
+        box-shadow: 0 4px 12px rgba(242, 133, 0, 0.3);
+    }
+    
+    .temp-critical {
+        background: linear-gradient(135deg, #D10000 0%, #D10000 100%); /* Red */
+        box-shadow: 0 4px 12px rgba(209, 0, 0, 0.3);
+    }
+    
+    .temp-cold {
+        background: linear-gradient(135deg, #5C5CFF 0%, #5C5CFF 100%); /* Blue */
+        box-shadow: 0 4px 12px rgba(92, 92, 255, 0.3);
     }
 
-    .humidity-card {
-        background: linear-gradient(135deg, #7800D6 0%, #5A00A0 100%);
-        box-shadow: 0 4px 12px rgba(120, 0, 214, 0.3);
+    .humidity-optimal {
+        background: linear-gradient(135deg, #00D100 0%, #00D100 100%); /* Green */
+        box-shadow: 0 4px 12px rgba(0, 209, 0, 0.3);
+    }
+
+    .humidity-risk {
+        background: linear-gradient(135deg, #F28500 0%, #F28500 100%); /* Amber/Yellow Drop */
+        box-shadow: 0 4px 12px rgba(242, 133, 0, 0.3);
     }
 
     .status-card.status-normal {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        background: linear-gradient(135deg, #00D100 0%, #00D100 100%);
+        box-shadow: 0 4px 12px rgba(0, 209, 0, 0.3);
     }
 
     .status-card.status-warning {
-        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        background: linear-gradient(135deg, #F28500 0%, #F28500 100%);
+        box-shadow: 0 4px 12px rgba(242, 133, 0, 0.3);
     }
 
     .status-card.status-critical {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        background: linear-gradient(135deg, #D10000 0%, #D10000 100%);
+        box-shadow: 0 4px 12px rgba(209, 0, 0, 0.3);
     }
 
     .card-icon {
@@ -244,7 +264,8 @@
     private bool isLoading = true;
     private string statusMessage = "";
     private List<manufacturing_system.Models.EnvironmentalMonitor> recentReadings = new();
-    private string currentLocation = "Davao City,PH";
+    private string currentLocation = "";
+    private string currentApiKey = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -264,20 +285,21 @@
             {
                 using var scope = ScopeFactory.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                var user = await context.Users
+                var facility = await context.Users
                     .Where(u => u.Id == userId)
                     .Select(u => u.Facility)
                     .FirstOrDefaultAsync();
 
-                if (user != null && !string.IsNullOrEmpty(user.Location))
+                if (facility != null)
                 {
-                    currentLocation = user.Location;
+                    currentLocation = facility.Location ?? "";
+                    currentApiKey = facility.APIKeyOpenWeather ?? "";
                 }
             }
         }
         catch
         {
-            // Use default location
+            // Use empty strings
         }
     }
 
@@ -286,7 +308,7 @@
         isLoading = true;
         StateHasChanged();
 
-        weatherData = await WeatherService.GetCurrentWeatherAsync(currentLocation);
+        weatherData = await WeatherService.GetCurrentWeatherAsync(currentLocation, currentApiKey);
         
         isLoading = false;
         StateHasChanged();
@@ -377,4 +399,20 @@
         "Warning" or "Cold Warning" or "High Humidity" => "bg-warning text-dark",
         _ => "bg-success"
     };
+
+    private string GetTempClass()
+    {
+        if (weatherData == null) return "temp-optimal";
+        if (weatherData.Temperature > 40) return "temp-critical";
+        if (weatherData.Temperature > 35) return "temp-warning";
+        if (weatherData.Temperature < 10) return "temp-cold";
+        return "temp-optimal";
+    }
+
+    private string GetHumidityClass()
+    {
+        if (weatherData == null) return "humidity-optimal";
+        if (weatherData.Humidity >= 40 && weatherData.Humidity <= 60) return "humidity-optimal";
+        return "humidity-risk";
+    }
 }

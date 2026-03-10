@@ -5,8 +5,8 @@ namespace manufacturing_system.Services
 {
     public interface IExchangeRateService
     {
-        Task<ExchangeRateData?> GetExchangeRatesAsync(string baseCurrency = "USD");
-        Task<decimal> ConvertToPhpAsync(decimal amount, string fromCurrency = "USD");
+        Task<ExchangeRateData?> GetExchangeRatesAsync(string apiKey, string baseCurrency = "USD");
+        Task<decimal> ConvertToPhpAsync(decimal amount, string apiKey, string fromCurrency = "USD");
     }
 
     public class ExchangeRateService : IExchangeRateService
@@ -19,32 +19,32 @@ namespace manufacturing_system.Services
         // Cache rates for 1 hour to avoid excessive API calls
         private ExchangeRateData? _cachedRates;
         private DateTime _cacheExpiry = DateTime.MinValue;
+        private string? _cachedApiKey;
 
         public ExchangeRateService(HttpClient httpClient, IConfiguration configuration, ILogger<ExchangeRateService> logger)
         {
             _httpClient = httpClient;
-            _apiKey = configuration["ApiSettings:ExchangeRateApiKey"] ?? "";
             _baseUrl = configuration["ApiSettings:ExchangeRateBaseUrl"] ?? "https://v6.exchangerate-api.com/v6";
             _logger = logger;
         }
 
-        public async Task<ExchangeRateData?> GetExchangeRatesAsync(string baseCurrency = "USD")
+        public async Task<ExchangeRateData?> GetExchangeRatesAsync(string apiKey, string baseCurrency = "USD")
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(apiKey))
+                {
+                    _logger.LogWarning("Exchange Rate API key is not provided.");
+                    return null;
+                }
+
                 // Return cached data if still valid
-                if (_cachedRates != null && DateTime.UtcNow < _cacheExpiry && _cachedRates.BaseCode == baseCurrency)
+                if (_cachedRates != null && DateTime.UtcNow < _cacheExpiry && _cachedRates.BaseCode == baseCurrency && _cachedApiKey == apiKey)
                 {
                     return _cachedRates;
                 }
 
-                if (string.IsNullOrWhiteSpace(_apiKey))
-                {
-                    _logger.LogWarning("Exchange Rate API key is not configured.");
-                    return null;
-                }
-
-                var url = $"{_baseUrl}/{_apiKey}/latest/{baseCurrency}";
+                var url = $"{_baseUrl}/{apiKey}/latest/{baseCurrency}";
                 var response = await _httpClient.GetAsync(url);
 
                 if (!response.IsSuccessStatusCode)
@@ -74,6 +74,7 @@ namespace manufacturing_system.Services
                     LastUpdated = DateTime.UtcNow
                 };
 
+                _cachedApiKey = apiKey;
                 _cacheExpiry = DateTime.UtcNow.AddHours(1);
 
                 return _cachedRates;
@@ -85,9 +86,9 @@ namespace manufacturing_system.Services
             }
         }
 
-        public async Task<decimal> ConvertToPhpAsync(decimal amount, string fromCurrency = "USD")
+        public async Task<decimal> ConvertToPhpAsync(decimal amount, string apiKey, string fromCurrency = "USD")
         {
-            var rates = await GetExchangeRatesAsync(fromCurrency);
+            var rates = await GetExchangeRatesAsync(apiKey, fromCurrency);
             if (rates == null) return amount; // Return unconverted if API fails
 
             return amount * rates.PhpRate;

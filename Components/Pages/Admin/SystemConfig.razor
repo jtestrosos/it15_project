@@ -7,6 +7,7 @@
 @attribute [Authorize(Roles = "Superadmin")]
 @inject IConfiguration Configuration
 @inject IServiceScopeFactory ScopeFactory
+@rendermode InteractiveServer
 
 <PageTitle>NodeSync | System Configuration</PageTitle>
 
@@ -89,69 +90,111 @@
     </div>
 </div>
 
-<!-- API Keys Overview -->
+<!-- API Keys Management -->
 <div class="card shadow mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="bi bi-key me-2"></i>API Keys Overview</h5>
-        <a href="admin/api-config" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-pencil me-1"></i>Manage Keys
-        </a>
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-key me-2"></i>API Keys Management</h5>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="ps-4">Facility</th>
-                        <th>OpenWeather Key</th>
-                        <th>Exchange Rate Key</th>
-                        <th class="text-end pe-4">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var f in facilities)
-                    {
-                        <tr>
-                            <td class="ps-4 fw-medium">@f.FacilityName</td>
-                            <td>
-                                @if (!string.IsNullOrEmpty(f.APIKeyOpenWeather))
-                                {
-                                    <code>@MaskKey(f.APIKeyOpenWeather)</code>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">Not set</span>
-                                }
-                            </td>
-                            <td>
-                                @if (!string.IsNullOrEmpty(f.APIKeyExchangeRate))
-                                {
-                                    <code>@MaskKey(f.APIKeyExchangeRate)</code>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">Not set</span>
-                                }
-                            </td>
-                            <td class="text-end pe-4">
-                                @if (!string.IsNullOrEmpty(f.APIKeyOpenWeather) && !string.IsNullOrEmpty(f.APIKeyExchangeRate))
-                                {
-                                    <span class="badge bg-success">Configured</span>
-                                }
-                                else if (!string.IsNullOrEmpty(f.APIKeyOpenWeather) || !string.IsNullOrEmpty(f.APIKeyExchangeRate))
-                                {
-                                    <span class="badge bg-warning text-dark">Partial</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary">Not configured</span>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+    <div class="card-body">
+        <p class="text-muted small mb-4">Configure OpenWeather and Exchange Rate API keys for each facility. These keys are used for environment monitoring and currency conversion respectively.</p>
+
+        @foreach (var f in facilities)
+        {
+            var facilityId = f.FacilityID;
+            var isExpanded = expandedFacility == facilityId;
+            var hasWeather = !string.IsNullOrEmpty(f.APIKeyOpenWeather);
+            var hasExchange = !string.IsNullOrEmpty(f.APIKeyExchangeRate);
+            var statusBadge = (hasWeather && hasExchange) ? "bg-success" : (hasWeather || hasExchange) ? "bg-warning text-dark" : "bg-secondary";
+            var statusText = (hasWeather && hasExchange) ? "Configured" : (hasWeather || hasExchange) ? "Partial" : "Not configured";
+
+            <div class="api-key-facility-card mb-3">
+                <div class="api-key-facility-header" @onclick="() => ToggleFacility(facilityId)">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="api-key-facility-icon">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <div>
+                            <strong>@f.FacilityName</strong>
+                            <div class="text-muted" style="font-size: 0.75rem;">@(f.Location ?? "No location")</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge @statusBadge">@statusText</span>
+                        <i class="bi @(isExpanded ? "bi-chevron-up" : "bi-chevron-down") text-muted"></i>
+                    </div>
+                </div>
+
+                @if (isExpanded)
+                {
+                    <div class="api-key-facility-body">
+                        @{ var weatherType = "weather"; var exchangeType = "exchange"; }
+                        <div class="row g-3">
+                            <!-- OpenWeather API Key -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold d-flex align-items-center gap-2">
+                                    <i class="bi bi-cloud-sun text-info"></i> OpenWeather API Key
+                                </label>
+                                <div class="input-group">
+                                    <input type="@(IsKeyVisible(facilityId, weatherType) ? "text" : "password")"
+                                           class="form-control font-monospace"
+                                           value="@f.APIKeyOpenWeather"
+                                           @oninput="(e) => UpdateWeatherKey(facilityId, e.Value?.ToString())"
+                                           placeholder="Enter OpenWeather API key..." />
+                                    <button class="btn btn-outline-secondary" type="button"
+                                            @onclick="() => ToggleKeyVisibility(facilityId, weatherType)">
+                                        <i class="bi @(IsKeyVisible(facilityId, weatherType) ? "bi-eye-slash" : "bi-eye")"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>Used for temperature & humidity monitoring.
+                                    @if (hasWeather)
+                                    {
+                                        <span class="text-success ms-1"><i class="bi bi-check-circle"></i> Active</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Exchange Rate API Key -->
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold d-flex align-items-center gap-2">
+                                    <i class="bi bi-currency-exchange text-primary"></i> Exchange Rate API Key
+                                </label>
+                                <div class="input-group">
+                                    <input type="@(IsKeyVisible(facilityId, exchangeType) ? "text" : "password")"
+                                           class="form-control font-monospace"
+                                           value="@f.APIKeyExchangeRate"
+                                           @oninput="(e) => UpdateExchangeKey(facilityId, e.Value?.ToString())"
+                                           placeholder="Enter Exchange Rate API key..." />
+                                    <button class="btn btn-outline-secondary" type="button"
+                                            @onclick="() => ToggleKeyVisibility(facilityId, exchangeType)">
+                                        <i class="bi @(IsKeyVisible(facilityId, exchangeType) ? "bi-eye-slash" : "bi-eye")"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>Used for live USD→PHP currency conversion.
+                                    @if (hasExchange)
+                                    {
+                                        <span class="text-success ms-1"><i class="bi bi-check-circle"></i> Active</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-3 pt-3 border-top">
+                            @if (savedFacilityId == facilityId)
+                            {
+                                <span class="text-success d-flex align-items-center me-2">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Saved!
+                                </span>
+                            }
+                            <button class="btn btn-primary" @onclick="() => SaveFacilityKeys(facilityId)">
+                                <i class="bi bi-save me-1"></i> Save Keys
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     </div>
 </div>
 
@@ -175,6 +218,52 @@
     </div>
 </div>
 
+<style>
+    .api-key-facility-card {
+        border: 1px solid var(--ns-border);
+        border-radius: 0.5rem;
+        overflow: hidden;
+        transition: border-color 0.15s ease;
+    }
+
+    .api-key-facility-card:hover {
+        border-color: var(--ns-primary-light);
+    }
+
+    .api-key-facility-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.875rem 1rem;
+        cursor: pointer;
+        background: #fafbfc;
+        transition: background 0.15s ease;
+    }
+
+    .api-key-facility-header:hover {
+        background: #f0f1f3;
+    }
+
+    .api-key-facility-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 0.5rem;
+        background: rgba(143, 0, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--ns-primary);
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .api-key-facility-body {
+        padding: 1rem;
+        border-top: 1px solid var(--ns-border);
+        animation: fadeIn 0.2s ease-out;
+    }
+</style>
+
 @code {
     private string? statusMessage;
     private string statusAlertClass = "alert-info";
@@ -190,13 +279,19 @@
     private string exchangeRateBaseUrl = "";
     private List<Facility> facilities = new();
 
+    // API Key management state
+    private int? expandedFacility;
+    private int? savedFacilityId;
+    private HashSet<string> visibleKeys = new();
+
     protected override async Task OnInitializedAsync()
     {
         // Environment
         environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
 
         // Connection info
-        connectionString = Configuration.GetConnectionString("DefaultConnection") ?? "Not configured";
+        var connectionStringName = environment == "Development" ? "DefaultConnection" : "OnlineConnection";
+        connectionString = Configuration.GetConnectionString(connectionStringName) ?? Configuration.GetConnectionString("DefaultConnection") ?? "Not configured";
         ParseConnectionString();
 
         // API settings from appsettings
@@ -208,6 +303,78 @@
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         facilities = await context.Facilities.ToListAsync();
         facilityCount = facilities.Count;
+    }
+
+    private void ToggleFacility(int facilityId)
+    {
+        expandedFacility = expandedFacility == facilityId ? null : facilityId;
+        savedFacilityId = null;
+    }
+
+    private string GetVisibilityKey(int facilityId, string keyType) => $"{facilityId}_{keyType}";
+
+    private bool IsKeyVisible(int facilityId, string keyType) =>
+        visibleKeys.Contains(GetVisibilityKey(facilityId, keyType));
+
+    private void ToggleKeyVisibility(int facilityId, string keyType)
+    {
+        var vk = GetVisibilityKey(facilityId, keyType);
+        if (!visibleKeys.Remove(vk))
+            visibleKeys.Add(vk);
+    }
+
+    private void UpdateWeatherKey(int facilityId, string? value)
+    {
+        var facility = facilities.FirstOrDefault(f => f.FacilityID == facilityId);
+        if (facility != null) facility.APIKeyOpenWeather = value;
+    }
+
+    private void UpdateExchangeKey(int facilityId, string? value)
+    {
+        var facility = facilities.FirstOrDefault(f => f.FacilityID == facilityId);
+        if (facility != null) facility.APIKeyExchangeRate = value;
+    }
+
+    private async Task SaveFacilityKeys(int facilityId)
+    {
+        var facility = facilities.FirstOrDefault(f => f.FacilityID == facilityId);
+        if (facility == null) return;
+
+        try
+        {
+            using var scope = ScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var dbFacility = await context.Facilities.FindAsync(facilityId);
+            if (dbFacility != null)
+            {
+                dbFacility.APIKeyOpenWeather = facility.APIKeyOpenWeather;
+                dbFacility.APIKeyExchangeRate = facility.APIKeyExchangeRate;
+                await context.SaveChangesAsync();
+            }
+
+            savedFacilityId = facilityId;
+            statusMessage = $"API keys for {facility.FacilityName} saved successfully.";
+            statusAlertClass = "alert-success";
+            statusIcon = "bi-check-circle-fill";
+
+            // Auto-dismiss after 3s
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(3000);
+                await InvokeAsync(() =>
+                {
+                    savedFacilityId = null;
+                    statusMessage = null;
+                    StateHasChanged();
+                });
+            });
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Error saving keys: {ex.Message}";
+            statusAlertClass = "alert-danger";
+            statusIcon = "bi-exclamation-triangle-fill";
+        }
     }
 
     private void ParseConnectionString()

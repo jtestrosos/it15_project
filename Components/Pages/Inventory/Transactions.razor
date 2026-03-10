@@ -4,14 +4,14 @@
 @using manufacturing_system.Data
 @using manufacturing_system.Models
 
-@attribute [Authorize(Roles = "ProductionManager")]
+@attribute [Authorize(Roles = "ProductionManager,Superadmin")]
 @inject IServiceScopeFactory ScopeFactory
 
-<PageTitle>Inventory Transactions</PageTitle>
+<PageTitle>NodeSync | Stock Transactions</PageTitle>
 
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
-        <h1 class="h3 mb-0 text-gray-800">Inventory Logs</h1>
+        <h1 class="h3 mb-0 text-gray-800">Stock Transactions</h1>
         <p class="text-muted mb-0">Track history of stock movements.</p>
     </div>
 </div>

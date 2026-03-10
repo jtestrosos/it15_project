@@ -393,7 +393,8 @@ C:\Users\james\codingRepos\it15Repos\production_system\bin\check_build\runtimes\
 C:\Users\james\codingRepos\it15Repos\production_system\bin\check_build\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\james\codingRepos\it15Repos\production_system\bin\check_build\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
 C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\i7hlojl6xb-{0}-7nm8swu5x3-7nm8swu5x3.gz
-C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\p109q0or39-{0}-xgkpgtvu1v-xgkpgtvu1v.gz
-C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\atf3az2mss-{0}-sivktr07qo-sivktr07qo.gz
-C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\04m9zdu2dm-{0}-mlr2yv87xl-mlr2yv87xl.gz
-C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
+C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\yqo2oyyg7z-{0}-oyat0yvuts-oyat0yvuts.gz
+C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\bvl52r9dye-{0}-23bba190w5-23bba190w5.gz
+C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\p109q0or39-{0}-rwioc1qnv0-rwioc1qnv0.gz
+C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\atf3az2mss-{0}-vv5ov0ndkz-vv5ov0ndkz.gz
+C:\Users\james\codingRepos\it15Repos\production_system\obj\Debug\net10.0\compressed\04m9zdu2dm-{0}-e5ox8yqkdp-e5ox8yqkdp.gz

@@ -661,6 +661,66 @@ namespace manufacturing_system.Migrations
                     b.ToTable("ProductionPlans");
                 });
 
+            modelBuilder.Entity("manufacturing_system.Models.SystemNotification", b =>
+                {
+                    b.Property<int>("NotificationID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NotificationID"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("FacilityID")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDismissed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LinkUrl")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<string>("TargetRole")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("UserID")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("NotificationID");
+
+                    b.HasIndex("FacilityID");
+
+                    b.HasIndex("UserID");
+
+                    b.ToTable("SystemNotifications");
+                });
+
             modelBuilder.Entity("manufacturing_system.Models.WorkOrder", b =>
                 {
                     b.Property<int>("OrderID")
@@ -973,6 +1033,21 @@ namespace manufacturing_system.Migrations
                     b.Navigation("Facility");
 
                     b.Navigation("Product");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("manufacturing_system.Models.SystemNotification", b =>
+                {
+                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                        .WithMany()
+                        .HasForeignKey("FacilityID");
+
+                    b.HasOne("manufacturing_system.Data.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserID");
+
+                    b.Navigation("Facility");
 
                     b.Navigation("User");
                 });

@@ -8,6 +8,7 @@
 @attribute [Authorize(Roles = "Superadmin")]
 @inject IServiceScopeFactory ScopeFactory
 @inject IConfiguration Configuration
+@inject IJSRuntime JS
 
 <PageTitle>NodeSync | Database Tools</PageTitle>
 
@@ -137,17 +138,12 @@
     <div class="col-md-6">
         <div class="card shadow h-100">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-download me-2"></i>Backup Database</h5>
+                <h5 class="mb-0"><i class="bi bi-download me-2"></i>Download Database Backup</h5>
             </div>
-            <div class="card-body">
-                <p class="text-muted small">Create a full backup of the current database. Backups are saved to the server's backup directory.</p>
-                <div class="mb-3">
-                    <label class="form-label">Backup Path</label>
-                    <input type="text" class="form-control" @bind="backupPath" placeholder="C:\Backups\production_system.bak" />
-                    <div class="form-text">Full path where the backup file will be saved.</div>
-                </div>
-                <button class="btn btn-primary w-100" @onclick="BackupDatabase" disabled="@(isLoading || string.IsNullOrWhiteSpace(backupPath))">
-                    <i class="bi bi-download me-2"></i>Create Backup
+            <div class="card-body d-flex flex-column justify-content-center">
+                <p class="text-muted small">Generate and download a complete JSON backup of the current database directly to your local machine.</p>
+                <button class="btn btn-primary w-100 mt-2" @onclick="BackupDatabase" disabled="@(isLoading)">
+                    <i class="bi bi-cloud-download me-2"></i>Download Backup (.json)
                 </button>
             </div>
         </div>
@@ -163,8 +159,8 @@
                 <p class="text-muted small">These actions are irreversible. Make sure you have a backup before proceeding.</p>
 
                 <div class="mb-3">
-                    <h6>Purge Old Activity Logs</h6>
-                    <p class="text-muted small mb-2">Delete activity logs older than the specified number of days.</p>
+                    <h6>Purge Old Audit Logs</h6>
+                    <p class="text-muted small mb-2">Delete audit logs older than the specified number of days.</p>
                     <div class="input-group mb-2">
                         <input type="number" class="form-control" @bind="purgeOlderThanDays" min="30" />
                         <span class="input-group-text">days</span>
@@ -237,9 +233,6 @@
     private string statusAlertClass = "alert-info";
     private string statusIcon = "bi-info-circle";
     private List<TableStat> tableStats = new();
-
-    // Backup
-    private string backupPath = @"C:\Backups\production_system.bak";
 
     // Purge
     private int purgeOlderThanDays = 90;
@@ -352,24 +345,42 @@
 
     private async Task BackupDatabase()
     {
-        if (string.IsNullOrWhiteSpace(backupPath)) return;
-
         isLoading = true;
         StateHasChanged();
 
         try
         {
-            var dir = System.IO.Path.GetDirectoryName(backupPath);
-            if (!string.IsNullOrEmpty(dir) && !System.IO.Directory.Exists(dir))
-            {
-                System.IO.Directory.CreateDirectory(dir);
-            }
-
             using var scope = ScopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var sql = $"BACKUP DATABASE [{dbName}] TO DISK = '{backupPath}' WITH FORMAT, INIT, NAME = 'NodeSync Full Backup'";
-            await context.Database.ExecuteSqlRawAsync(sql);
-            SetStatus($"Backup created successfully at: {backupPath}", "alert-success", "bi-check-circle");
+            
+            var backupData = new 
+            {
+                Facilities = await context.Facilities.ToListAsync(),
+                Products = await context.Products.ToListAsync(),
+                Components = await context.Components.ToListAsync(),
+                ProductionPlans = await context.ProductionPlans.ToListAsync(),
+                WorkOrders = await context.WorkOrders.ToListAsync(),
+                BillOfMaterials = await context.BillOfMaterials.ToListAsync(),
+                InventoryTransactions = await context.InventoryTransactions.ToListAsync(),
+                Costs = await context.Costs.ToListAsync(),
+                EnvironmentalMonitors = await context.EnvironmentalMonitors.ToListAsync(),
+                ActivityLogs = await context.ActivityLogs.ToListAsync(),
+                Users = await context.Users.ToListAsync()
+            };
+
+            var jsonOptions = new System.Text.Json.JsonSerializerOptions { 
+                WriteIndented = true,
+                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles 
+            };
+            var json = System.Text.Json.JsonSerializer.Serialize(backupData, jsonOptions);
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+            using var stream = new System.IO.MemoryStream(bytes);
+            using var streamRef = new DotNetStreamReference(stream: stream);
+
+            var fileName = $"NodeSync_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.json";
+            await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+
+            SetStatus("Backup downloaded successfully.", "alert-success", "bi-check-circle");
         }
         catch (Exception ex)
         {
@@ -381,7 +392,7 @@
 
     private void PurgeLogs()
     {
-        confirmMessage = $"You are about to permanently delete all activity logs older than {purgeOlderThanDays} days. This will remove historical audit data.";
+        confirmMessage = $"You are about to permanently delete all audit logs older than {purgeOlderThanDays} days. This will remove historical audit data.";
         confirmInput = "";
         confirmedAction = async () =>
         {
@@ -392,7 +403,7 @@
             var oldLogs = context.ActivityLogs.Where(l => l.Timestamp < cutoff);
             context.ActivityLogs.RemoveRange(oldLogs);
             await context.SaveChangesAsync();
-            SetStatus($"Purged {count} activity logs older than {purgeOlderThanDays} days.", "alert-success", "bi-check-circle");
+            SetStatus($"Purged {count} audit logs older than {purgeOlderThanDays} days.", "alert-success", "bi-check-circle");
             await RefreshStats();
         };
         showConfirmModal = true;

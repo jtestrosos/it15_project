@@ -4,30 +4,38 @@
 @using manufacturing_system.Data
 @using manufacturing_system.Models
 
-@attribute [Authorize(Roles = "Superadmin")]
+@attribute [Authorize(Roles = "Superadmin,Administrator")]
 @inject IServiceScopeFactory ScopeFactory
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
-<PageTitle>Manage Facilities</PageTitle>
+<PageTitle>NodeSync | Facilities</PageTitle>
 
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
         <h1 class="h3 mb-0 text-gray-800">Facilities</h1>
         <p class="text-muted mb-0">Manage production facilities and sites.</p>
     </div>
-    <div class="d-flex gap-2">
-        <button class="btn btn-primary" @onclick="OpenCreateModal">
-            <i class="bi bi-plus-lg me-1"></i> New Facility
+    <div class="d-flex flex-column gap-2 align-items-end">
+        <button class="btn btn-outline-secondary" @onclick="ToggleArchivedView">
+            <i class="bi @(ShowArchived ? "bi-eye-slash" : "bi-archive") me-1"></i>
+            @(ShowArchived ? "Show Active" : "Show Archived")
         </button>
+        @if (!IsReadOnly)
+        {
+            <button class="btn btn-primary" @onclick="OpenCreateModal" disabled="@ShowArchived">
+                <i class="bi bi-plus-lg me-1"></i> New Facility
+            </button>
+        }
     </div>
 </div>
 
-@if (ShowCreateModal)
+@if (ShowCreateModal && !IsReadOnly)
 {
     <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">New Facility</h5>
+                    <h5 class="modal-title">@(IsEditing ? "Edit Facility" : "New Facility")</h5>
                     <button type="button" class="btn-close" @onclick="CloseCreateModal"></button>
                 </div>
                 <div class="modal-body">
@@ -54,7 +62,10 @@
                         
                         <div class="modal-footer px-0 pb-0">
                             <button type="button" class="btn btn-secondary" @onclick="CloseCreateModal">Cancel</button>
-                             <button type="submit" class="btn btn-primary">Create Facility</button>
+                             <button type="submit" class="btn btn-primary">
+                                <i class="bi @(IsEditing ? "bi-check-lg" : "bi-plus-lg") me-1"></i>
+                                @(IsEditing ? "Save Changes" : "Create Facility")
+                             </button>
                         </div>
                     </EditForm>
                 </div>
@@ -74,41 +85,79 @@ else
 {
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-building me-1"></i> Facilities</span>
+            <span>
+                <i class="bi bi-building me-1"></i>
+                @(ShowArchived ? "Inactive / Suspended Facilities" : "Active Facilities")
+            </span>
             <span class="badge bg-light text-dark border">@facilities.Count site(s)</span>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="ps-4">ID</th>
-                            <th>Name</th>
-                            <th>Location</th>
-                            <th>Status</th>
-                            <th class="text-center" style="width: 140px;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var f in facilities)
-                        {
+            @if (!facilities.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-2" style="opacity: 0.3;"></i>
+                    @if (ShowArchived)
+                    {
+                        <p>No inactive or suspended facilities.</p>
+                    }
+                    else
+                    {
+                        <p>No active facilities yet. Click <strong>New Facility</strong> to create one.</p>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
                             <tr>
-                                <td class="ps-4 text-muted small">#@f.FacilityID</td>
-                                <td class="fw-bold">@f.FacilityName</td>
-                                <td>@f.Location</td>
-                                <td>
-                                    <span class="badge @GetStatusBadge(f.SubscriptionStatus)">@f.SubscriptionStatus</span>
-                                </td>
-                                <td class="text-center">
-                                    <button class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                </td>
+                                <th class="ps-4">ID</th>
+                                <th>Name</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                @if (!IsReadOnly)
+                                {
+                                    <th class="text-center" style="width: 180px;">Actions</th>
+                                }
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            @foreach (var f in facilities)
+                            {
+                                <tr class="@(f.SubscriptionStatus != "Active" ? "table-light text-muted" : "")">
+                                    <td class="ps-4 text-muted small">#@f.FacilityID</td>
+                                    <td class="fw-bold">@f.FacilityName</td>
+                                    <td>@f.Location</td>
+                                    <td>
+                                        <span class="badge @GetStatusBadge(f.SubscriptionStatus)">@f.SubscriptionStatus</span>
+                                    </td>
+                                    @if (!IsReadOnly)
+                                    {
+                                        <td class="text-center">
+                                            @if (f.SubscriptionStatus == "Active")
+                                            {
+                                                <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => OpenEditModal(f)" title="Edit">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-warning" @onclick="() => ArchiveFacility(f)" title="Set Inactive">
+                                                    <i class="bi bi-archive"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-sm btn-outline-success" @onclick="() => RestoreFacility(f)" title="Restore to Active">
+                                                    <i class="bi bi-arrow-counterclockwise"></i> Restore
+                                                </button>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     </div>
 }
@@ -116,10 +165,18 @@ else
 @code {
     private List<Facility>? facilities;
     private bool ShowCreateModal = false;
+    private bool ShowArchived = false;
+    private bool IsEditing = false;
     private Facility NewFacility = new();
+    private int? editingFacilityId;
+    private bool IsReadOnly = false;
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        // Administrator gets read-only access; only Superadmin can modify
+        IsReadOnly = user.IsInRole("Administrator") && !user.IsInRole("Superadmin");
         await LoadFacilities();
     }
 
@@ -127,28 +184,104 @@ else
     {
         using var scope = ScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        facilities = await context.Facilities.ToListAsync();
+        var query = context.Facilities.AsQueryable();
+
+        if (ShowArchived)
+        {
+            query = query.Where(f => f.SubscriptionStatus == "Inactive" || f.SubscriptionStatus == "Suspended");
+        }
+        else
+        {
+            query = query.Where(f => f.SubscriptionStatus == "Active");
+        }
+
+        facilities = await query.ToListAsync();
+    }
+
+    private async Task ToggleArchivedView()
+    {
+        ShowArchived = !ShowArchived;
+        await LoadFacilities();
     }
 
     private void OpenCreateModal()
     {
         NewFacility = new Facility { SubscriptionStatus = "Active" };
+        IsEditing = false;
+        editingFacilityId = null;
+        ShowCreateModal = true;
+    }
+
+    private void OpenEditModal(Facility facility)
+    {
+        NewFacility = new Facility
+        {
+            FacilityName = facility.FacilityName,
+            Location = facility.Location,
+            SubscriptionStatus = facility.SubscriptionStatus
+        };
+        editingFacilityId = facility.FacilityID;
+        IsEditing = true;
         ShowCreateModal = true;
     }
 
     private void CloseCreateModal()
     {
         ShowCreateModal = false;
+        IsEditing = false;
+        editingFacilityId = null;
     }
 
     private async Task HandleValidSubmit()
     {
         using var scope = ScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        context.Facilities.Add(NewFacility);
-        await context.SaveChangesAsync();
+
+        if (IsEditing && editingFacilityId.HasValue)
+        {
+            var dbFacility = await context.Facilities.FindAsync(editingFacilityId.Value);
+            if (dbFacility != null)
+            {
+                dbFacility.FacilityName = NewFacility.FacilityName;
+                dbFacility.Location = NewFacility.Location;
+                dbFacility.SubscriptionStatus = NewFacility.SubscriptionStatus;
+                await context.SaveChangesAsync();
+            }
+        }
+        else
+        {
+            context.Facilities.Add(NewFacility);
+            await context.SaveChangesAsync();
+        }
+
         await LoadFacilities();
         CloseCreateModal();
+    }
+
+    private async Task ArchiveFacility(Facility facility)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbFacility = await context.Facilities.FindAsync(facility.FacilityID);
+        if (dbFacility != null)
+        {
+            dbFacility.SubscriptionStatus = "Inactive";
+            await context.SaveChangesAsync();
+            await LoadFacilities();
+        }
+    }
+
+    private async Task RestoreFacility(Facility facility)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbFacility = await context.Facilities.FindAsync(facility.FacilityID);
+        if (dbFacility != null)
+        {
+            dbFacility.SubscriptionStatus = "Active";
+            await context.SaveChangesAsync();
+            await LoadFacilities();
+        }
     }
 
     private string GetStatusBadge(string status) => status switch

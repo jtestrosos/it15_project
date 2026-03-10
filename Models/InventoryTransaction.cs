@@ -26,6 +26,7 @@ namespace manufacturing_system.Models
         [StringLength(25)]
         public string TransactionType { get; set; } = "Inbound"; // e.g., Inbound, Outbound, Adjustment
 
+        [Range(1, int.MaxValue, ErrorMessage = "Transaction quantity must be at least 1.")]
         public int Quantity { get; set; }
 
         public DateTime TransactionDate { get; set; }

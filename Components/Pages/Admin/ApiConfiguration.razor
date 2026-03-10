@@ -7,7 +7,7 @@
 @attribute [Authorize(Roles = "Superadmin")]
 @inject IServiceScopeFactory ScopeFactory
 
-<PageTitle>API Configuration</PageTitle>
+<PageTitle>NodeSync | API Configuration</PageTitle>
 
 <div class="row mb-4">
     <div class="col-md-6">
@@ -20,7 +20,7 @@
     <div class="card-body">
         <label class="form-label fw-bold">Select Facility to Configure</label>
         <select class="form-select mb-4" @bind="SelectedFacilityId">
-            <option value="0">-- Select Facility --</option>
+            <option value="0">Select Facility</option>
             @foreach (var f in facilities)
             {
                 <option value="@f.FacilityID">@f.FacilityName (@f.Location)</option>

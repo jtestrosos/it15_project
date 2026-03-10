@@ -18,6 +18,7 @@ namespace manufacturing_system.Data
         public DbSet<EnvironmentalMonitor> EnvironmentalMonitors { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
         public DbSet<ArchivedUser> ArchivedUsers { get; set; }
+        public DbSet<SystemNotification> SystemNotifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

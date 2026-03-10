@@ -28,6 +28,7 @@ namespace manufacturing_system.Models
 
         public DateTime? EndTime { get; set; }
 
+        [Range(1, int.MaxValue, ErrorMessage = "Batch quantity must be at least 1.")]
         public int BatchQuantity { get; set; }
 
         public int? FacilityID { get; set; }

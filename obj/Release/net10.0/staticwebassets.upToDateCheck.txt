@@ -46,10 +46,14 @@ wwwroot\lib\bootstrap\dist\js\bootstrap.js.map
 wwwroot\lib\bootstrap\dist\js\bootstrap.min.js
 wwwroot\lib\bootstrap\dist\js\bootstrap.min.js.map
 wwwroot\lib\chart-interop.js
+wwwroot\js\interactive-bg.js
+wwwroot\js\download.js
 Components\Account\Shared\PasskeySubmit.razor.js
 Components\Layout\ReconnectModal.razor.js
 C:\Users\james\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.3\build\..\_framework\blazor.web.js
 C:\Users\james\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.3\build\..\_framework\blazor.server.js
+C:\Users\james\codingRepos\it15Repos\production_system\wwwroot\css\account.css
+C:\Users\james\codingRepos\it15Repos\production_system\wwwroot\js\download.js
 C:\Users\james\codingRepos\it15Repos\production_system\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css
 C:\Users\james\codingRepos\it15Repos\production_system\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.css.map
 C:\Users\james\codingRepos\it15Repos\production_system\wwwroot\lib\bootstrap\dist\css\bootstrap-grid.min.css
@@ -99,5 +103,5 @@ C:\Users\james\codingRepos\it15Repos\production_system\Components\Account\Shared
 C:\Users\james\codingRepos\it15Repos\production_system\Components\Layout\ReconnectModal.razor.js
 C:\Users\james\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.3\_framework\blazor.web.js
 C:\Users\james\.nuget\packages\microsoft.aspnetcore.app.internal.assets\10.0.3\_framework\blazor.server.js
-C:\Users\james\codingRepos\it15Repos\production_system\wwwroot\css\account.css
 C:\Users\james\codingRepos\it15Repos\production_system\wwwroot\app.css
+C:\Users\james\codingRepos\it15Repos\production_system\wwwroot\js\interactive-bg.js

@@ -17,13 +17,15 @@
 }
 
 .top-row[b-3nr08vm7lu] {
+    border-bottom: none; 
     min-height: 3rem;
     background: transparent;
+    border: none;
 }
 
 .navbar-brand[b-3nr08vm7lu] {
-    font-size: 1rem;
-    color: var(--ns-primary) !important;
+    font-size: 1.4rem;
+    color: #1e1b4b !important;
 }
 
 .bi[b-3nr08vm7lu] {

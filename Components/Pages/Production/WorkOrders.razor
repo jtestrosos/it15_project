@@ -5,20 +5,24 @@
 @using manufacturing_system.Data
 @using manufacturing_system.Models
 
-@attribute [Authorize(Roles = "ProductionManager")]
+@attribute [Authorize(Roles = "ProductionManager,Superadmin")]
 @inject IServiceScopeFactory ScopeFactory
 @inject UserManager<ApplicationUser> UserManager
 @inject NavigationManager NavigationManager
 
-<PageTitle>Work Orders</PageTitle>
+<PageTitle>NodeSync | Work Orders</PageTitle>
 
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
         <h1 class="h3 mb-0 text-gray-800">Work Orders</h1>
         <p class="text-muted mb-0">Assign production tasks to workers.</p>
     </div>
-    <div class="d-flex gap-2">
-        <button class="btn btn-primary" @onclick="OpenCreateModal">
+    <div class="d-flex flex-column gap-2 align-items-end">
+        <button class="btn btn-outline-secondary" @onclick="ToggleArchivedView">
+            <i class="bi @(ShowArchived ? "bi-eye-slash" : "bi-archive") me-1"></i>
+            @(ShowArchived ? "Show Active" : "Show Archived")
+        </button>
+        <button class="btn btn-primary" @onclick="OpenCreateModal" disabled="@ShowArchived">
             <i class="bi bi-plus-lg me-1"></i> New Work Order
         </button>
     </div>
@@ -41,7 +45,7 @@
                         <div class="mb-3">
                             <label class="form-label">Production Plan</label>
                             <InputSelect class="form-select" @bind-Value="NewOrder.PlanID">
-                                <option value="0">-- Select Plan --</option>
+                                <option value="0">Select Plan</option>
                                 @foreach (var p in plans)
                                 {
                                     <option value="@p.PlanID">#@p.PlanID - @p.Product?.ProductName (@p.BatchQuantity)</option>
@@ -51,7 +55,7 @@
                         <div class="mb-3">
                             <label class="form-label">Assign To Worker</label>
                             <InputSelect class="form-select" @bind-Value="NewOrder.UserID">
-                                <option value="">-- Select Worker --</option>
+                                <option value="">Select Worker</option>
                                 @foreach (var w in workers)
                                 {
                                     <option value="@w.Id">@w.UserName</option>
@@ -89,62 +93,103 @@ else
 {
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-list-task me-1"></i> Work Orders</span>
+            <span>
+                <i class="bi bi-list-task me-1"></i>
+                @(ShowArchived ? "Archived Work Orders" : "Active Work Orders")
+            </span>
             <span class="badge bg-light text-dark border">@orders.Count item(s)</span>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="ps-4">ID</th>
-                            <th>Description</th>
-                            <th>Product</th>
-                            <th>Worker</th>
-                            <th>Status</th>
-                            <th>Progress</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var order in orders)
-                        {
+            @if (!orders.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-2" style="opacity: 0.3;"></i>
+                    @if (ShowArchived)
+                    {
+                        <p>No archived work orders.</p>
+                    }
+                    else
+                    {
+                        <p>No active work orders yet. Click <strong>New Work Order</strong> to create one.</p>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
                             <tr>
-                                <td class="ps-4 text-muted small">#@order.OrderID</td>
-                                <td class="fw-bold">@order.OrderDescription</td>
-                                <td>@order.Plan?.Product?.ProductName</td>
-                                <td>
-                                    <span class="badge bg-light text-dark border">
-                                        <i class="bi bi-person me-1"></i> @order.User?.UserName
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge @GetStatusBadge(order.Status)">@order.Status</span>
-                                </td>
-                                <td>
-                                    @if(order.Status == "Completed")
-                                    {
-                                        <div class="progress" style="height: 6px; width: 100px;">
-                                            <div class="progress-bar bg-success" role="progressbar" style="width: 100%"></div>
-                                        </div>
-                                    }
-                                    else if (order.Status == "In Progress")
-                                    {
-                                        <div class="progress" style="height: 6px; width: 100px;">
-                                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" role="progressbar" style="width: 50%"></div>
-                                        </div>
-                                    }
-                                    else 
-                                    {
-                                        <div class="progress" style="height: 6px; width: 100px;">
-                                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
-                                        </div>
-                                    }
-                                </td>
+                                <th class="ps-4">ID</th>
+                                <th>Description</th>
+                                <th>Product</th>
+                                <th>Worker</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                                <th class="text-center" style="width: 120px;">Actions</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in orders)
+                            {
+                                <tr class="@(IsArchivedStatus(order.Status) ? "table-light text-muted" : "")">
+                                    <td class="ps-4 text-muted small">#@order.OrderID</td>
+                                    <td class="fw-bold">@order.OrderDescription</td>
+                                    <td>@order.Plan?.Product?.ProductName</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="bi bi-person me-1"></i> @order.User?.UserName
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetStatusBadge(order.Status)">@order.Status</span>
+                                    </td>
+                                    <td>
+                                        @if(order.Status == "Completed")
+                                        {
+                                            <div class="progress" style="height: 6px; width: 100px;">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: 100%"></div>
+                                            </div>
+                                        }
+                                        else if (order.Status == "In Progress")
+                                        {
+                                            <div class="progress" style="height: 6px; width: 100px;">
+                                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 50%"></div>
+                                            </div>
+                                        }
+                                        else if (order.Status == "Failed" || order.Status == "Canceled")
+                                        {
+                                            <div class="progress" style="height: 6px; width: 100px;">
+                                                <div class="progress-bar bg-danger" role="progressbar" style="width: 100%"></div>
+                                            </div>
+                                        }
+                                        else 
+                                        {
+                                            <div class="progress" style="height: 6px; width: 100px;">
+                                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (!IsArchivedStatus(order.Status))
+                                        {
+                                            <button class="btn btn-sm btn-outline-warning" @onclick="() => ArchiveOrder(order)" title="Archive">
+                                                <i class="bi bi-archive"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-outline-success" @onclick="() => RestoreOrder(order)" title="Restore">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     </div>
 }
@@ -154,9 +199,13 @@ else
     private List<ProductionPlan> plans = new();
     private IList<ApplicationUser> workers = new List<ApplicationUser>();
     private bool ShowCreateModal = false;
+    private bool ShowArchived = false;
     private WorkOrder NewOrder = new();
     private int? userFacilityId;
     private bool isSuperAdmin;
+    private string? currentUserId;
+
+    private static readonly string[] ArchivedStatuses = { "Completed", "Canceled", "Failed" };
 
     [Inject] private manufacturing_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
 
@@ -164,6 +213,7 @@ else
     {
         isSuperAdmin = await FacilityAccess.IsSuperAdminAsync();
         userFacilityId = await FacilityAccess.GetCurrentUserFacilityIdAsync();
+        currentUserId = await FacilityAccess.GetCurrentUserIdAsync();
         await LoadData();
     }
 
@@ -201,8 +251,25 @@ else
             orderQuery = orderQuery.Where(o => o.FacilityID == userFacilityId.Value);
         }
 
+        if (ShowArchived)
+        {
+            orderQuery = orderQuery.Where(o => ArchivedStatuses.Contains(o.Status));
+        }
+        else
+        {
+            orderQuery = orderQuery.Where(o => !ArchivedStatuses.Contains(o.Status));
+        }
+
         orders = await orderQuery.ToListAsync();
     }
+
+    private async Task ToggleArchivedView()
+    {
+        ShowArchived = !ShowArchived;
+        await LoadData();
+    }
+
+    private bool IsArchivedStatus(string status) => ArchivedStatuses.Contains(status);
 
     private void OpenCreateModal()
     {
@@ -224,15 +291,91 @@ else
         NewOrder.FacilityID = userFacilityId;
         context.WorkOrders.Add(NewOrder);
         await context.SaveChangesAsync();
+        
+        var log = new manufacturing_system.Models.ActivityLog
+        {
+            UserID = currentUserId ?? "",
+            ActionType = "Create Work Order",
+            Details = $"Created new Work Order for Plan #{NewOrder.PlanID}",
+            Timestamp = DateTime.Now,
+            FacilityID = userFacilityId
+        };
+        context.ActivityLogs.Add(log);
+
+        var notification = new manufacturing_system.Models.SystemNotification
+        {
+            FacilityID = userFacilityId,
+            UserID = NewOrder.UserID,
+            Title = $"New Task Assigned: #{NewOrder.OrderID}",
+            Message = $"You've been assigned a new task: \"{NewOrder.OrderDescription}\".",
+            Category = "WorkOrder",
+            Severity = "Info",
+            LinkUrl = "/tasks/assigned",
+            CreatedAt = DateTime.UtcNow
+        };
+        context.SystemNotifications.Add(notification);
+
+        await context.SaveChangesAsync();
+
         await LoadData();
         CloseCreateModal();
+    }
+
+    private async Task ArchiveOrder(WorkOrder order)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbOrder = await context.WorkOrders.FindAsync(order.OrderID);
+        if (dbOrder != null)
+        {
+            dbOrder.Status = "Canceled";
+            
+            var log = new manufacturing_system.Models.ActivityLog
+            {
+                UserID = currentUserId ?? "",
+                ActionType = "Archive Work Order",
+                Details = $"Archived Work Order #{order.OrderID}",
+                Timestamp = DateTime.Now,
+                FacilityID = userFacilityId
+            };
+            context.ActivityLogs.Add(log);
+
+            await context.SaveChangesAsync();
+            await LoadData();
+        }
+    }
+
+    private async Task RestoreOrder(WorkOrder order)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbOrder = await context.WorkOrders.FindAsync(order.OrderID);
+        if (dbOrder != null)
+        {
+            dbOrder.Status = "Pending";
+            
+            var log = new manufacturing_system.Models.ActivityLog
+            {
+                UserID = currentUserId ?? "",
+                ActionType = "Restore Work Order",
+                Details = $"Restored Work Order #{order.OrderID}",
+                Timestamp = DateTime.Now,
+                FacilityID = userFacilityId
+            };
+            context.ActivityLogs.Add(log);
+
+            await context.SaveChangesAsync();
+            await LoadData();
+        }
     }
 
     private string GetStatusBadge(string status) => status switch
     {
         "Completed" => "bg-success",
-        "In Progress" => "bg-warning text-dark",
-        "Pending" => "bg-secondary",
+        "In Progress" => "bg-primary",
+        "Pending" => "bg-warning text-dark",
+        "Canceled" => "bg-danger",
+        "Failed" => "bg-danger",
         _ => "bg-light text-dark border"
     };
 }

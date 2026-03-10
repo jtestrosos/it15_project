@@ -5,34 +5,30 @@ namespace manufacturing_system.Services
 {
     public interface IWeatherService
     {
-        Task<WeatherData?> GetCurrentWeatherAsync(string location);
+        Task<WeatherData?> GetCurrentWeatherAsync(string location, string apiKey);
     }
 
     public class WeatherService : IWeatherService
     {
         private readonly HttpClient _httpClient;
-        private readonly string _apiKey;
         private readonly string _baseUrl;
         private readonly ILogger<WeatherService> _logger;
 
         public WeatherService(HttpClient httpClient, IConfiguration configuration, ILogger<WeatherService> logger)
         {
             _httpClient = httpClient;
-            _apiKey = configuration["ApiSettings:OpenWeatherApiKey"] ?? "";
             _baseUrl = configuration["ApiSettings:OpenWeatherBaseUrl"] ?? "https://api.openweathermap.org/data/2.5";
             _logger = logger;
         }
 
-        public async Task<WeatherData?> GetCurrentWeatherAsync(string location)
+        public async Task<WeatherData?> GetCurrentWeatherAsync(string location, string apiKey)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(location))
-                {
-                    location = "Davao City,PH"; // Default location
-                }
+                if (string.IsNullOrWhiteSpace(apiKey)) return null;
+                if (string.IsNullOrWhiteSpace(location)) return null;
 
-                var url = $"{_baseUrl}/weather?q={Uri.EscapeDataString(location)}&appid={_apiKey}&units=metric";
+                var url = $"{_baseUrl}/weather?q={Uri.EscapeDataString(location)}&appid={apiKey}&units=metric";
                 
                 var response = await _httpClient.GetAsync(url);
                 
@@ -90,7 +86,18 @@ namespace manufacturing_system.Services
             if (Temperature > 35) return "Warning";
             if (Temperature < 10) return "Cold Warning";
             if (Humidity > 80) return "High Humidity";
+            if (Humidity < 40 || Humidity > 60) return "Warning";
             return "Normal";
+        }
+
+        public string GetAlertSubtitle()
+        {
+            if (Temperature > 40) return "Temperature at critical/dangerous levels.";
+            if (Temperature > 35) return "Temperature exceeds safe operating limits.";
+            if (Temperature < 10) return "Cold temperature warning.";
+            if (Humidity > 80) return "Humidity exceeds safe threshold.";
+            if (Humidity < 40 || Humidity > 60) return "Humidity exceeds safe threshold.";
+            return $"Wind: {WindSpeed} m/s";
         }
 
         public string IconUrl => $"https://openweathermap.org/img/wn/{Icon}@2x.png";
