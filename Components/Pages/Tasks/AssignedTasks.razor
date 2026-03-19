@@ -1,0 +1,363 @@
+@page "/tasks/assigned"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+
+@attribute [Authorize(Roles = "ProductionWorker,Superadmin")]
+@inject IServiceScopeFactory ScopeFactory
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>NodeSync | @(isSuperadmin ? "Worker Tasks" : "My Work Orders")</PageTitle>
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">@(isSuperadmin ? "Worker Tasks" : "My Work Orders")</h1>
+            <p class="text-muted">Manage your daily production work orders.</p>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="d-flex justify-content-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (!workOrders.Any())
+    {
+        <div class="alert alert-info shadow-sm border-0 d-flex align-items-center">
+            <i class="bi bi-info-circle-fill me-3 fs-4"></i>
+            <div>
+                @if (isSuperadmin)
+                {
+                    <strong>No tasks found!</strong>
+                    <p class="mb-0">There are currently no work orders in the system.</p>
+                }
+                else
+                {
+                    <strong>No tasks assigned!</strong>
+                    <p class="mb-0">You currently don't have any active work orders. Please check with your manager.</p>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var order in workOrders)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm task-card @GetStatusClass(order.Status)">
+                        <div class="card-header bg-transparent border-0 pt-3 pb-0 d-flex justify-content-between align-items-start">
+                            <span class="badge @GetBadgeClass(order.Status) rounded-pill">@order.Status</span>
+                            <small class="text-muted fw-bold">#@order.OrderID</small>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title fw-bold mb-1">@order.Plan?.Product?.ProductName</h5>
+                            <p class="text-muted small mb-3">@order.OrderDescription</p>
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted small"><i class="bi bi-building me-1"></i> Batch Qty:</span>
+                                <span class="fw-bold text-dark">@order.BatchQuantity Units</span>
+                            </div>
+
+                            @if (isSuperadmin)
+                            {
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted small"><i class="bi bi-person me-1"></i> Worker:</span>
+                                    <span class="text-dark small">@(order.User != null ? $"{order.User.FirstName} {order.User.LastName}" : "Unassigned")</span>
+                                </div>
+                            }
+                            
+                             @if (order.StartTime.HasValue)
+                            {
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted small"><i class="bi bi-clock me-1"></i> Started:</span>
+                                    <span class="text-dark small">@order.StartTime.Value.ToString("g")</span>
+                                </div>
+                            }
+                            
+                            @if (order.EndTime.HasValue)
+                            {
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted small"><i class="bi bi-check-circle me-1"></i> Ended:</span>
+                                    <span class="text-dark small">@order.EndTime.Value.ToString("g")</span>
+                                </div>
+                            }
+                        </div>
+                        <div class="card-footer bg-transparent border-0 pb-3 pt-0">
+                            @if (order.Status == "Pending")
+                            {
+                                <button class="btn btn-warning w-100 fw-bold text-white" @onclick="() => ConfirmStartTask(order)">
+                                    <i class="bi bi-play-fill me-1"></i> Start Work
+                                </button>
+                            }
+                            else if (order.Status == "In Progress")
+                            {
+                                <button class="btn w-100 fw-bold text-white" style="background-color: var(--ns-primary, #8F00FF);" @onclick="() => ConfirmCompleteTask(order)">
+                                    <i class="bi bi-check-lg me-1"></i> Complete Task
+                                </button>
+                            }
+                            else if (order.Status == "Completed")
+                            {
+                                <button class="btn btn-outline-success w-100 fw-bold" disabled style="background-color: transparent; border-color: #00D100; color: #00D100;">
+                                    <i class="bi bi-check2-all me-1"></i> Completed
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@if (showConfirmModal && orderToUpdate != null)
+{
+    <div class="modal fade show d-block" style="background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px);" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-header border-0 text-white @(modalAction == "Start" ? "bg-warning" : "")" style="@(modalAction == "Complete" ? "background-color: var(--ns-primary, #8F00FF);" : "")">
+                    <h5 class="modal-title fw-bold text-white">
+                        <i class="bi @(modalAction == "Start" ? "bi-play-circle-fill" : "bi-check-circle-fill") me-2 text-white"></i>
+                        Confirm @modalAction Task
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <div class="mb-3">
+                        <i class="bi @(modalAction == "Start" ? "bi-rocket-takeoff text-warning" : "bi-check2-square")" style="font-size: 3rem; @(modalAction == "Complete" ? "color: var(--ns-primary, #8F00FF);" : "")"></i>
+                    </div>
+                    <h5 class="fs-4 text-dark mb-3">Are you sure you want to <strong>@modalAction.ToLower()</strong> this task?</h5>
+                    <div class="card bg-light border-0 text-start shadow-sm mx-auto" style="max-width: 350px;">
+                        <div class="card-body p-3">
+                            <div class="fw-bold fs-5 text-dark mb-1">@orderToUpdate.Plan?.Product?.ProductName</div>
+                            <div class="text-secondary small d-flex align-items-center">
+                                <i class="bi bi-box-seam me-2"></i> @orderToUpdate.BatchQuantity Units
+                            </div>
+                            <div class="text-secondary small d-flex align-items-center mt-1">
+                                <i class="bi bi-card-text me-2"></i> @orderToUpdate.OrderDescription
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0 d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-light px-4 fw-bold text-secondary" @onclick="CloseModal">Cancel</button>
+                    <button type="button" class="btn @(modalAction == "Start" ? "btn-warning" : "") text-white px-4 fw-bold shadow-sm" style="@(modalAction == "Complete" ? "background-color: var(--ns-primary, #8F00FF);" : "")" @onclick="HandleConfirm">
+                        Yes, @modalAction
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .task-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+        border-radius: 0.75rem;
+    }
+    .task-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.12) !important;
+    }
+    .task-card.status-pending { 
+        border: 1px solid rgba(242, 133, 0, 0.2) !important;
+        border-left: 5px solid #F28500 !important;
+        background-color: #fffbeb;
+    }
+    .task-card.status-pending .card-title { color: #92400e; }
+    
+    .task-card.status-inprogress { 
+        border: 1px solid rgba(143, 0, 255, 0.2) !important;
+        border-left: 5px solid var(--ns-primary, #8F00FF) !important;
+        background-color: #faf5ff;
+    }
+    .task-card.status-inprogress .card-title { color: #4c0080; }
+
+    .task-card.status-completed { 
+        border: 1px solid rgba(0, 209, 0, 0.2) !important;
+        border-left: 5px solid #00D100 !important;
+        background-color: #ffffff;
+    }
+    .task-card.status-completed .card-title { color: #065f46; }
+    
+    /* Enhance contrast of inner text */
+    .task-card .text-muted {
+        color: #696969 !important;
+    }
+    .task-card .text-dark {
+        color: #0f172a !important;
+        font-weight: 600;
+    }
+</style>
+
+@code {
+    private List<WorkOrder> workOrders = new();
+    private bool isLoading = true;
+    private string? userId;
+    private bool isSuperadmin = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        isSuperadmin = user.IsInRole("Superadmin");
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            await LoadTasks();
+        }
+        else
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadTasks()
+    {
+        if (string.IsNullOrEmpty(userId)) return;
+
+        isLoading = true;
+        try 
+        {
+            workOrders = await LoadOrdersFromDb();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task<List<WorkOrder>> LoadOrdersFromDb()
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        
+        var query = context.WorkOrders
+            .Include(w => w.Plan)
+            .ThenInclude(p => p.Product)
+            .Include(w => w.User)
+            .AsQueryable();
+
+        if (!isSuperadmin)
+        {
+            query = query.Where(w => w.UserID == userId);
+        }
+
+        return await query
+            .OrderByDescending(w => w.Status == "In Progress")
+            .ThenByDescending(w => w.Status == "Pending")
+            .ThenByDescending(w => w.OrderID)
+            .ToListAsync();
+    }
+
+    private WorkOrder? orderToUpdate = null;
+    private string modalAction = "";
+    private bool showConfirmModal = false;
+
+    private void ConfirmStartTask(WorkOrder order)
+    {
+        orderToUpdate = order;
+        modalAction = "Start";
+        showConfirmModal = true;
+    }
+
+    private void ConfirmCompleteTask(WorkOrder order)
+    {
+        orderToUpdate = order;
+        modalAction = "Complete";
+        showConfirmModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showConfirmModal = false;
+        orderToUpdate = null;
+    }
+
+    private async Task HandleConfirm()
+    {
+        if (orderToUpdate == null) return;
+        
+        if (modalAction == "Start")
+        {
+            await StartTask(orderToUpdate);
+        }
+        else if (modalAction == "Complete")
+        {
+            await CompleteTask(orderToUpdate);
+        }
+        
+        CloseModal();
+    }
+
+    private async Task StartTask(WorkOrder order)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbOrder = await context.WorkOrders.FindAsync(order.OrderID);
+        if (dbOrder == null) return;
+        dbOrder.Status = "In Progress";
+        dbOrder.StartTime = DateTime.Now;
+        
+        var log = new ActivityLog
+        {
+            UserID = userId ?? "",
+            ActionType = "Task Started",
+            Details = $"Started work on Order #{order.OrderID}: {order.OrderDescription}",
+            Timestamp = DateTime.Now,
+            FacilityID = order.FacilityID
+        };
+        context.ActivityLogs.Add(log);
+        
+        await context.SaveChangesAsync();
+        order.Status = dbOrder.Status;
+        order.StartTime = dbOrder.StartTime;
+    }
+
+    private async Task CompleteTask(WorkOrder order)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbOrder = await context.WorkOrders.FindAsync(order.OrderID);
+        if (dbOrder == null) return;
+        dbOrder.Status = "Completed";
+        dbOrder.EndTime = DateTime.Now;
+
+        var log = new ActivityLog
+        {
+            UserID = userId ?? "",
+            ActionType = "Task Completed",
+            Details = $"Completed work on Order #{order.OrderID}: {order.OrderDescription}",
+            Timestamp = DateTime.Now,
+            FacilityID = order.FacilityID
+        };
+        context.ActivityLogs.Add(log);
+
+        await context.SaveChangesAsync();
+        workOrders = await LoadOrdersFromDb();
+    }
+
+    private string GetStatusClass(string status) => status switch
+    {
+        "Pending" => "status-pending",
+        "In Progress" => "status-inprogress",
+        "Completed" => "status-completed",
+        _ => ""
+    };
+
+    private string GetBadgeClass(string status) => status switch
+    {
+        "Pending" => "bg-warning text-white fw-bold",
+        "In Progress" => "bg-primary text-white shadow-sm fw-bold",
+        "Completed" => "bg-success text-white fw-bold",
+        _ => "bg-secondary fw-bold"
+    };
+}

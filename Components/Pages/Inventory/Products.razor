@@ -1,0 +1,309 @@
+@page "/inventory/products"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+
+@attribute [Authorize(Roles = "ProductionManager,Superadmin")]
+@inject IServiceScopeFactory ScopeFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>NodeSync | Product Catalog</PageTitle>
+
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">Product Catalog</h1>
+        <p class="text-muted mb-0">Manage finished goods used in production plans and BOM.</p>
+    </div>
+    <div class="d-flex flex-column gap-2 align-items-end">
+        <button class="btn btn-outline-secondary" @onclick="ToggleArchivedView">
+            <i class="bi @(ShowArchived ? "bi-eye-slash" : "bi-archive") me-1"></i>
+            @(ShowArchived ? "Show Active" : "Show Archived")
+        </button>
+        <button class="btn btn-primary" @onclick="OpenCreateModal" disabled="@ShowArchived">
+            <i class="bi bi-plus-lg me-1"></i> Add Product
+        </button>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-search text-muted"></i>
+            <input type="text" class="form-control form-control-sm border-0" placeholder="Search products by name or description..."
+                   @bind="searchTerm" @bind:event="oninput" />
+            @if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                <button class="btn btn-sm btn-outline-secondary" @onclick="() => searchTerm = string.Empty">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Create / Edit Modal -->
+@if (ShowModal)
+{
+    <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(IsEditing ? "Edit Product" : "New Product")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="FormProduct" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="mb-3">
+                            <label class="form-label">Product Name <span class="text-danger">*</span></label>
+                            <InputText class="form-control" @bind-Value="FormProduct.ProductName" placeholder="e.g. PCB Assembly Unit A" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <InputTextArea class="form-control" @bind-Value="FormProduct.Description" rows="3"
+                                           placeholder="Brief description of the product..." />
+                        </div>
+
+                        <div class="modal-footer px-0 pb-0">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi @(IsEditing ? "bi-check-lg" : "bi-plus-lg") me-1"></i>
+                                @(IsEditing ? "Save Changes" : "Add Product")
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Product List -->
+@if (products == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3 text-muted">Loading products...</p>
+    </div>
+}
+else
+{
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>
+                <i class="bi bi-grid me-1"></i>
+                @(ShowArchived ? "Archived Products" : "Active Products")
+            </span>
+            <span class="badge bg-light text-dark border">@FilteredProducts.Count item(s)</span>
+        </div>
+        <div class="card-body p-0">
+            @if (!FilteredProducts.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-2" style="opacity: 0.3;"></i>
+                    @if (!string.IsNullOrWhiteSpace(searchTerm))
+                    {
+                        <p>No products match "<strong>@searchTerm</strong>".</p>
+                    }
+                    else if (ShowArchived)
+                    {
+                        <p>No archived products.</p>
+                    }
+                    else
+                    {
+                        <p>No products yet. Click <strong>Add Product</strong> to create one.</p>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Product Name</th>
+                                <th>Description</th>
+                                <th class="text-center" style="width: 140px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var product in FilteredProducts)
+                            {
+                                <tr class="@(product.IsArchived ? "table-light text-muted" : "")">
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="d-flex align-items-center justify-content-center rounded"
+                                                 style="width: 32px; height: 32px; background: rgba(143,0,255,0.08); flex-shrink: 0;">
+                                                <i class="bi bi-grid text-primary" style="font-size: 0.875rem;"></i>
+                                            </div>
+                                            <div>
+                                                <span class="fw-bold">@product.ProductName</span>
+                                                <div class="text-muted" style="font-size: 0.7rem;">ID: @product.ProductID</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-muted">@(string.IsNullOrWhiteSpace(product.Description) ? "—" : product.Description)</td>
+                                    <td class="text-center">
+                                        @if (!product.IsArchived)
+                                        {
+                                            <button class="btn btn-sm btn-outline-secondary me-1" @onclick="() => OpenEditModal(product)" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-warning" @onclick="() => ArchiveProduct(product)" title="Archive">
+                                                <i class="bi bi-archive"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-outline-success" @onclick="() => RestoreProduct(product)" title="Restore">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private List<Product>? products;
+    private bool ShowModal = false;
+    private bool IsEditing = false;
+    private bool ShowArchived = false;
+    private string searchTerm = string.Empty;
+    private Product FormProduct = new();
+    private int? editingProductId;
+    private int? userFacilityId;
+    private bool isSuperAdmin;
+
+    [Inject] private manufacturing_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
+
+    private List<Product> FilteredProducts =>
+        (products ?? new())
+            .Where(p => string.IsNullOrWhiteSpace(searchTerm)
+                || p.ProductName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+                || (p.Description ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(p => p.ProductName)
+            .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        isSuperAdmin = await FacilityAccess.IsSuperAdminAsync();
+        userFacilityId = await FacilityAccess.GetCurrentUserFacilityIdAsync();
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var query = context.Products.AsQueryable();
+
+        if (!isSuperAdmin && userFacilityId.HasValue)
+        {
+            query = query.Where(p => p.FacilityID == userFacilityId.Value);
+        }
+
+        if (ShowArchived)
+            query = query.Where(p => p.IsArchived);
+        else
+            query = query.Where(p => !p.IsArchived);
+
+        products = await query.ToListAsync();
+    }
+
+    private void OpenCreateModal()
+    {
+        FormProduct = new Product();
+        IsEditing = false;
+        editingProductId = null;
+        ShowModal = true;
+    }
+
+    private void OpenEditModal(Product product)
+    {
+        FormProduct = new Product
+        {
+            ProductName = product.ProductName,
+            Description = product.Description
+        };
+        editingProductId = product.ProductID;
+        IsEditing = true;
+        ShowModal = true;
+    }
+
+    private void CloseModal()
+    {
+        ShowModal = false;
+        IsEditing = false;
+        editingProductId = null;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        if (IsEditing && editingProductId.HasValue)
+        {
+            var dbProduct = await context.Products.FindAsync(editingProductId.Value);
+            if (dbProduct != null)
+            {
+                dbProduct.ProductName = FormProduct.ProductName;
+                dbProduct.Description = FormProduct.Description;
+                await context.SaveChangesAsync();
+            }
+        }
+        else
+        {
+            FormProduct.FacilityID = userFacilityId;
+            FormProduct.IsArchived = false;
+            context.Products.Add(FormProduct);
+            await context.SaveChangesAsync();
+        }
+
+        await LoadProducts();
+        CloseModal();
+    }
+
+    private async Task ArchiveProduct(Product product)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbProduct = await context.Products.FindAsync(product.ProductID);
+        if (dbProduct != null)
+        {
+            dbProduct.IsArchived = true;
+            await context.SaveChangesAsync();
+        }
+        await LoadProducts();
+    }
+
+    private async Task RestoreProduct(Product product)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbProduct = await context.Products.FindAsync(product.ProductID);
+        if (dbProduct != null)
+        {
+            dbProduct.IsArchived = false;
+            await context.SaveChangesAsync();
+        }
+        await LoadProducts();
+    }
+
+    private async Task ToggleArchivedView()
+    {
+        ShowArchived = !ShowArchived;
+        await LoadProducts();
+    }
+}

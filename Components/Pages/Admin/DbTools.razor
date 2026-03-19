@@ -1,0 +1,464 @@
+@page "/admin/db-tools"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using manufacturing_system.Data
+@using manufacturing_system.Models
+@using Microsoft.Data.SqlClient
+
+@attribute [Authorize(Roles = "Superadmin")]
+@inject IServiceScopeFactory ScopeFactory
+@inject IConfiguration Configuration
+@inject IJSRuntime JS
+
+<PageTitle>NodeSync | Database Tools</PageTitle>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1 class="h3 mb-0 text-gray-800">Database Tools</h1>
+        <p class="text-muted">Manage, monitor, and maintain your database.</p>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert @statusAlertClass alert-dismissible fade show" role="alert">
+        <i class="bi @statusIcon me-2"></i>@statusMessage
+        <button type="button" class="btn-close" @onclick="() => statusMessage = null"></button>
+    </div>
+}
+
+<!-- Database Overview Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-2">
+                    <i class="bi bi-server fs-1 text-primary"></i>
+                </div>
+                <h5 class="card-title">Connection</h5>
+                <p class="mb-1">
+                    @if (isConnected)
+                    {
+                        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Connected</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Disconnected</span>
+                    }
+                </p>
+                <small class="text-muted">@dbName</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-2">
+                    <i class="bi bi-hdd-stack fs-1 text-info"></i>
+                </div>
+                <h5 class="card-title">Database Size</h5>
+                <p class="fs-4 fw-bold mb-0">@dbSizeMB</p>
+                <small class="text-muted">Total size in MB</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-2">
+                    <i class="bi bi-table fs-1 text-success"></i>
+                </div>
+                <h5 class="card-title">Total Tables</h5>
+                <p class="fs-4 fw-bold mb-0">@tableStats.Count</p>
+                <small class="text-muted">User tables</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Table Statistics -->
+<div class="card shadow mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Table Statistics</h5>
+        <button class="btn btn-sm btn-outline-primary" @onclick="RefreshStats" disabled="@isLoading">
+            <i class="bi bi-arrow-clockwise @(isLoading ? "spin" : "") me-1"></i>Refresh
+        </button>
+    </div>
+    <div class="card-body p-0">
+        @if (tableStats.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Table Name</th>
+                            <th class="text-end">Row Count</th>
+                            <th class="text-end">Size (KB)</th>
+                            <th class="text-end pe-4">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var table in tableStats.OrderByDescending(t => t.RowCount))
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <i class="bi bi-table text-muted me-2"></i>
+                                    <span class="fw-medium">@table.TableName</span>
+                                </td>
+                                <td class="text-end">@table.RowCount.ToString("N0")</td>
+                                <td class="text-end">@table.SizeKB.ToString("N0")</td>
+                                <td class="text-end pe-4">
+                                    @if (table.RowCount > 0)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Empty</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-info-circle me-1"></i>No table data available.
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Database Actions -->
+<div class="row g-4 mb-4">
+    <!-- Backup -->
+    <div class="col-md-6">
+        <div class="card shadow h-100">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-download me-2"></i>Download Database Backup</h5>
+            </div>
+            <div class="card-body d-flex flex-column justify-content-center">
+                <p class="text-muted small">Generate and download a complete JSON backup of the current database directly to your local machine.</p>
+                <button class="btn btn-primary w-100 mt-2" @onclick="BackupDatabase" disabled="@(isLoading)">
+                    <i class="bi bi-cloud-download me-2"></i>Download Backup (.json)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="col-md-6">
+        <div class="card shadow h-100 border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Danger Zone</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">These actions are irreversible. Make sure you have a backup before proceeding.</p>
+
+                <div class="mb-3">
+                    <h6>Purge Old Audit Logs</h6>
+                    <p class="text-muted small mb-2">Delete audit logs older than the specified number of days.</p>
+                    <div class="input-group mb-2">
+                        <input type="number" class="form-control" @bind="purgeOlderThanDays" min="30" />
+                        <span class="input-group-text">days</span>
+                    </div>
+                    <button class="btn btn-outline-danger w-100" @onclick="PurgeLogs" disabled="@isLoading">
+                        <i class="bi bi-trash me-1"></i>Purge Logs
+                    </button>
+                </div>
+
+                <hr />
+
+                <div>
+                    <h6>Clear All Environmental Readings</h6>
+                    <p class="text-muted small mb-2">Remove all environmental monitoring data from the database.</p>
+                    <button class="btn btn-outline-danger w-100" @onclick="ClearEnvironmentalData" disabled="@isLoading">
+                        <i class="bi bi-thermometer me-1"></i>Clear Readings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+@if (showConfirmModal)
+{
+    <div class="modal fade show d-block" style="background: rgba(0,0,0,0.5);" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Confirm Action</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => showConfirmModal = false"></button>
+                </div>
+                <div class="modal-body">
+                    <p>@confirmMessage</p>
+                    <p class="fw-bold text-danger">This action cannot be undone.</p>
+                    <div class="mb-3">
+                        <label class="form-label">Type <strong>CONFIRM</strong> to proceed:</label>
+                        <input type="text" class="form-control" @bind="confirmInput" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="() => showConfirmModal = false">Cancel</button>
+                    <button class="btn btn-danger" @onclick="ExecuteConfirmedAction" disabled="@(confirmInput != "CONFIRM")">
+                        <i class="bi bi-check-lg me-1"></i>Execute
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .spin {
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+
+@code {
+    private bool isConnected = false;
+    private bool isLoading = false;
+    private string dbName = "Unknown";
+    private string dbSizeMB = "--";
+    private string? statusMessage;
+    private string statusAlertClass = "alert-info";
+    private string statusIcon = "bi-info-circle";
+    private List<TableStat> tableStats = new();
+
+    // Purge
+    private int purgeOlderThanDays = 90;
+
+    // Confirm modal
+    private bool showConfirmModal = false;
+    private string confirmMessage = "";
+    private string confirmInput = "";
+    private Func<Task>? confirmedAction;
+
+    private class TableStat
+    {
+        public string TableName { get; set; } = "";
+        public long RowCount { get; set; }
+        public long SizeKB { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshStats();
+    }
+
+    private async Task RefreshStats()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            using var scope = ScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var conn = context.Database.GetDbConnection();
+            dbName = conn.Database;
+
+            if (await context.Database.CanConnectAsync())
+            {
+                isConnected = true;
+            }
+
+            try
+            {
+                var sizeResult = await context.Database
+                    .SqlQueryRaw<decimal>("SELECT CAST(SUM(size) * 8.0 / 1024 AS decimal(10,2)) AS Value FROM sys.database_files")
+                    .FirstOrDefaultAsync();
+                dbSizeMB = sizeResult.ToString("F2") + " MB";
+            }
+            catch
+            {
+                dbSizeMB = "N/A";
+            }
+
+            tableStats.Clear();
+            try
+            {
+                var tables = await context.Database
+                    .SqlQueryRaw<TableQueryResult>(
+                        @"SELECT 
+                            t.NAME AS TableName,
+                            p.rows AS RowCount,
+                            (SUM(a.total_pages) * 8) AS SizeKB
+                        FROM sys.tables t
+                        INNER JOIN sys.indexes i ON t.OBJECT_ID = i.object_id
+                        INNER JOIN sys.partitions p ON i.object_id = p.OBJECT_ID AND i.index_id = p.index_id
+                        INNER JOIN sys.allocation_units a ON p.partition_id = a.container_id
+                        WHERE t.is_ms_shipped = 0 AND i.OBJECT_ID > 255
+                        GROUP BY t.Name, p.Rows
+                        ORDER BY t.Name")
+                    .ToListAsync();
+
+                tableStats = tables.Select(t => new TableStat
+                {
+                    TableName = t.TableName,
+                    RowCount = t.RowCount,
+                    SizeKB = t.SizeKB
+                }).ToList();
+            }
+            catch
+            {
+                await LoadFallbackStats(context);
+            }
+
+            SetStatus("Database stats refreshed successfully.", "alert-success", "bi-check-circle");
+        }
+        catch (Exception ex)
+        {
+            isConnected = false;
+            SetStatus($"Error connecting to database: {ex.Message}", "alert-danger", "bi-x-circle");
+        }
+
+        isLoading = false;
+    }
+
+    private async Task LoadFallbackStats(ApplicationDbContext context)
+    {
+        tableStats = new List<TableStat>
+        {
+            new() { TableName = "Facilities", RowCount = await context.Facilities.CountAsync() },
+            new() { TableName = "Products", RowCount = await context.Products.CountAsync() },
+            new() { TableName = "Components", RowCount = await context.Components.CountAsync() },
+            new() { TableName = "ProductionPlans", RowCount = await context.ProductionPlans.CountAsync() },
+            new() { TableName = "WorkOrders", RowCount = await context.WorkOrders.CountAsync() },
+            new() { TableName = "BillOfMaterials", RowCount = await context.BillOfMaterials.CountAsync() },
+            new() { TableName = "InventoryTransactions", RowCount = await context.InventoryTransactions.CountAsync() },
+            new() { TableName = "Costs", RowCount = await context.Costs.CountAsync() },
+            new() { TableName = "EnvironmentalMonitors", RowCount = await context.EnvironmentalMonitors.CountAsync() },
+            new() { TableName = "ActivityLogs", RowCount = await context.ActivityLogs.CountAsync() },
+            new() { TableName = "Users", RowCount = await context.Users.CountAsync() },
+        };
+    }
+
+    private async Task BackupDatabase()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            using var scope = ScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            
+            var backupData = new 
+            {
+                Facilities = await context.Facilities.ToListAsync(),
+                Products = await context.Products.ToListAsync(),
+                Components = await context.Components.ToListAsync(),
+                ProductionPlans = await context.ProductionPlans.ToListAsync(),
+                WorkOrders = await context.WorkOrders.ToListAsync(),
+                BillOfMaterials = await context.BillOfMaterials.ToListAsync(),
+                InventoryTransactions = await context.InventoryTransactions.ToListAsync(),
+                Costs = await context.Costs.ToListAsync(),
+                EnvironmentalMonitors = await context.EnvironmentalMonitors.ToListAsync(),
+                ActivityLogs = await context.ActivityLogs.ToListAsync(),
+                Users = await context.Users.ToListAsync()
+            };
+
+            var jsonOptions = new System.Text.Json.JsonSerializerOptions { 
+                WriteIndented = true,
+                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles 
+            };
+            var json = System.Text.Json.JsonSerializer.Serialize(backupData, jsonOptions);
+            var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+            using var stream = new System.IO.MemoryStream(bytes);
+            using var streamRef = new DotNetStreamReference(stream: stream);
+
+            var fileName = $"NodeSync_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.json";
+            await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+
+            SetStatus("Backup downloaded successfully.", "alert-success", "bi-check-circle");
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Backup failed: {ex.Message}", "alert-danger", "bi-x-circle");
+        }
+
+        isLoading = false;
+    }
+
+    private void PurgeLogs()
+    {
+        confirmMessage = $"You are about to permanently delete all audit logs older than {purgeOlderThanDays} days. This will remove historical audit data.";
+        confirmInput = "";
+        confirmedAction = async () =>
+        {
+            using var scope = ScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var cutoff = DateTime.Now.AddDays(-purgeOlderThanDays);
+            var count = await context.ActivityLogs.CountAsync(l => l.Timestamp < cutoff);
+            var oldLogs = context.ActivityLogs.Where(l => l.Timestamp < cutoff);
+            context.ActivityLogs.RemoveRange(oldLogs);
+            await context.SaveChangesAsync();
+            SetStatus($"Purged {count} audit logs older than {purgeOlderThanDays} days.", "alert-success", "bi-check-circle");
+            await RefreshStats();
+        };
+        showConfirmModal = true;
+    }
+
+    private void ClearEnvironmentalData()
+    {
+        confirmMessage = "You are about to permanently delete ALL environmental monitoring readings from the database.";
+        confirmInput = "";
+        confirmedAction = async () =>
+        {
+            using var scope = ScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var count = await context.EnvironmentalMonitors.CountAsync();
+            context.EnvironmentalMonitors.RemoveRange(context.EnvironmentalMonitors);
+            await context.SaveChangesAsync();
+            SetStatus($"Cleared {count} environmental readings.", "alert-success", "bi-check-circle");
+            await RefreshStats();
+        };
+        showConfirmModal = true;
+    }
+
+    private async Task ExecuteConfirmedAction()
+    {
+        showConfirmModal = false;
+        if (confirmedAction == null) return;
+
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            await confirmedAction();
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Action failed: {ex.Message}", "alert-danger", "bi-x-circle");
+        }
+
+        isLoading = false;
+        confirmedAction = null;
+    }
+
+    private void SetStatus(string message, string alertClass, string icon)
+    {
+        statusMessage = message;
+        statusAlertClass = alertClass;
+        statusIcon = icon;
+    }
+
+    // DTO for raw SQL query
+    private class TableQueryResult
+    {
+        public string TableName { get; set; } = "";
+        public long RowCount { get; set; }
+        public long SizeKB { get; set; }
+    }
+}

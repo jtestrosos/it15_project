@@ -1,0 +1,103 @@
+﻿@page "/Account/LoginWithRecoveryCode"
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using manufacturing_system.Data
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+@inject IdentityRedirectManager RedirectManager
+@inject ILogger<LoginWithRecoveryCode> Logger
+
+<PageTitle>NodeSync | Recovery Code</PageTitle>
+
+<div class="login-content">
+    <div class="login-header">
+        <h1>Recovery Code</h1>
+        <p>Use a recovery code to log in.</p>
+    </div>
+
+    <StatusMessage Message="@message" />
+    
+    <p class="text-center text-muted mb-4" style="font-size: 0.9rem;">
+        This login will not be remembered until you provide an authenticator app code at log in or disable 2FA and log in again.
+    </p>
+
+    <EditForm Model="Input" FormName="login-with-recovery-code" OnValidSubmit="OnValidSubmitAsync" method="post">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="validation-errors" role="alert" />
+        
+        <div class="form-group">
+            <label for="Input.RecoveryCode">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                    <path d="M8 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                </svg>
+                Recovery Code
+            </label>
+            <InputText @bind-Value="Input.RecoveryCode" id="Input.RecoveryCode" class="form-input" autocomplete="off" placeholder="Enter recovery code" />
+            <ValidationMessage For="() => Input.RecoveryCode" class="field-error" />
+        </div>
+        
+        <button type="submit" class="btn-login">Log in</button>
+    </EditForm>
+</div>
+
+@code {
+    private string? message;
+    private ApplicationUser user = default!;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = default!;
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Input ??= new();
+
+        // Ensure the user has gone through the username & password screen first
+        user = await SignInManager.GetTwoFactorAuthenticationUserAsync() ??
+            throw new InvalidOperationException("Unable to load two-factor authentication user.");
+
+        if (user.IsArchived)
+        {
+            Logger.LogWarning("Archived user with ID '{UserId}' tried to log in with recovery code.", await UserManager.GetUserIdAsync(user));
+            RedirectManager.RedirectTo("login");
+        }
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        var recoveryCode = Input.RecoveryCode.Replace(" ", string.Empty);
+
+        var result = await SignInManager.TwoFactorRecoveryCodeSignInAsync(recoveryCode);
+
+        var userId = await UserManager.GetUserIdAsync(user);
+
+        if (result.Succeeded)
+        {
+            Logger.LogInformation("User with ID '{UserId}' logged in with a recovery code.", userId);
+            RedirectManager.RedirectTo(ReturnUrl);
+        }
+        else if (result.IsLockedOut)
+        {
+            Logger.LogWarning("User account locked out.");
+            RedirectManager.RedirectTo("Account/Lockout");
+        }
+        else
+        {
+            Logger.LogWarning("Invalid recovery code entered for user with ID '{UserId}' ", userId);
+            message = "Error: Invalid recovery code entered.";
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required]
+        [DataType(DataType.Text)]
+        [Display(Name = "Recovery Code")]
+        public string RecoveryCode { get; set; } = "";
+    }
+}
