@@ -1,14 +1,14 @@
-@page "/admin/users"
+﻿@page "/admin/users"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
-@using manufacturing_system.Data
-@using manufacturing_system.Models
+@using production_system.Data
+@using production_system.Models
 
 @attribute [Authorize(Roles = "Superadmin,Administrator,ProductionManager")]
 @inject IServiceScopeFactory ScopeFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject manufacturing_system.Services.FacilityAccessService FacilityAccess
+@inject production_system.Services.FacilityAccessService FacilityAccess
 
 @using System.Security.Claims
 
@@ -683,3 +683,4 @@ else
         resetResultMessage = $"Password for {user.UserName} has been reset successfully.";
     }
 }
+

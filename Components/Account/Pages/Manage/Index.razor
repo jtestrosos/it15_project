@@ -3,8 +3,8 @@
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
-@using manufacturing_system.Data
-@using manufacturing_system.Models
+@using production_system.Data
+@using production_system.Models
 
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
@@ -393,3 +393,4 @@
         _ => role ?? "—"
     };
 }
+

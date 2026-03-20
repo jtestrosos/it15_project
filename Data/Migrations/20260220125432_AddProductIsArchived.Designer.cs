@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using manufacturing_system.Data;
+using production_system.Data;
 
 #nullable disable
 
-namespace manufacturing_system.Data.Migrations
+namespace production_system.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260220125432_AddProductIsArchived")]
@@ -179,7 +179,7 @@ namespace manufacturing_system.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("manufacturing_system.Data.ApplicationUser", b =>
+            modelBuilder.Entity("production_system.Data.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -264,7 +264,7 @@ namespace manufacturing_system.Data.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.ActivityLog", b =>
+            modelBuilder.Entity("production_system.Models.ActivityLog", b =>
                 {
                     b.Property<int>("LogID")
                         .ValueGeneratedOnAdd()
@@ -306,7 +306,7 @@ namespace manufacturing_system.Data.Migrations
                     b.ToTable("ActivityLogs");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.ArchivedUser", b =>
+            modelBuilder.Entity("production_system.Models.ArchivedUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -348,7 +348,7 @@ namespace manufacturing_system.Data.Migrations
                     b.ToTable("ArchivedUsers");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.BillOfMaterial", b =>
+            modelBuilder.Entity("production_system.Models.BillOfMaterial", b =>
                 {
                     b.Property<int>("BOMID")
                         .ValueGeneratedOnAdd()
@@ -387,7 +387,7 @@ namespace manufacturing_system.Data.Migrations
                     b.ToTable("BillOfMaterials");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.Component", b =>
+            modelBuilder.Entity("production_system.Models.Component", b =>
                 {
                     b.Property<int>("ComponentID")
                         .ValueGeneratedOnAdd()
@@ -433,7 +433,7 @@ namespace manufacturing_system.Data.Migrations
                     b.ToTable("Components");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.Cost", b =>
+            modelBuilder.Entity("production_system.Models.Cost", b =>
                 {
                     b.Property<int>("CostID")
                         .ValueGeneratedOnAdd()
@@ -475,7 +475,7 @@ namespace manufacturing_system.Data.Migrations
                     b.ToTable("Costs");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.EnvironmentalMonitor", b =>
+            modelBuilder.Entity("production_system.Models.EnvironmentalMonitor", b =>
                 {
                     b.Property<int>("MonitorID")
                         .ValueGeneratedOnAdd()
@@ -507,7 +507,7 @@ namespace manufacturing_system.Data.Migrations
                     b.ToTable("EnvironmentalMonitors");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.Facility", b =>
+            modelBuilder.Entity("production_system.Models.Facility", b =>
                 {
                     b.Property<int>("FacilityID")
                         .ValueGeneratedOnAdd()
@@ -545,7 +545,7 @@ namespace manufacturing_system.Data.Migrations
                     b.ToTable("Facilities");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.InventoryTransaction", b =>
+            modelBuilder.Entity("production_system.Models.InventoryTransaction", b =>
                 {
                     b.Property<int>("TransactionID")
                         .ValueGeneratedOnAdd()
@@ -590,7 +590,7 @@ namespace manufacturing_system.Data.Migrations
                     b.ToTable("InventoryTransactions");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.Product", b =>
+            modelBuilder.Entity("production_system.Models.Product", b =>
                 {
                     b.Property<int>("ProductID")
                         .ValueGeneratedOnAdd()
@@ -621,7 +621,7 @@ namespace manufacturing_system.Data.Migrations
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.ProductionPlan", b =>
+            modelBuilder.Entity("production_system.Models.ProductionPlan", b =>
                 {
                     b.Property<int>("PlanID")
                         .ValueGeneratedOnAdd()
@@ -664,7 +664,7 @@ namespace manufacturing_system.Data.Migrations
                     b.ToTable("ProductionPlans");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.WorkOrder", b =>
+            modelBuilder.Entity("production_system.Models.WorkOrder", b =>
                 {
                     b.Property<int>("OrderID")
                         .ValueGeneratedOnAdd()
@@ -723,7 +723,7 @@ namespace manufacturing_system.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("manufacturing_system.Data.ApplicationUser", null)
+                    b.HasOne("production_system.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -732,7 +732,7 @@ namespace manufacturing_system.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("manufacturing_system.Data.ApplicationUser", null)
+                    b.HasOne("production_system.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -741,7 +741,7 @@ namespace manufacturing_system.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserPasskey<string>", b =>
                 {
-                    b.HasOne("manufacturing_system.Data.ApplicationUser", null)
+                    b.HasOne("production_system.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -798,7 +798,7 @@ namespace manufacturing_system.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("manufacturing_system.Data.ApplicationUser", null)
+                    b.HasOne("production_system.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -807,29 +807,29 @@ namespace manufacturing_system.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("manufacturing_system.Data.ApplicationUser", null)
+                    b.HasOne("production_system.Data.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("manufacturing_system.Data.ApplicationUser", b =>
+            modelBuilder.Entity("production_system.Data.ApplicationUser", b =>
                 {
-                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                    b.HasOne("production_system.Models.Facility", "Facility")
                         .WithMany("Users")
                         .HasForeignKey("FacilityID");
 
                     b.Navigation("Facility");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.ActivityLog", b =>
+            modelBuilder.Entity("production_system.Models.ActivityLog", b =>
                 {
-                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                    b.HasOne("production_system.Models.Facility", "Facility")
                         .WithMany()
                         .HasForeignKey("FacilityID");
 
-                    b.HasOne("manufacturing_system.Data.ApplicationUser", "User")
+                    b.HasOne("production_system.Data.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -840,28 +840,28 @@ namespace manufacturing_system.Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.ArchivedUser", b =>
+            modelBuilder.Entity("production_system.Models.ArchivedUser", b =>
                 {
-                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                    b.HasOne("production_system.Models.Facility", "Facility")
                         .WithMany()
                         .HasForeignKey("FacilityID");
 
                     b.Navigation("Facility");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.BillOfMaterial", b =>
+            modelBuilder.Entity("production_system.Models.BillOfMaterial", b =>
                 {
-                    b.HasOne("manufacturing_system.Models.Component", "Component")
+                    b.HasOne("production_system.Models.Component", "Component")
                         .WithMany()
                         .HasForeignKey("ComponentID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                    b.HasOne("production_system.Models.Facility", "Facility")
                         .WithMany()
                         .HasForeignKey("FacilityID");
 
-                    b.HasOne("manufacturing_system.Models.Product", "Product")
+                    b.HasOne("production_system.Models.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -874,26 +874,26 @@ namespace manufacturing_system.Data.Migrations
                     b.Navigation("Product");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.Component", b =>
+            modelBuilder.Entity("production_system.Models.Component", b =>
                 {
-                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                    b.HasOne("production_system.Models.Facility", "Facility")
                         .WithMany()
                         .HasForeignKey("FacilityID");
 
                     b.Navigation("Facility");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.Cost", b =>
+            modelBuilder.Entity("production_system.Models.Cost", b =>
                 {
-                    b.HasOne("manufacturing_system.Models.Component", "Component")
+                    b.HasOne("production_system.Models.Component", "Component")
                         .WithMany()
                         .HasForeignKey("ComponentID");
 
-                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                    b.HasOne("production_system.Models.Facility", "Facility")
                         .WithMany()
                         .HasForeignKey("FacilityID");
 
-                    b.HasOne("manufacturing_system.Models.WorkOrder", "Order")
+                    b.HasOne("production_system.Models.WorkOrder", "Order")
                         .WithMany()
                         .HasForeignKey("OrderID");
 
@@ -904,9 +904,9 @@ namespace manufacturing_system.Data.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.EnvironmentalMonitor", b =>
+            modelBuilder.Entity("production_system.Models.EnvironmentalMonitor", b =>
                 {
-                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                    b.HasOne("production_system.Models.Facility", "Facility")
                         .WithMany()
                         .HasForeignKey("FacilityID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -915,23 +915,23 @@ namespace manufacturing_system.Data.Migrations
                     b.Navigation("Facility");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.InventoryTransaction", b =>
+            modelBuilder.Entity("production_system.Models.InventoryTransaction", b =>
                 {
-                    b.HasOne("manufacturing_system.Models.Component", "Component")
+                    b.HasOne("production_system.Models.Component", "Component")
                         .WithMany()
                         .HasForeignKey("ComponentID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                    b.HasOne("production_system.Models.Facility", "Facility")
                         .WithMany()
                         .HasForeignKey("FacilityID");
 
-                    b.HasOne("manufacturing_system.Models.WorkOrder", "Order")
+                    b.HasOne("production_system.Models.WorkOrder", "Order")
                         .WithMany()
                         .HasForeignKey("OrderID");
 
-                    b.HasOne("manufacturing_system.Data.ApplicationUser", "User")
+                    b.HasOne("production_system.Data.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -946,28 +946,28 @@ namespace manufacturing_system.Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.Product", b =>
+            modelBuilder.Entity("production_system.Models.Product", b =>
                 {
-                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                    b.HasOne("production_system.Models.Facility", "Facility")
                         .WithMany()
                         .HasForeignKey("FacilityID");
 
                     b.Navigation("Facility");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.ProductionPlan", b =>
+            modelBuilder.Entity("production_system.Models.ProductionPlan", b =>
                 {
-                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                    b.HasOne("production_system.Models.Facility", "Facility")
                         .WithMany()
                         .HasForeignKey("FacilityID");
 
-                    b.HasOne("manufacturing_system.Models.Product", "Product")
+                    b.HasOne("production_system.Models.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("manufacturing_system.Data.ApplicationUser", "User")
+                    b.HasOne("production_system.Data.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -980,19 +980,19 @@ namespace manufacturing_system.Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.WorkOrder", b =>
+            modelBuilder.Entity("production_system.Models.WorkOrder", b =>
                 {
-                    b.HasOne("manufacturing_system.Models.Facility", "Facility")
+                    b.HasOne("production_system.Models.Facility", "Facility")
                         .WithMany()
                         .HasForeignKey("FacilityID");
 
-                    b.HasOne("manufacturing_system.Models.ProductionPlan", "Plan")
+                    b.HasOne("production_system.Models.ProductionPlan", "Plan")
                         .WithMany()
                         .HasForeignKey("PlanID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("manufacturing_system.Data.ApplicationUser", "User")
+                    b.HasOne("production_system.Data.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1005,7 +1005,7 @@ namespace manufacturing_system.Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("manufacturing_system.Models.Facility", b =>
+            modelBuilder.Entity("production_system.Models.Facility", b =>
                 {
                     b.Navigation("Users");
                 });
@@ -1013,3 +1013,4 @@ namespace manufacturing_system.Data.Migrations
         }
     }
 }
+

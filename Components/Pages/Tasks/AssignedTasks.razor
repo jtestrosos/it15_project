@@ -1,9 +1,9 @@
-@page "/tasks/assigned"
+﻿@page "/tasks/assigned"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using System.Security.Claims
-@using manufacturing_system.Data
-@using manufacturing_system.Models
+@using production_system.Data
+@using production_system.Models
 
 @attribute [Authorize(Roles = "ProductionWorker,Superadmin")]
 @inject IServiceScopeFactory ScopeFactory
@@ -361,3 +361,4 @@
         _ => "bg-secondary fw-bold"
     };
 }
+

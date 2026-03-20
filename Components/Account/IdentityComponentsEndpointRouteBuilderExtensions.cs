@@ -1,8 +1,8 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text.Json;
-using manufacturing_system.Components.Account.Pages;
-using manufacturing_system.Components.Account.Pages.Manage;
-using manufacturing_system.Data;
+using production_system.Components.Account.Pages;
+using production_system.Components.Account.Pages.Manage;
+using production_system.Data;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -151,3 +151,4 @@ namespace Microsoft.AspNetCore.Routing
         }
     }
 }
+

@@ -1,5 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Identity
-@using manufacturing_system.Data
+@using production_system.Data
 
 @inject SignInManager<ApplicationUser> SignInManager
 
@@ -91,3 +91,4 @@
         hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
     }
 }
+

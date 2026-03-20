@@ -6,7 +6,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
-@using manufacturing_system.Data
+@using production_system.Data
 
 @attribute [Authorize(Roles = "Administrator,Superadmin")]
 
@@ -167,3 +167,4 @@
         public string ConfirmPassword { get; set; } = "";
     }
 }
+

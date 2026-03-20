@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-using manufacturing_system.Models;
+using production_system.Models;
 
-namespace manufacturing_system.Data
+namespace production_system.Data
 {
     public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<ApplicationUser>(options)
     {
@@ -51,3 +51,4 @@ namespace manufacturing_system.Data
         }
     }
 }
+

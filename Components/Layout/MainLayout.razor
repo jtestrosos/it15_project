@@ -16,7 +16,7 @@
             <div class="topbar-right">
                 <AuthorizeView>
                     <Authorized>
-                        <manufacturing_system.Components.Shared.NotificationBell />
+                        <production_system.Components.Shared.NotificationBell />
                         <div class="tb-profile-wrapper">
                             <input type="checkbox" id="tb-dropdown-toggle" class="tb-dropdown-checkbox" autocomplete="off" />
                             <label for="tb-dropdown-toggle" class="tb-avatar" tabindex="0">
@@ -109,7 +109,7 @@
             _userEmail = user.Identity.Name ?? "";
             
             using var scope = ServiceProvider.CreateAsyncScope();
-            var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<manufacturing_system.Data.ApplicationUser>>();
+            var userManager = scope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<production_system.Data.ApplicationUser>>();
             
             var appUser = await userManager.FindByNameAsync(_userEmail);
             if (appUser != null && (!string.IsNullOrWhiteSpace(appUser.FirstName) || !string.IsNullOrWhiteSpace(appUser.LastName)))
@@ -127,3 +127,4 @@
         }
     }
 }
+

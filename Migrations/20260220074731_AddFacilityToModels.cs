@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace manufacturing_system.Migrations
+namespace production_system.Migrations
 {
     /// <inheritdoc />
     public partial class AddFacilityToModels : Migration
@@ -256,3 +256,4 @@ namespace manufacturing_system.Migrations
         }
     }
 }
+

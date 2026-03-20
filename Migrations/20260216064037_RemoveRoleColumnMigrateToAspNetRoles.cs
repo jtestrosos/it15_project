@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace manufacturing_system.Migrations
+namespace production_system.Migrations
 {
     /// <inheritdoc />
     public partial class RemoveRoleColumnMigrateToAspNetRoles : Migration
@@ -46,3 +46,4 @@ namespace manufacturing_system.Migrations
         }
     }
 }
+

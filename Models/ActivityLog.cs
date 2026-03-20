@@ -1,7 +1,7 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace manufacturing_system.Models
+namespace production_system.Models
 {
     public class ActivityLog
     {
@@ -11,7 +11,7 @@ namespace manufacturing_system.Models
         public string UserID { get; set; } = string.Empty;
 
         [ForeignKey("UserID")]
-        public manufacturing_system.Data.ApplicationUser User { get; set; } = null!;
+        public production_system.Data.ApplicationUser User { get; set; } = null!;
 
         [StringLength(50)]
         public string ActionType { get; set; } = string.Empty;
@@ -30,3 +30,4 @@ namespace manufacturing_system.Models
         public Facility? Facility { get; set; }
     }
 }
+

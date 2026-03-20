@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace manufacturing_system.Migrations
+namespace production_system.Migrations
 {
     /// <inheritdoc />
     public partial class AddIsArchivedToComponents : Migration
@@ -27,3 +27,4 @@ namespace manufacturing_system.Migrations
         }
     }
 }
+

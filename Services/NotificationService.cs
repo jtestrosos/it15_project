@@ -1,9 +1,9 @@
-using manufacturing_system.Data;
-using manufacturing_system.Models;
+﻿using production_system.Data;
+using production_system.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
-namespace manufacturing_system.Services
+namespace production_system.Services
 {
     public class NotificationService
     {
@@ -138,7 +138,7 @@ namespace manufacturing_system.Services
             var now = DateTime.UtcNow;
             var cutoff = now.AddHours(-6); // Don't duplicate alerts within 6 hours
 
-            // ── 1. Low Stock Alerts ──────────────────────────────────
+            // â”€â”€ 1. Low Stock Alerts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             var components = await context.Components
                 .Where(c => !c.IsArchived)
                 .ToListAsync();
@@ -183,7 +183,7 @@ namespace manufacturing_system.Services
                 }
             }
 
-            // ── 2. Environment Alerts ────────────────────────────────
+            // â”€â”€ 2. Environment Alerts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             var recentReadings = await context.EnvironmentalMonitors
                 .Where(e => e.RecordedDate > now.AddHours(-2))
                 .Where(e => e.AlertStatus == "Critical" || e.AlertStatus == "Warning" || e.AlertStatus == "Cold Warning" || e.AlertStatus == "High Humidity")
@@ -205,7 +205,7 @@ namespace manufacturing_system.Services
                         FacilityID = reading.FacilityID,
                         TargetRole = null, // Broadcast to everyone in facility (Workers, Managers, Admins)
                         Title = $"Environment {reading.AlertStatus}",
-                        Message = $"Temperature: {reading.Temperature}°C, Humidity: {reading.Humidity}% — Status: {reading.AlertStatus}",
+                        Message = $"Temperature: {reading.Temperature}Â°C, Humidity: {reading.Humidity}% â€” Status: {reading.AlertStatus}",
                         Category = "EnvironmentAlert",
                         Severity = severity,
                         LinkUrl = "/monitoring/environment",
@@ -214,7 +214,7 @@ namespace manufacturing_system.Services
                 }
             }
 
-            // ── 3. Overdue Work Orders ───────────────────────────────
+            // â”€â”€ 3. Overdue Work Orders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             var overdueOrders = await context.WorkOrders
                 .Include(o => o.Plan)
                 .Where(o => o.Status == "In Progress" && o.Plan.PlannedEndDate < now)
@@ -258,7 +258,7 @@ namespace manufacturing_system.Services
                 }
             }
 
-            // ── 3.5. Pending Work Orders (for Workers) ───────────────
+            // â”€â”€ 3.5. Pending Work Orders (for Workers) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             var pendingOrders = await context.WorkOrders
                 .Where(o => o.Status == "Pending" && !string.IsNullOrEmpty(o.UserID))
                 .ToListAsync();
@@ -287,7 +287,7 @@ namespace manufacturing_system.Services
                 }
             }
 
-            // ── 4. Pending Production Plans (for Managers) ───────────
+            // â”€â”€ 4. Pending Production Plans (for Managers) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             var pendingPlans = await context.ProductionPlans
                 .Where(p => p.Status == "Draft" && p.PlannedStartDate <= now.AddDays(2))
                 .ToListAsync();
@@ -307,7 +307,7 @@ namespace manufacturing_system.Services
                         FacilityID = plan.FacilityID,
                         TargetRole = "ProductionManager",
                         Title = $"Production Plan #{plan.PlanID} starts soon",
-                        Message = $"Planned start: {plan.PlannedStartDate:MMM dd}. Status still \"Draft\" — needs approval.",
+                        Message = $"Planned start: {plan.PlannedStartDate:MMM dd}. Status still \"Draft\" â€” needs approval.",
                         Category = "Production",
                         Severity = "Info",
                         LinkUrl = "/production/plans",
@@ -318,7 +318,7 @@ namespace manufacturing_system.Services
 
             await context.SaveChangesAsync();
 
-            // ── 5. Missing API Keys (for Superadmin) ─────────────────
+            // â”€â”€ 5. Missing API Keys (for Superadmin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             var facilitiesWithMissingKeys = await context.Facilities
                 .Where(f => string.IsNullOrEmpty(f.APIKeyOpenWeather) || string.IsNullOrEmpty(f.APIKeyExchangeRate))
                 .ToListAsync();
@@ -347,7 +347,7 @@ namespace manufacturing_system.Services
                 }
             }
 
-            // ── 6. Unassigned Users (for Administrator) ─────────────────
+            // â”€â”€ 6. Unassigned Users (for Administrator) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             var unassignedUsersCount = await context.Users
                 .Where(u => u.FacilityID == null && !u.IsArchived)
                 .CountAsync();
@@ -376,7 +376,7 @@ namespace manufacturing_system.Services
                 }
             }
 
-            // ── 7. Cleanup old dismissed notifications (older than 30 days)
+            // â”€â”€ 7. Cleanup old dismissed notifications (older than 30 days)
             var oldCutoff = now.AddDays(-30);
             var old = await context.SystemNotifications
                 .Where(n => n.IsDismissed && n.CreatedAt < oldCutoff)
@@ -389,3 +389,4 @@ namespace manufacturing_system.Services
         }
     }
 }
+

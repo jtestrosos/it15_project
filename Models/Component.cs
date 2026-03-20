@@ -1,7 +1,7 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace manufacturing_system.Models
+namespace production_system.Models
 {
     public class Component
     {
@@ -33,3 +33,4 @@ namespace manufacturing_system.Models
         public Facility? Facility { get; set; }
     }
 }
+

@@ -1,6 +1,6 @@
-@page "/monitoring/environment"
-@using manufacturing_system.Data
-@using manufacturing_system.Services
+﻿@page "/monitoring/environment"
+@using production_system.Data
+@using production_system.Services
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @attribute [Authorize]
@@ -37,8 +37,8 @@
                 </div>
                 <div class="card-content">
                     <span class="card-label">Temperature</span>
-                    <span class="card-value">@weatherData.Temperature.ToString("F1")°C</span>
-                    <span class="card-sublabel">Feels like @weatherData.FeelsLike.ToString("F1")°C</span>
+                    <span class="card-value">@weatherData.Temperature.ToString("F1")Â°C</span>
+                    <span class="card-sublabel">Feels like @weatherData.FeelsLike.ToString("F1")Â°C</span>
                 </div>
             </div>
         </div>
@@ -127,7 +127,7 @@
                                     {
                                         <tr>
                                             <td>@reading.RecordedDate.ToString("MMM dd, yyyy HH:mm")</td>
-                                            <td>@reading.Temperature.ToString("F1")°C</td>
+                                            <td>@reading.Temperature.ToString("F1")Â°C</td>
                                             <td>@reading.Humidity%</td>
                                             <td>
                                                 <span class="badge @GetBadgeClass(reading.AlertStatus)">@reading.AlertStatus</span>
@@ -263,7 +263,7 @@
     private WeatherData? weatherData;
     private bool isLoading = true;
     private string statusMessage = "";
-    private List<manufacturing_system.Models.EnvironmentalMonitor> recentReadings = new();
+    private List<production_system.Models.EnvironmentalMonitor> recentReadings = new();
     private string currentLocation = "";
     private string currentApiKey = "";
 
@@ -330,7 +330,7 @@
                 .Where(u => u.Id == userId)
                 .FirstOrDefaultAsync();
 
-            var reading = new manufacturing_system.Models.EnvironmentalMonitor
+            var reading = new production_system.Models.EnvironmentalMonitor
             {
                 FacilityID = user?.FacilityID ?? 1,
                 Temperature = weatherData.Temperature,
@@ -416,3 +416,4 @@
         return "humidity-risk";
     }
 }
+

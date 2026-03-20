@@ -1,7 +1,7 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace manufacturing_system.Models
+namespace production_system.Models
 {
     public class InventoryTransaction
     {
@@ -21,7 +21,7 @@ namespace manufacturing_system.Models
         public string UserID { get; set; } = string.Empty;
 
         [ForeignKey("UserID")]
-        public manufacturing_system.Data.ApplicationUser User { get; set; } = null!;
+        public production_system.Data.ApplicationUser User { get; set; } = null!;
 
         [StringLength(25)]
         public string TransactionType { get; set; } = "Inbound"; // e.g., Inbound, Outbound, Adjustment
@@ -37,3 +37,4 @@ namespace manufacturing_system.Models
         public Facility? Facility { get; set; }
     }
 }
+

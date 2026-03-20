@@ -1,9 +1,9 @@
-@page "/production/workorders"
+﻿@page "/production/workorders"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Identity
-@using manufacturing_system.Data
-@using manufacturing_system.Models
+@using production_system.Data
+@using production_system.Models
 
 @attribute [Authorize(Roles = "ProductionManager,Superadmin")]
 @inject IServiceScopeFactory ScopeFactory
@@ -207,7 +207,7 @@ else
 
     private static readonly string[] ArchivedStatuses = { "Completed", "Canceled", "Failed" };
 
-    [Inject] private manufacturing_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
+    [Inject] private production_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -292,7 +292,7 @@ else
         context.WorkOrders.Add(NewOrder);
         await context.SaveChangesAsync();
         
-        var log = new manufacturing_system.Models.ActivityLog
+        var log = new production_system.Models.ActivityLog
         {
             UserID = currentUserId ?? "",
             ActionType = "Create Work Order",
@@ -302,7 +302,7 @@ else
         };
         context.ActivityLogs.Add(log);
 
-        var notification = new manufacturing_system.Models.SystemNotification
+        var notification = new production_system.Models.SystemNotification
         {
             FacilityID = userFacilityId,
             UserID = NewOrder.UserID,
@@ -330,7 +330,7 @@ else
         {
             dbOrder.Status = "Canceled";
             
-            var log = new manufacturing_system.Models.ActivityLog
+            var log = new production_system.Models.ActivityLog
             {
                 UserID = currentUserId ?? "",
                 ActionType = "Archive Work Order",
@@ -354,7 +354,7 @@ else
         {
             dbOrder.Status = "Pending";
             
-            var log = new manufacturing_system.Models.ActivityLog
+            var log = new production_system.Models.ActivityLog
             {
                 UserID = currentUserId ?? "",
                 ActionType = "Restore Work Order",
@@ -379,3 +379,4 @@ else
         _ => "bg-light text-dark border"
     };
 }
+

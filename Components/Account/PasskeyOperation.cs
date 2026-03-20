@@ -1,4 +1,4 @@
-namespace manufacturing_system.Components.Account
+﻿namespace production_system.Components.Account
 {
     public enum PasskeyOperation
     {
@@ -6,3 +6,4 @@ namespace manufacturing_system.Components.Account
         Request = 1,
     }
 }
+

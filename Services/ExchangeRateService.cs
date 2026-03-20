@@ -1,7 +1,7 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace manufacturing_system.Services
+namespace production_system.Services
 {
     public interface IExchangeRateService
     {
@@ -119,3 +119,4 @@ namespace manufacturing_system.Services
         public Dictionary<string, decimal>? ConversionRates { get; set; }
     }
 }
+

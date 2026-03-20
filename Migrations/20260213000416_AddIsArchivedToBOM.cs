@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace manufacturing_system.Migrations
+namespace production_system.Migrations
 {
     /// <inheritdoc />
     public partial class AddIsArchivedToBOM : Migration
@@ -194,3 +194,4 @@ namespace manufacturing_system.Migrations
         }
     }
 }
+

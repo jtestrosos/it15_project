@@ -1,7 +1,7 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace manufacturing_system.Models
+namespace production_system.Models
 {
     public class SystemNotification
     {
@@ -12,7 +12,7 @@ namespace manufacturing_system.Models
         public string? UserID { get; set; }
 
         [ForeignKey("UserID")]
-        public manufacturing_system.Data.ApplicationUser? User { get; set; }
+        public production_system.Data.ApplicationUser? User { get; set; }
 
         /// <summary>Facility scope. Null = global (Superadmin only).</summary>
         public int? FacilityID { get; set; }
@@ -51,3 +51,4 @@ namespace manufacturing_system.Models
         public bool IsDismissed { get; set; } = false;
     }
 }
+

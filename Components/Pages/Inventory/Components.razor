@@ -1,8 +1,8 @@
-@page "/inventory/components"
+﻿@page "/inventory/components"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
-@using manufacturing_system.Data
-@using manufacturing_system.Models
+@using production_system.Data
+@using production_system.Models
 @using Microsoft.Extensions.DependencyInjection
 
 @attribute [Authorize(Roles = "ProductionManager,ProductionWorker,Superadmin")]
@@ -162,10 +162,10 @@ else
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="text-muted small">@(string.IsNullOrWhiteSpace(comp.Description) ? "—" : comp.Description)</td>
-                                    <td>₱@comp.UnitCost.ToString("N2")</td>
+                                    <td class="text-muted small">@(string.IsNullOrWhiteSpace(comp.Description) ? "â€”" : comp.Description)</td>
+                                    <td>â‚±@comp.UnitCost.ToString("N2")</td>
                                     <td><span class="badge bg-secondary">@comp.MinStockLevel</span></td>
-                                    <td class="text-muted small">@(string.IsNullOrWhiteSpace(comp.SupplierInfo) ? "—" : comp.SupplierInfo)</td>
+                                    <td class="text-muted small">@(string.IsNullOrWhiteSpace(comp.SupplierInfo) ? "â€”" : comp.SupplierInfo)</td>
                                     <AuthorizeView Roles="ProductionManager">
                                         <Authorized>
                                             <td class="text-center">
@@ -206,7 +206,7 @@ else
     private int? userFacilityId;
     private bool isSuperAdmin;
 
-    [Inject] private manufacturing_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
+    [Inject] private production_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -317,3 +317,4 @@ else
         }
     }
 }
+

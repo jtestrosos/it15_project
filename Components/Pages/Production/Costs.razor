@@ -1,9 +1,9 @@
-@page "/production/costs"
+﻿@page "/production/costs"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
-@using manufacturing_system.Data
-@using manufacturing_system.Models
-@using manufacturing_system.Services
+@using production_system.Data
+@using production_system.Models
+@using production_system.Services
 
 @attribute [Authorize(Roles = "ProductionManager,Superadmin")]
 @inject IServiceScopeFactory ScopeFactory
@@ -41,7 +41,7 @@
                     <i class="bi bi-currency-exchange text-primary fs-4"></i>
                 </div>
                 <div>
-                    <div class="text-muted small">USD → PHP Rate</div>
+                    <div class="text-muted small">USD â†’ PHP Rate</div>
                     <div class="fw-bold fs-5">
                         @if (isRatesLoading)
                         {
@@ -49,7 +49,7 @@
                         }
                         else if (exchangeRates != null)
                         {
-                            <span>₱@exchangeRates.PhpRate.ToString("N4")</span>
+                            <span>â‚±@exchangeRates.PhpRate.ToString("N4")</span>
                         }
                         else
                         {
@@ -68,7 +68,7 @@
                 </div>
                 <div>
                     <div class="text-muted small">Total Costs (PHP)</div>
-                    <div class="fw-bold fs-5">₱@totalCostPhp.ToString("N2")</div>
+                    <div class="fw-bold fs-5">â‚±@totalCostPhp.ToString("N2")</div>
                 </div>
             </div>
         </div>
@@ -92,7 +92,7 @@
                         }
                         else
                         {
-                            <span class="text-muted">—</span>
+                            <span class="text-muted">â€”</span>
                         }
                     </div>
                 </div>
@@ -154,11 +154,11 @@
                                 <div class="form-text">
                                     @if (exchangeRates != null)
                                     {
-                                        <span class="text-success">Live: 1 USD = ₱@exchangeRates.PhpRate.ToString("N4")</span>
+                                        <span class="text-success">Live: 1 USD = â‚±@exchangeRates.PhpRate.ToString("N4")</span>
                                     }
                                     else
                                     {
-                                        <span class="text-muted">API unavailable — using default fallback</span>
+                                        <span class="text-muted">API unavailable â€” using default fallback</span>
                                     }
                                 </div>
                             </div>
@@ -213,7 +213,7 @@ else
                                     @if(cost.OrderID != null) { <span>Order #@cost.OrderID</span> }
                                     @if(cost.ComponentID != null) { <span> | @cost.Component?.ComponentName</span> }
                                 </td>
-                                <td class="fw-bold">₱@cost.Amount.ToString("N2")</td>
+                                <td class="fw-bold">â‚±@cost.Amount.ToString("N2")</td>
                                 <td class="text-muted small">@cost.CurrencyRate</td>
                             </tr>
                         }
@@ -236,7 +236,7 @@ else
     private decimal totalCostPhp = 0;
     private bool isRatesLoading = true;
 
-    [Inject] private manufacturing_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
+    [Inject] private production_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -341,3 +341,4 @@ else
         _ => "bg-secondary"
     };
 }
+

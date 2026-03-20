@@ -1,7 +1,7 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace manufacturing_system.Models
+namespace production_system.Models
 {
     public class ProductionPlan
     {
@@ -16,7 +16,7 @@ namespace manufacturing_system.Models
         public string UserID { get; set; } = string.Empty;
 
         [ForeignKey("UserID")]
-        public manufacturing_system.Data.ApplicationUser User { get; set; } = null!;
+        public production_system.Data.ApplicationUser User { get; set; } = null!;
 
         [Range(1, int.MaxValue, ErrorMessage = "Batch quantity must be at least 1.")]
         public int BatchQuantity { get; set; }
@@ -36,3 +36,4 @@ namespace manufacturing_system.Models
         public Facility? Facility { get; set; }
     }
 }
+

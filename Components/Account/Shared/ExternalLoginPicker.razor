@@ -1,6 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
-@using manufacturing_system.Data
+@using production_system.Data
 
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
@@ -42,3 +42,4 @@
         externalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToArray();
     }
 }
+

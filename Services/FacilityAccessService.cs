@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using manufacturing_system.Data;
+using production_system.Data;
 
-namespace manufacturing_system.Services
+namespace production_system.Services
 {
     public class FacilityAccessService
     {
@@ -43,3 +43,4 @@ namespace manufacturing_system.Services
         }
     }
 }
+

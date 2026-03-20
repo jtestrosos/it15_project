@@ -1,11 +1,11 @@
-using System.Security.Claims;
-using manufacturing_system.Data;
+﻿using System.Security.Claims;
+using production_system.Data;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
-namespace manufacturing_system.Components.Account
+namespace production_system.Components.Account
 {
     // This is a server-side AuthenticationStateProvider that revalidates the security stamp for the connected user
     // every 30 minutes an interactive circuit is connected.
@@ -46,3 +46,4 @@ namespace manufacturing_system.Components.Account
         }
     }
 }
+

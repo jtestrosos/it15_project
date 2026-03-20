@@ -1,7 +1,7 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace manufacturing_system.Services
+namespace production_system.Services
 {
     public interface IWeatherService
     {
@@ -140,3 +140,4 @@ namespace manufacturing_system.Services
         public string? Country { get; set; }
     }
 }
+

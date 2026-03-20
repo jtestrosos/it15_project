@@ -1,8 +1,8 @@
-using manufacturing_system.Data;
+﻿using production_system.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 
-namespace manufacturing_system.Components.Account
+namespace production_system.Components.Account
 {
     // Remove the "else if (EmailSender is IdentityNoOpEmailSender)" block from RegisterConfirmation.razor after updating with a real implementation.
     internal sealed class IdentityNoOpEmailSender : IEmailSender<ApplicationUser>
@@ -19,3 +19,4 @@ namespace manufacturing_system.Components.Account
             emailSender.SendEmailAsync(email, "Reset your password", $"Please reset your password using the following code: {resetCode}");
     }
 }
+

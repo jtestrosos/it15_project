@@ -4,9 +4,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>aspnet-manufacturing_system-8227068b-fa0f-4576-a49a-9fde2004dbee</UserSecretsId>
+    <UserSecretsId>aspnet-production_system-8227068b-fa0f-4576-a49a-9fde2004dbee</UserSecretsId>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
-    <RootNamespace>manufacturing_system</RootNamespace>
+    <RootNamespace>production_system</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,3 +26,4 @@
   </ItemGroup>
 
 </Project>
+

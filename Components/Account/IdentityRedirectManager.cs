@@ -1,8 +1,8 @@
-using manufacturing_system.Data;
+﻿using production_system.Data;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 
-namespace manufacturing_system.Components.Account
+namespace production_system.Components.Account
 {
     internal sealed class IdentityRedirectManager(NavigationManager navigationManager)
     {
@@ -53,3 +53,4 @@ namespace manufacturing_system.Components.Account
             => RedirectToWithStatus("Account/InvalidUser", $"Error: Unable to load user with ID '{userManager.GetUserId(context.User)}'.", context);
     }
 }
+

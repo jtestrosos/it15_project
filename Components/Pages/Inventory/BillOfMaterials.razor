@@ -1,8 +1,8 @@
-@page "/inventory/bom"
+﻿@page "/inventory/bom"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
-@using manufacturing_system.Data
-@using manufacturing_system.Models
+@using production_system.Data
+@using production_system.Models
 
 @attribute [Authorize(Roles = "ProductionManager,Superadmin")]
 @inject IServiceScopeFactory ScopeFactory
@@ -169,7 +169,7 @@ else
     private int? userFacilityId;
     private bool isSuperAdmin;
 
-    [Inject] private manufacturing_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
+    [Inject] private production_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -269,3 +269,4 @@ else
         await LoadData();
     }
 }
+

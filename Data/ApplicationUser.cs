@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace manufacturing_system.Data
+namespace production_system.Data
 {
     // Add profile data for application users by adding properties to the ApplicationUser class
     public class ApplicationUser : IdentityUser
@@ -22,9 +22,10 @@ namespace manufacturing_system.Data
         public int? FacilityID { get; set; }
         
         [ForeignKey("FacilityID")]
-        public manufacturing_system.Models.Facility? Facility { get; set; }
+        public production_system.Models.Facility? Facility { get; set; }
 
         public bool IsArchived { get; set; } = false;
     }
 
 }
+

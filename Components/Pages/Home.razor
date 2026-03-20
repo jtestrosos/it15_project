@@ -1,7 +1,7 @@
 ﻿@page "/"
-@using manufacturing_system.Data
-@using manufacturing_system.Models
-@using manufacturing_system.Services
+@using production_system.Data
+@using production_system.Models
+@using production_system.Services
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using System.Security.Claims
@@ -403,7 +403,7 @@
     [CascadingParameter]
     private Task<AuthenticationState> AuthStateTask { get; set; } = default!;
 
-    [Inject] private manufacturing_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
+    [Inject] private production_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
 
     // Facility access
     private int? userFacilityId;
@@ -641,3 +641,4 @@
         _ => "bg-light text-dark"
     };
 }
+

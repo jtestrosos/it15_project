@@ -1,10 +1,10 @@
-@using manufacturing_system.Services
-@using manufacturing_system.Models
+﻿@using production_system.Services
+@using production_system.Models
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @inject NotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
-@inject manufacturing_system.Services.FacilityAccessService FacilityAccess
+@inject production_system.Services.FacilityAccessService FacilityAccess
 @rendermode InteractiveServer
 
 <div class="notif-wrapper">
@@ -464,3 +464,4 @@
         refreshTimer?.Dispose();
     }
 }
+

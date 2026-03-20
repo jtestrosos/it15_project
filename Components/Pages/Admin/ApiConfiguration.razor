@@ -1,8 +1,8 @@
-@page "/admin/api-config"
+﻿@page "/admin/api-config"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
-@using manufacturing_system.Data
-@using manufacturing_system.Models
+@using production_system.Data
+@using production_system.Models
 
 @attribute [Authorize(Roles = "Superadmin")]
 @inject IServiceScopeFactory ScopeFactory
@@ -111,3 +111,4 @@
         StateHasChanged();
     }
 }
+

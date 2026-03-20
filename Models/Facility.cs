@@ -1,7 +1,7 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace manufacturing_system.Models
+namespace production_system.Models
 {
     public class Facility
     {
@@ -25,6 +25,7 @@ namespace manufacturing_system.Models
         public string SubscriptionStatus { get; set; } = "Active";
 
         // Navigation property
-        public ICollection<manufacturing_system.Data.ApplicationUser> Users { get; set; } = new List<manufacturing_system.Data.ApplicationUser>();
+        public ICollection<production_system.Data.ApplicationUser> Users { get; set; } = new List<production_system.Data.ApplicationUser>();
     }
 }
+

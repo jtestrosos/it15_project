@@ -1,8 +1,8 @@
-@page "/admin/db-tools"
+﻿@page "/admin/db-tools"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
-@using manufacturing_system.Data
-@using manufacturing_system.Models
+@using production_system.Data
+@using production_system.Models
 @using Microsoft.Data.SqlClient
 
 @attribute [Authorize(Roles = "Superadmin")]
@@ -462,3 +462,4 @@
         public long SizeKB { get; set; }
     }
 }
+

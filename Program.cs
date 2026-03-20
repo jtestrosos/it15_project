@@ -1,6 +1,6 @@
-using manufacturing_system.Components;
-using manufacturing_system.Components.Account;
-using manufacturing_system.Data;
+﻿using production_system.Components;
+using production_system.Components.Account;
+using production_system.Data;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -53,16 +53,16 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 // Register WeatherService for OpenWeather API
-builder.Services.AddHttpClient<manufacturing_system.Services.IWeatherService, manufacturing_system.Services.WeatherService>();
+builder.Services.AddHttpClient<production_system.Services.IWeatherService, production_system.Services.WeatherService>();
 
 // Register ExchangeRateService for currency conversion API
-builder.Services.AddHttpClient<manufacturing_system.Services.IExchangeRateService, manufacturing_system.Services.ExchangeRateService>();
+builder.Services.AddHttpClient<production_system.Services.IExchangeRateService, production_system.Services.ExchangeRateService>();
 
 // Register FacilityAccessService for facility-scoped data access
-builder.Services.AddScoped<manufacturing_system.Services.FacilityAccessService>();
+builder.Services.AddScoped<production_system.Services.FacilityAccessService>();
 
 // Register NotificationService for system alerts
-builder.Services.AddSingleton<manufacturing_system.Services.NotificationService>();
+builder.Services.AddSingleton<production_system.Services.NotificationService>();
 
 var app = builder.Build();
 
@@ -95,4 +95,5 @@ app.MapRazorComponents<App>()
 app.MapAdditionalIdentityEndpoints();
 
 app.Run();
+
 

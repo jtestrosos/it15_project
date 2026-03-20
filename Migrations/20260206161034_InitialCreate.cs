@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace manufacturing_system.Migrations
+namespace production_system.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -639,3 +639,4 @@ namespace manufacturing_system.Migrations
         }
     }
 }
+
