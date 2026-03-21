@@ -2,12 +2,22 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
+    padding-top: 3.5rem;
 }
 
 main {
     flex: 1;
     display: flex;
     flex-direction: column;
+    height: calc(100vh - 3.5rem);
+    overflow: hidden;
+}
+
+.content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .sidebar {
@@ -19,17 +29,46 @@ main {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 4.25rem;
+    height: 3.5rem;
     padding: 0 1.25rem;
     background: var(--ns-card-bg);
     border-bottom: 1px solid var(--ns-border);
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 200;
+    left: 0;
+    right: 0;
+    z-index: 1100;
 }
 
 .topbar-left {
     flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: #1e1b4b;
+    cursor: pointer;
+}
+
+.topbar-brand:hover {
+    color: #1e1b4b;
+    text-decoration: none;
+}
+
+.topbar-brand img {
+    flex-shrink: 0;
+}
+
+.topbar-brand span {
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
 }
 
 .topbar-right {
@@ -260,6 +299,24 @@ main {
     overflow: hidden;
 }
 
+@media (max-width: 576px) {
+    .tb-notif-dropdown {
+        position: fixed;
+        top: 3.5rem;
+        left: 0.5rem;
+        right: 0.5rem;
+        width: auto;
+    }
+
+    .tb-dropdown {
+        position: fixed;
+        top: 3.5rem;
+        left: 0.5rem;
+        right: 0.5rem;
+        min-width: auto;
+    }
+}
+
 .tb-notif-header {
     display: flex;
     justify-content: space-between;
@@ -363,10 +420,6 @@ main {
     line-height: 1.4;
     margin-top: 0.125rem;
 }
-
-/* ── Layout is handled in app.css ───────────────── */
-
-
 
 /* ── Blazor Error UI ──────────────────────── */
 #blazor-error-ui {

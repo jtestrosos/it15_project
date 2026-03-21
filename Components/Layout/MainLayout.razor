@@ -1,17 +1,30 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @using Microsoft.Extensions.DependencyInjection
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IServiceProvider ServiceProvider
+
+<!-- CSS-only sidebar toggle checkbox (works without JS/InteractiveServer) -->
+<input type="checkbox" id="sidebar-toggle" class="sidebar-toggle-checkbox" autocomplete="off" />
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
     </div>
 
+    <!-- Mobile overlay backdrop — clicking it closes the sidebar -->
+    <label for="sidebar-toggle" class="sidebar-backdrop"></label>
+
     <main>
         <!-- Top Bar -->
         <div class="topbar">
             <div class="topbar-left">
-                <!-- Page breadcrumb area (empty, reserved for future use) -->
+                <label for="sidebar-toggle" class="mobile-menu-btn" tabindex="0" title="Toggle menu">
+                    <span class="bi bi-list"></span>
+                </label>
+                <a href="" class="topbar-brand">
+                    <img src="favicon.png" alt="NodeSync" width="28" height="28" style="object-fit: contain;" />
+                    <span>NodeSync</span>
+                </a>
             </div>
             <div class="topbar-right">
                 <AuthorizeView>
@@ -62,6 +75,15 @@
 </div>
 
 <style>
+    /* ── Sidebar toggle (CSS-only, no JS required) ──── */
+    .sidebar-toggle-checkbox {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        pointer-events: none;
+    }
+
     /* CSS-only dropdown toggle */
     .tb-dropdown-checkbox {
         position: absolute;
@@ -127,4 +149,3 @@
         }
     }
 }
-

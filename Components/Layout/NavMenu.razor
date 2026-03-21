@@ -1,19 +1,10 @@
-﻿@implements IDisposable
+@implements IDisposable
 
 @inject NavigationManager NavigationManager
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <div class="navbar-brand d-flex align-items-center gap-2" style="cursor: default;">
-            <img src="favicon.png" alt="NodeSync" width="48" height="48" style="object-fit: contain;" />
-            <span style="font-weight: 800; letter-spacing: 1px;">NodeSync</span>
-        </div>
-    </div>
-</div>
-
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
-<div class="nav-scrollable mt-4" onclick="document.querySelector('.navbar-toggler').click()">
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click(); var st = document.getElementById('sidebar-toggle'); if(st) st.checked = false;">
     <nav class="nav flex-column">
         <!-- Dashboard - All authenticated users -->
         <div class="nav-item px-3">
