@@ -19,7 +19,7 @@ main {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 3rem;
+    height: 4.25rem;
     padding: 0 1.25rem;
     background: var(--ns-card-bg);
     border-bottom: 1px solid var(--ns-border);
@@ -340,9 +340,9 @@ main {
 }
 
 .notif-bg-danger  { background: rgba(209, 0, 0, 0.1);  color: #D10000; }
-.notif-bg-warning { background: rgba(242, 133, 0, 0.1); color: #F28500; }
+.notif-bg-warning { background: rgba(255, 150, 79, 0.1); color: #FF964F; }
 .notif-bg-info    { background: rgba(92, 92, 255, 0.1);  color: #5C5CFF; }
-.notif-bg-success { background: rgba(0, 209, 0, 0.1);  color: #00D100; }
+.notif-bg-success { background: rgba(86, 174, 87, 0.1);  color: #56AE57; }
 
 .tb-notif-content {
     display: flex;
@@ -364,32 +364,7 @@ main {
     margin-top: 0.125rem;
 }
 
-/* ── Layout ───────────────────────────────── */
-@media (min-width: 641px) {
-    .page {
-        flex-direction: row;
-    }
-
-    .sidebar {
-        width: 250px;
-        height: 100vh;
-        position: sticky;
-        top: 0;
-        flex-shrink: 0;
-    }
-
-    main {
-        flex: 1;
-        min-width: 0;
-    }
-
-    article {
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
-        padding-top: 1.25rem;
-        max-width: 1400px;
-    }
-}
+/* ── Layout is handled in app.css ───────────────── */
 
 
 

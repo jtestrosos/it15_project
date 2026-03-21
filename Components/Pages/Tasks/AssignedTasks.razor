@@ -1,4 +1,4 @@
-﻿@page "/tasks/assigned"
+@page "/tasks/assigned"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using System.Security.Claims
@@ -105,7 +105,7 @@
                             }
                             else if (order.Status == "Completed")
                             {
-                                <button class="btn btn-outline-success w-100 fw-bold" disabled style="background-color: transparent; border-color: #00D100; color: #00D100;">
+                                <button class="btn btn-outline-success w-100 fw-bold" disabled style="background-color: transparent; border-color: #56AE57; color: #56AE57;">
                                     <i class="bi bi-check2-all me-1"></i> Completed
                                 </button>
                             }
@@ -167,8 +167,8 @@
         box-shadow: 0 12px 24px rgba(0,0,0,0.12) !important;
     }
     .task-card.status-pending { 
-        border: 1px solid rgba(242, 133, 0, 0.2) !important;
-        border-left: 5px solid #F28500 !important;
+        border: 1px solid rgba(255, 150, 79, 0.2) !important;
+        border-left: 5px solid #FF964F !important;
         background-color: #fffbeb;
     }
     .task-card.status-pending .card-title { color: #92400e; }
@@ -181,8 +181,8 @@
     .task-card.status-inprogress .card-title { color: #4c0080; }
 
     .task-card.status-completed { 
-        border: 1px solid rgba(0, 209, 0, 0.2) !important;
-        border-left: 5px solid #00D100 !important;
+        border: 1px solid rgba(86, 174, 87, 0.2) !important;
+        border-left: 5px solid #56AE57 !important;
         background-color: #ffffff;
     }
     .task-card.status-completed .card-title { color: #065f46; }

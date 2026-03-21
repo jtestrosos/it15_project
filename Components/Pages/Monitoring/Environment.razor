@@ -1,4 +1,4 @@
-﻿@page "/monitoring/environment"
+@page "/monitoring/environment"
 @using production_system.Data
 @using production_system.Services
 @using Microsoft.AspNetCore.Authorization
@@ -37,8 +37,8 @@
                 </div>
                 <div class="card-content">
                     <span class="card-label">Temperature</span>
-                    <span class="card-value">@weatherData.Temperature.ToString("F1")Â°C</span>
-                    <span class="card-sublabel">Feels like @weatherData.FeelsLike.ToString("F1")Â°C</span>
+                    <span class="card-value">@weatherData.Temperature.ToString("F1")°C</span>
+                    <span class="card-sublabel">Feels like @weatherData.FeelsLike.ToString("F1")°C</span>
                 </div>
             </div>
         </div>
@@ -127,7 +127,7 @@
                                     {
                                         <tr>
                                             <td>@reading.RecordedDate.ToString("MMM dd, yyyy HH:mm")</td>
-                                            <td>@reading.Temperature.ToString("F1")Â°C</td>
+                                            <td>@reading.Temperature.ToString("F1")°C</td>
                                             <td>@reading.Humidity%</td>
                                             <td>
                                                 <span class="badge @GetBadgeClass(reading.AlertStatus)">@reading.AlertStatus</span>
@@ -177,13 +177,13 @@
     }
 
     .temp-optimal {
-        background: linear-gradient(135deg, #F28500 0%, #F28500 100%); /* Orange */
-        box-shadow: 0 4px 12px rgba(242, 133, 0, 0.3);
+        background: linear-gradient(135deg, #FF964F 0%, #FF964F 100%); /* Orange */
+        box-shadow: 0 4px 12px rgba(255, 150, 79, 0.3);
     }
     
     .temp-warning {
-        background: linear-gradient(135deg, #F28500 0%, #F28500 100%); /* Amber */
-        box-shadow: 0 4px 12px rgba(242, 133, 0, 0.3);
+        background: linear-gradient(135deg, #FF964F 0%, #FF964F 100%); /* Amber */
+        box-shadow: 0 4px 12px rgba(255, 150, 79, 0.3);
     }
     
     .temp-critical {
@@ -197,23 +197,23 @@
     }
 
     .humidity-optimal {
-        background: linear-gradient(135deg, #00D100 0%, #00D100 100%); /* Green */
-        box-shadow: 0 4px 12px rgba(0, 209, 0, 0.3);
+        background: linear-gradient(135deg, #56AE57 0%, #56AE57 100%); /* Green */
+        box-shadow: 0 4px 12px rgba(86, 174, 87, 0.3);
     }
 
     .humidity-risk {
-        background: linear-gradient(135deg, #F28500 0%, #F28500 100%); /* Amber/Yellow Drop */
-        box-shadow: 0 4px 12px rgba(242, 133, 0, 0.3);
+        background: linear-gradient(135deg, #FF964F 0%, #FF964F 100%); /* Amber/Yellow Drop */
+        box-shadow: 0 4px 12px rgba(255, 150, 79, 0.3);
     }
 
     .status-card.status-normal {
-        background: linear-gradient(135deg, #00D100 0%, #00D100 100%);
-        box-shadow: 0 4px 12px rgba(0, 209, 0, 0.3);
+        background: linear-gradient(135deg, #56AE57 0%, #56AE57 100%);
+        box-shadow: 0 4px 12px rgba(86, 174, 87, 0.3);
     }
 
     .status-card.status-warning {
-        background: linear-gradient(135deg, #F28500 0%, #F28500 100%);
-        box-shadow: 0 4px 12px rgba(242, 133, 0, 0.3);
+        background: linear-gradient(135deg, #FF964F 0%, #FF964F 100%);
+        box-shadow: 0 4px 12px rgba(255, 150, 79, 0.3);
     }
 
     .status-card.status-critical {

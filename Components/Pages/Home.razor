@@ -26,7 +26,7 @@
         <div class="col-md-4">
             <div class="dashboard-widget">
                 <div class="d-flex align-items-center mb-3">
-                    <div class="widget-icon me-3" style="background-color: #F28500; color: white;">
+                    <div class="widget-icon me-3" style="background-color: #FF964F; color: white;">
                         <i class="bi bi-list-task"></i>
                     </div>
                     <div>
@@ -40,7 +40,7 @@
         <div class="col-md-4">
             <div class="dashboard-widget">
                 <div class="d-flex align-items-center mb-3">
-                    <div class="widget-icon me-3" style="background-color: #00D100; color: white;">
+                    <div class="widget-icon me-3" style="background-color: #56AE57; color: white;">
                         <i class="bi bi-check2-circle"></i>
                     </div>
                     <div>
@@ -162,7 +162,7 @@
                          <i class="bi bi-currency-dollar"></i>
                     </div>
                     <div>
-                        <div class="widget-value">₱@todayCost.ToString("N0")</div>
+                        <div class="widget-value">?@todayCost.ToString("N0")</div>
                         <div class="widget-label">Costs Today</div>
                     </div>
                 </div>
@@ -367,7 +367,7 @@
                 <div class="card-body text-center">
                     <i class="bi bi-server fs-1 mb-3 card-icon-accent"></i>
                     <h3 class="text-dark fw-bold">System Status</h3>
-                    <p class="mb-0 fw-bold fs-5" style="color: #00D100;">ONLINE</p>
+                    <p class="mb-0 fw-bold fs-5" style="color: #56AE57;">ONLINE</p>
                     <small class="text-secondary fw-semibold">Database Connected</small>
                 </div>
             </div>
@@ -379,7 +379,7 @@
                     <h3 class="text-dark fw-bold">API Configuration</h3>
                     @{
                         bool isComplete = superFacilityCount > 0 && superConfiguredFacilityCount == superFacilityCount;
-                        string configColor = isComplete ? "#00D100" : "#F28500";
+                        string configColor = isComplete ? "#56AE57" : "#FF964F";
                     }
                     <p class="mb-0 fw-bold fs-5" style="color: @configColor;">@superConfiguredFacilityCount / @superFacilityCount Configured</p>
                     <small class="text-secondary fw-semibold">OpenWeather & ExchangeRate</small>
@@ -423,11 +423,11 @@
         if (decimal.TryParse(currentTemp, out decimal temp))
         {
             if (temp > 40) return "background-color: #D10000; color: white;";
-            if (temp > 35) return "background-color: #F28500; color: white;";
+            if (temp > 35) return "background-color: #FF964F; color: white;";
             if (temp < 10) return "background-color: #5C5CFF; color: white;";
         }
         
-        return isSafe ? "background-color: #00D100; color: white;" : "background-color: #F28500; color: white;";
+        return isSafe ? "background-color: #56AE57; color: white;" : "background-color: #FF964F; color: white;";
     }
 
     // Manager Stats

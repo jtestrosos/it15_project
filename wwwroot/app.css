@@ -15,9 +15,9 @@
     --ns-text-muted: #c4b5fd;
     --ns-text-dark: #1c1c1c;
     --ns-text-secondary: #696969;
-    --ns-success: #00D100;
+    --ns-success: #56AE57;
     --ns-success-light: #d1fae5;
-    --ns-warning: #F28500;
+    --ns-warning: #FF964F;
     --ns-warning-light: #fef3c7;
     --ns-danger: #D10000;
     --ns-danger-light: #fee2e2;
@@ -283,7 +283,7 @@ main {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: 3.5rem;
+    min-height: 4.25rem;
     border-bottom: none;
 }
 
@@ -309,7 +309,7 @@ main {
 }
 
 .top-row {
-    height: 3rem;
+    height: 4.25rem;
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -365,7 +365,7 @@ main {
 
     .sidebar .top-row {
         padding: 0.5rem 0.75rem;
-        min-height: 3rem;
+        min-height: 4.25rem;
     }
 
     .sidebar .navbar-toggler {
