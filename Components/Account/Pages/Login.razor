@@ -1,4 +1,4 @@
-﻿@page "/login"
+@page "/login"
 @layout AccountLayout
 
 @using System.ComponentModel.DataAnnotations
@@ -34,7 +34,8 @@
                 </svg>
                 Email Address
             </label>
-            <InputText @bind-Value="Input.Email" id="Input.Email" class="form-input" autocomplete="username webauthn" aria-required="true" placeholder="Enter your email" />
+            <InputText @bind-Value="Input.Email" id="Input.Email" class="form-input" autocomplete="username webauthn" aria-required="true" placeholder="Enter your email" 
+                       onfocus="if(window.innerWidth < 768) { setTimeout(() => document.getElementById('login-submit-btn')?.scrollIntoView({behavior:'smooth', block:'end'}), 300); }" />
             <ValidationMessage For="() => Input.Email" class="field-error" />
         </div>
         
@@ -45,7 +46,8 @@
                 </svg>
                 Password
             </label>
-            <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-input" autocomplete="current-password" aria-required="true" placeholder="Enter your password" />
+            <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-input" autocomplete="current-password" aria-required="true" placeholder="Enter your password" 
+                       onfocus="if(window.innerWidth < 768) { setTimeout(() => document.getElementById('login-submit-btn')?.scrollIntoView({behavior:'smooth', block:'end'}), 300); }" />
             <ValidationMessage For="() => Input.Password" class="field-error" />
         </div>
         
@@ -58,7 +60,7 @@
             <a href="Account/ForgotPassword" class="forgot-link">Forgot password?</a>
         </div>
         
-        <button type="submit" class="btn-login">
+        <button type="submit" class="btn-login" id="login-submit-btn">
             <span>Sign In</span>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
                 <path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"/>
