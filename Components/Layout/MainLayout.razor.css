@@ -3,14 +3,14 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    padding-top: 3.5rem;
+    padding-top: 4.5rem;
 }
 
 main {
     flex: 1;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 3.5rem);
+    height: calc(100vh - 4.5rem);
     overflow: hidden;
 }
 
@@ -29,8 +29,8 @@ main {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 3.5rem;
-    padding: 0 1.25rem;
+    height: 4.5rem;
+    padding: 0 1.5rem;
     background: var(--ns-card-bg);
     border-bottom: 1px solid var(--ns-border);
     position: fixed;
@@ -62,12 +62,14 @@ main {
 }
 
 .topbar-brand img {
+    height: 36px;
+    width: auto;
     flex-shrink: 0;
 }
 
 .topbar-brand span {
     font-weight: 800;
-    font-size: 1.1rem;
+    font-size: 1.4rem;
     letter-spacing: 0.5px;
 }
 
@@ -83,15 +85,15 @@ main {
 }
 
 .tb-avatar {
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2.75rem;
+    height: 2.75rem;
     border-radius: 50%;
     background: var(--ns-primary);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 1rem;
+    font-size: 1.2rem;
     cursor: pointer;
     transition: opacity 0.15s ease, box-shadow 0.15s ease;
     flex-shrink: 0;
@@ -235,15 +237,15 @@ main {
 }
 
 .tb-notif-bell {
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2.75rem;
+    height: 2.75rem;
     border-radius: 50%;
     background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--ns-text-secondary);
-    font-size: 1rem;
+    font-size: 1.2rem;
     cursor: pointer;
     transition: all 0.15s ease;
     position: relative;
@@ -302,7 +304,7 @@ main {
 @media (max-width: 576px) {
     .tb-notif-dropdown {
         position: fixed;
-        top: 3.5rem;
+        top: 4.5rem;
         left: 0.5rem;
         right: 0.5rem;
         width: auto;
@@ -310,7 +312,7 @@ main {
 
     .tb-dropdown {
         position: fixed;
-        top: 3.5rem;
+        top: 4.5rem;
         left: 0.5rem;
         right: 0.5rem;
         min-width: auto;
@@ -397,9 +399,9 @@ main {
 }
 
 .notif-bg-danger  { background: rgba(209, 0, 0, 0.1);  color: #D10000; }
-.notif-bg-warning { background: rgba(255, 150, 79, 0.1); color: #FF964F; }
-.notif-bg-info    { background: rgba(92, 92, 255, 0.1);  color: #5C5CFF; }
-.notif-bg-success { background: rgba(86, 174, 87, 0.1);  color: #56AE57; }
+.notif-bg-warning { background: rgba(234, 88, 12, 0.1); color: #EA580C; }
+.notif-bg-info    { background: rgba(0, 98, 255, 0.1);  color: #0062FF; }
+.notif-bg-success { background: rgba(5, 150, 105, 0.1);  color: #059669; }
 
 .tb-notif-content {
     display: flex;

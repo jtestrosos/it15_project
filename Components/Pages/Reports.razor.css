@@ -223,25 +223,25 @@
 
 .rpt-kpi-green {
     background: var(--ns-card-bg);
-    border-top: 4px solid #56AE57;
+    border-top: 4px solid #059669;
 }
-.rpt-kpi-green .rpt-kpi-icon  { background: #56AE57; color: white; }
+.rpt-kpi-green .rpt-kpi-icon  { background: #059669; color: white; }
 .rpt-kpi-green .rpt-kpi-value { color: var(--ns-text-dark); }
 .rpt-kpi-green .rpt-kpi-label { color: var(--ns-text-secondary); }
 
 .rpt-kpi-amber {
     background: var(--ns-card-bg);
-    border-top: 4px solid #FF964F;
+    border-top: 4px solid #EA580C;
 }
-.rpt-kpi-amber .rpt-kpi-icon  { background: #FF964F; color: white; }
+.rpt-kpi-amber .rpt-kpi-icon  { background: #EA580C; color: white; }
 .rpt-kpi-amber .rpt-kpi-value { color: var(--ns-text-dark); }
 .rpt-kpi-amber .rpt-kpi-label { color: var(--ns-text-secondary); }
 
 .rpt-kpi-blue {
     background: var(--ns-card-bg);
-    border-top: 4px solid #5C5CFF;
+    border-top: 4px solid #0062FF;
 }
-.rpt-kpi-blue .rpt-kpi-icon  { background: #5C5CFF; color: white; }
+.rpt-kpi-blue .rpt-kpi-icon  { background: #0062FF; color: white; }
 .rpt-kpi-blue .rpt-kpi-value { color: var(--ns-text-dark); }
 .rpt-kpi-blue .rpt-kpi-label { color: var(--ns-text-secondary); }
 
@@ -318,9 +318,9 @@
 }
 
 .dot-purple { background: #8F00FF; }
-.dot-green  { background: #56AE57; }
-.dot-amber  { background: #FF964F; }
-.dot-blue   { background: #5C5CFF; }
+.dot-green  { background: #059669; }
+.dot-amber  { background: #EA580C; }
+.dot-blue   { background: #0062FF; }
 
 .rpt-cost-total {
     display: flex;
@@ -380,9 +380,9 @@
 }
 
 .rpt-bar-purple { background: linear-gradient(90deg, #8F00FF, #8F00FF); }
-.rpt-bar-green  { background: linear-gradient(90deg, #56AE57, #56AE57); }
-.rpt-bar-amber  { background: linear-gradient(90deg, #FF964F, #FF964F); }
-.rpt-bar-blue   { background: linear-gradient(90deg, #5C5CFF, #5C5CFF); }
+.rpt-bar-green  { background: linear-gradient(90deg, #059669, #059669); }
+.rpt-bar-amber  { background: linear-gradient(90deg, #EA580C, #EA580C); }
+.rpt-bar-blue   { background: linear-gradient(90deg, #0062FF, #0062FF); }
 .rpt-bar-red    { background: linear-gradient(90deg, #D10000, #D10000); }
 
 /* ── Misc Helpers ───────────────────────────────── */
