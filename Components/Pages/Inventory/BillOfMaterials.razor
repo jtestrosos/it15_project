@@ -1,4 +1,4 @@
-﻿@page "/inventory/bom"
+@page "/inventory/bom"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using production_system.Data
@@ -7,8 +7,11 @@
 @attribute [Authorize(Roles = "ProductionManager,Superadmin")]
 @inject IServiceScopeFactory ScopeFactory
 @inject NavigationManager NavigationManager
+@inject production_system.Services.FacilityFilterService FacilityFilter
 
 <PageTitle>NodeSync | Bill of Materials</PageTitle>
+
+<production_system.Components.Shared.FacilitySelector OnFacilityChanged="HandleFacilityChanged" />
 
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
@@ -171,6 +174,18 @@ else
 
     [Inject] private production_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
 
+    private int? GetEffectiveFacilityId()
+    {
+        if (isSuperAdmin)
+            return FacilityFilter.SelectedFacilityId;
+        return userFacilityId;
+    }
+
+    private async Task HandleFacilityChanged()
+    {
+        await LoadData();
+    }
+
     protected override async Task OnInitializedAsync()
     {
         isSuperAdmin = await FacilityAccess.IsSuperAdminAsync();
@@ -180,15 +195,17 @@ else
 
     private async Task LoadData()
     {
+        var effectiveFacilityId = GetEffectiveFacilityId();
+
         using var scope = ScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var productQuery = context.Products.AsQueryable();
         var componentQuery = context.Components.AsQueryable();
         
-        if (!isSuperAdmin && userFacilityId.HasValue)
+        if (effectiveFacilityId.HasValue)
         {
-            productQuery = productQuery.Where(p => p.FacilityID == userFacilityId.Value);
-            componentQuery = componentQuery.Where(c => c.FacilityID == userFacilityId.Value);
+            productQuery = productQuery.Where(p => p.FacilityID == effectiveFacilityId.Value);
+            componentQuery = componentQuery.Where(c => c.FacilityID == effectiveFacilityId.Value);
         }
 
         products = await productQuery.ToListAsync();
@@ -199,9 +216,9 @@ else
             .Include(b => b.Component)
             .AsQueryable();
 
-        if (!isSuperAdmin && userFacilityId.HasValue)
+        if (effectiveFacilityId.HasValue)
         {
-            query = query.Where(b => b.FacilityID == userFacilityId.Value);
+            query = query.Where(b => b.FacilityID == effectiveFacilityId.Value);
         }
 
         if (ShowArchived)
@@ -234,7 +251,7 @@ else
         using var scope = ScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         NewBOM.IsArchived = false;
-        NewBOM.FacilityID = userFacilityId;
+        NewBOM.FacilityID = GetEffectiveFacilityId() ?? userFacilityId;
         context.BillOfMaterials.Add(NewBOM);
         await context.SaveChangesAsync();
         await LoadData();

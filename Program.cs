@@ -1,4 +1,4 @@
-﻿using production_system.Components;
+using production_system.Components;
 using production_system.Components.Account;
 using production_system.Data;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -60,6 +60,9 @@ builder.Services.AddHttpClient<production_system.Services.IExchangeRateService, 
 
 // Register FacilityAccessService for facility-scoped data access
 builder.Services.AddScoped<production_system.Services.FacilityAccessService>();
+
+// Register FacilityFilterService for Superadmin facility selector state
+builder.Services.AddScoped<production_system.Services.FacilityFilterService>();
 
 // Register NotificationService for system alerts
 builder.Services.AddSingleton<production_system.Services.NotificationService>();

@@ -1,4 +1,4 @@
-﻿@page "/inventory/components"
+@page "/inventory/components"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using production_system.Data
@@ -8,6 +8,7 @@
 @attribute [Authorize(Roles = "ProductionManager,ProductionWorker,Superadmin")]
 @inject IServiceScopeFactory ScopeFactory
 @inject NavigationManager NavigationManager
+@inject production_system.Services.FacilityFilterService FacilityFilter
 
 <AuthorizeView Roles="ProductionWorker">
     <Authorized>
@@ -17,6 +18,8 @@
         <PageTitle>NodeSync | Component Inventory</PageTitle>
     </NotAuthorized>
 </AuthorizeView>
+
+<production_system.Components.Shared.FacilitySelector OnFacilityChanged="HandleFacilityChanged" />
 
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
@@ -163,7 +166,7 @@ else
                                         </div>
                                     </td>
                                     <td class="text-muted small">@(string.IsNullOrWhiteSpace(comp.Description) ? "â€”" : comp.Description)</td>
-                                    <td>â‚±@comp.UnitCost.ToString("N2")</td>
+                                    <td>&#8369;@comp.UnitCost.ToString("N2")</td>
                                     <td><span class="badge bg-secondary">@comp.MinStockLevel</span></td>
                                     <td class="text-muted small">@(string.IsNullOrWhiteSpace(comp.SupplierInfo) ? "â€”" : comp.SupplierInfo)</td>
                                     <AuthorizeView Roles="ProductionManager">
@@ -215,14 +218,28 @@ else
         await LoadComponents();
     }
 
+    private int? GetEffectiveFacilityId()
+    {
+        if (isSuperAdmin)
+            return FacilityFilter.SelectedFacilityId;
+        return userFacilityId;
+    }
+
+    private async Task HandleFacilityChanged()
+    {
+        await LoadComponents();
+    }
+
     private async Task LoadComponents()
     {
+        var effectiveFacilityId = GetEffectiveFacilityId();
+
         using var scope = ScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var query = context.Components.AsNoTracking().AsQueryable();
-        if (!isSuperAdmin && userFacilityId.HasValue)
+        if (effectiveFacilityId.HasValue)
         {
-            query = query.Where(c => c.FacilityID == userFacilityId.Value);
+            query = query.Where(c => c.FacilityID == effectiveFacilityId.Value);
         }
         components = await query.ToListAsync();
     }
@@ -280,7 +297,7 @@ else
         }
         else
         {
-            NewComponent.FacilityID = userFacilityId;
+            NewComponent.FacilityID = GetEffectiveFacilityId() ?? userFacilityId;
             context.Components.Add(NewComponent);
         }
 

@@ -1,0 +1,115 @@
+@using Microsoft.EntityFrameworkCore
+@using production_system.Data
+@using production_system.Models
+@using production_system.Services
+
+@inject FacilityAccessService FacilityAccess
+@inject FacilityFilterService FacilityFilter
+@inject IServiceScopeFactory ScopeFactory
+
+@rendermode InteractiveServer
+
+@if (isSuperAdmin && facilities.Any())
+{
+    <div class="facility-selector-bar mb-4">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="d-flex align-items-center gap-2 facility-selector-heading">
+                <i class="bi bi-building"></i>
+                <span class="facility-selector-label">Viewing Facility:</span>
+            </div>
+            <div class="facility-selector-pills">
+                <button class="facility-pill @(selectedFacilityId == null ? "active" : "")"
+                        @onclick="() => SelectFacility(null)">
+                    <i class="bi bi-globe2 me-1"></i> All Facilities
+                </button>
+                @foreach (var f in facilities)
+                {
+                    <button class="facility-pill @(selectedFacilityId == f.FacilityID ? "active" : "")"
+                            @onclick="() => SelectFacility(f.FacilityID)">
+                        <i class="bi bi-geo-alt me-1"></i> @f.FacilityName
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .facility-selector-bar {
+        background: linear-gradient(135deg, rgba(143, 0, 255, 0.04) 0%, rgba(143, 0, 255, 0.02) 100%);
+        border: 1px solid rgba(143, 0, 255, 0.12);
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+    }
+
+    .facility-selector-heading {
+        color: #6c757d;
+    }
+
+    .facility-selector-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    .facility-selector-pills {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .facility-pill {
+        border: 1px solid rgba(143, 0, 255, 0.2);
+        background: white;
+        color: #555;
+        padding: 0.35rem 0.85rem;
+        border-radius: 2rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+
+    .facility-pill:hover {
+        border-color: var(--ns-primary, #8F00FF);
+        color: var(--ns-primary, #8F00FF);
+        background: rgba(143, 0, 255, 0.04);
+    }
+
+    .facility-pill.active {
+        background: var(--ns-primary, #8F00FF);
+        color: white;
+        border-color: var(--ns-primary, #8F00FF);
+        box-shadow: 0 2px 8px rgba(143, 0, 255, 0.25);
+    }
+</style>
+
+@code {
+    [Parameter] public EventCallback OnFacilityChanged { get; set; }
+
+    private bool isSuperAdmin;
+    private int? selectedFacilityId;
+    private List<Facility> facilities = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        isSuperAdmin = await FacilityAccess.IsSuperAdminAsync();
+        if (isSuperAdmin)
+        {
+            using var scope = ScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            facilities = await context.Facilities.AsNoTracking().OrderBy(f => f.FacilityName).ToListAsync();
+            selectedFacilityId = FacilityFilter.SelectedFacilityId;
+        }
+    }
+
+    private async Task SelectFacility(int? facilityId)
+    {
+        selectedFacilityId = facilityId;
+        FacilityFilter.SetFacility(facilityId);
+        await OnFacilityChanged.InvokeAsync();
+    }
+}

@@ -1,4 +1,4 @@
-﻿@page "/production/workorders"
+@page "/production/workorders"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.AspNetCore.Identity
@@ -9,8 +9,11 @@
 @inject IServiceScopeFactory ScopeFactory
 @inject UserManager<ApplicationUser> UserManager
 @inject NavigationManager NavigationManager
+@inject production_system.Services.FacilityFilterService FacilityFilter
 
 <PageTitle>NodeSync | Work Orders</PageTitle>
+
+<production_system.Components.Shared.FacilitySelector OnFacilityChanged="HandleFacilityChanged" />
 
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
@@ -217,22 +220,36 @@ else
         await LoadData();
     }
 
+    private int? GetEffectiveFacilityId()
+    {
+        if (isSuperAdmin)
+            return FacilityFilter.SelectedFacilityId; // null means "All"
+        return userFacilityId;
+    }
+
+    private async Task HandleFacilityChanged()
+    {
+        await LoadData();
+    }
+
     private async Task LoadData()
     {
+        var effectiveFacilityId = GetEffectiveFacilityId();
+
         using var scope = ScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var planQuery = context.ProductionPlans.Include(p => p.Product).Where(p => p.Status == "Active" || p.Status == "Draft").AsQueryable();
-        if (!isSuperAdmin && userFacilityId.HasValue)
+        if (effectiveFacilityId.HasValue)
         {
-            planQuery = planQuery.Where(p => p.FacilityID == userFacilityId.Value);
+            planQuery = planQuery.Where(p => p.FacilityID == effectiveFacilityId.Value);
         }
         plans = await planQuery.ToListAsync();
 
         // Filter workers by facility
         var allWorkers = await UserManager.GetUsersInRoleAsync("ProductionWorker");
-        if (!isSuperAdmin && userFacilityId.HasValue)
+        if (effectiveFacilityId.HasValue)
         {
-            workers = allWorkers.Where(w => w.FacilityID == userFacilityId.Value).ToList();
+            workers = allWorkers.Where(w => w.FacilityID == effectiveFacilityId.Value).ToList();
         }
         else
         {
@@ -246,9 +263,9 @@ else
             .OrderByDescending(o => o.OrderID)
             .AsQueryable();
 
-        if (!isSuperAdmin && userFacilityId.HasValue)
+        if (effectiveFacilityId.HasValue)
         {
-            orderQuery = orderQuery.Where(o => o.FacilityID == userFacilityId.Value);
+            orderQuery = orderQuery.Where(o => o.FacilityID == effectiveFacilityId.Value);
         }
 
         if (ShowArchived)
@@ -288,7 +305,7 @@ else
 
         using var scope = ScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        NewOrder.FacilityID = userFacilityId;
+        NewOrder.FacilityID = GetEffectiveFacilityId() ?? userFacilityId;
         context.WorkOrders.Add(NewOrder);
         await context.SaveChangesAsync();
         

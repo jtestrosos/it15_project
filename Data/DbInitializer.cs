@@ -1,4 +1,4 @@
-﻿using production_system.Data;
+using production_system.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -357,6 +357,16 @@ namespace production_system.Data
                 new production_system.Models.Cost { OrderID = order3.OrderID, CostType = "Labor", Amount = 4500.00m, CurrencyRate = 59.1699m, RecordedDate = now.AddHours(-2), FacilityID = facility.FacilityID },
                 new production_system.Models.Cost { OrderID = order3.OrderID, ComponentID = compCpu.ComponentID, CostType = "Material", Amount = (35000m * 25), CurrencyRate = 59.1699m, RecordedDate = now.AddHours(-8), FacilityID = facility.FacilityID },
                 new production_system.Models.Cost { OrderID = order3.OrderID, ComponentID = compMobo.ComponentID, CostType = "Material", Amount = (25000m * 25), CurrencyRate = 59.1699m, RecordedDate = now.AddHours(-8), FacilityID = facility.FacilityID }
+            );
+            await context.SaveChangesAsync();
+
+            // 9. Activity Logs
+            context.ActivityLogs.AddRange(
+                new production_system.Models.ActivityLog { UserID = worker.Id, ActionType = "Login", Details = "Worker logged into system", Timestamp = now.AddHours(-1), IPAddress = "192.168.1.10", FacilityID = facility.FacilityID },
+                new production_system.Models.ActivityLog { UserID = manager?.Id ?? worker.Id, ActionType = "ProductionPlan", Details = "Created new production plan #1", Timestamp = now.AddDays(-2), IPAddress = "192.168.1.5", FacilityID = facility.FacilityID },
+                new production_system.Models.ActivityLog { UserID = worker.Id, ActionType = "WorkOrder", Details = "Updated work order #1 to 'In Progress'", Timestamp = now.AddHours(-12), IPAddress = "192.168.1.10", FacilityID = facility.FacilityID },
+                new production_system.Models.ActivityLog { UserID = manager?.Id ?? worker.Id, ActionType = "Inventory", Details = "Restocked 'Steel Chassis' (250 units)", Timestamp = now.AddDays(-10), IPAddress = "192.168.1.5", FacilityID = facility.FacilityID },
+                new production_system.Models.ActivityLog { UserID = worker.Id, ActionType = "WorkOrder", Details = "Completed work order #6", Timestamp = now.AddDays(-25), IPAddress = "192.168.1.10", FacilityID = facility.FacilityID }
             );
             await context.SaveChangesAsync();
         }

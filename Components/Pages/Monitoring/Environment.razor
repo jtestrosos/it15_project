@@ -7,10 +7,31 @@
 @inject IWeatherService WeatherService
 @inject IServiceScopeFactory ScopeFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject production_system.Services.FacilityFilterService FacilityFilter
+@inject production_system.Services.FacilityAccessService FacilityAccess
 @rendermode InteractiveServer
 
 <PageTitle>NodeSync | Environment Monitor</PageTitle>
 
+<production_system.Components.Shared.FacilitySelector OnFacilityChanged="HandleFacilityChanged" />
+
+@if (isSuperAdmin && FacilityFilter.SelectedFacilityId == null)
+{
+    <div class="card border-0 shadow-sm overflow-hidden mb-4">
+        <div class="card-body p-5 text-center">
+            <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width:80px;height:80px;background:rgba(143,0,255,0.05);">
+                <i class="bi bi-geo-alt text-primary fs-1"></i>
+            </div>
+            <h3 class="fw-bold text-gray-800">Select a Facility</h3>
+            <p class="text-muted mx-auto" style="max-width: 500px;">
+                Please select a specific facility from the selector above to see real-time environmental data. 
+                Monitoring is disabled in global view because temperature and humidity readings are location-specific.
+            </p>
+        </div>
+    </div>
+}
+else
+{
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
         <h1 class="h3 mb-0 text-gray-800">Environment Monitor</h1>
@@ -157,6 +178,7 @@
         </div>
     }
 </div>
+}
 
 <style>
     .environment-card {
@@ -264,11 +286,30 @@
     private bool isLoading = true;
     private string statusMessage = "";
     private List<production_system.Models.EnvironmentalMonitor> recentReadings = new();
+    private int? userFacilityId;
+    private bool isSuperAdmin;
     private string currentLocation = "";
     private string currentApiKey = "";
 
+    private int? GetEffectiveFacilityId()
+    {
+        if (isSuperAdmin)
+            return FacilityFilter.SelectedFacilityId;
+        return userFacilityId;
+    }
+
+    private async Task HandleFacilityChanged()
+    {
+        await LoadFacilityLocation();
+        await RefreshWeather();
+        await LoadRecentReadings();
+    }
+
     protected override async Task OnInitializedAsync()
     {
+        isSuperAdmin = await FacilityAccess.IsSuperAdminAsync();
+        userFacilityId = await FacilityAccess.GetCurrentUserFacilityIdAsync();
+        
         await LoadFacilityLocation();
         await RefreshWeather();
         await LoadRecentReadings();
@@ -276,30 +317,21 @@
 
     private async Task LoadFacilityLocation()
     {
-        try
-        {
-            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-            var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            
-            if (!string.IsNullOrEmpty(userId))
-            {
-                using var scope = ScopeFactory.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                var facility = await context.Users
-                    .Where(u => u.Id == userId)
-                    .Select(u => u.Facility)
-                    .FirstOrDefaultAsync();
+        currentLocation = "";
+        currentApiKey = "";
 
-                if (facility != null)
-                {
-                    currentLocation = facility.Location ?? "";
-                    currentApiKey = facility.APIKeyOpenWeather ?? "";
-                }
-            }
-        }
-        catch
+        var effectiveFacilityId = GetEffectiveFacilityId();
+        if (effectiveFacilityId.HasValue)
         {
-            // Use empty strings
+            using var scope = ScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var facility = await context.Facilities.FindAsync(effectiveFacilityId.Value);
+
+            if (facility != null)
+            {
+                currentLocation = facility.Location ?? "";
+                currentApiKey = facility.APIKeyOpenWeather ?? "";
+            }
         }
     }
 
@@ -330,9 +362,11 @@
                 .Where(u => u.Id == userId)
                 .FirstOrDefaultAsync();
 
+            var effectiveFacilityId = GetEffectiveFacilityId();
+
             var reading = new production_system.Models.EnvironmentalMonitor
             {
-                FacilityID = user?.FacilityID ?? 1,
+                FacilityID = effectiveFacilityId ?? 1,
                 Temperature = weatherData.Temperature,
                 Humidity = weatherData.Humidity,
                 RecordedDate = DateTime.Now,
@@ -359,18 +393,10 @@
         
         // The user's facility is already loaded in LoadFacilityLocation
         // Filter by facility faor non-superadmin users
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        if (!authState.User.IsInRole("Superadmin"))
+        var effectiveFacilityId = GetEffectiveFacilityId();
+        if (effectiveFacilityId.HasValue)
         {
-            var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (!string.IsNullOrEmpty(userId))
-            {
-                var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId);
-                if (user?.FacilityID != null)
-                {
-                    query = query.Where(r => r.FacilityID == user.FacilityID);
-                }
-            }
+            query = query.Where(r => r.FacilityID == effectiveFacilityId.Value);
         }
         
         recentReadings = await query

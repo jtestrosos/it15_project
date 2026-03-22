@@ -1,4 +1,4 @@
-﻿@page "/admin/system-config"
+@page "/admin/system-config"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using production_system.Data
@@ -171,7 +171,7 @@
                                     </button>
                                 </div>
                                 <div class="form-text">
-                                    <i class="bi bi-info-circle me-1"></i>Used for live USDâ†’PHP currency conversion.
+                                    <i class="bi bi-info-circle me-1"></i>Used for live USD &rarr; PHP currency conversion.
                                     @if (hasExchange)
                                     {
                                         <span class="text-success ms-1"><i class="bi bi-check-circle"></i> Active</span>
@@ -404,8 +404,8 @@
 
     private string MaskKey(string key)
     {
-        if (string.IsNullOrEmpty(key) || key.Length <= 6) return "â€¢â€¢â€¢â€¢â€¢â€¢";
-        return key[..3] + "â€¢â€¢â€¢â€¢â€¢â€¢" + key[^3..];
+        if (string.IsNullOrEmpty(key) || key.Length <= 6) return "••••••";
+        return key[..3] + "••••••" + key[^3..];
     }
 }
 

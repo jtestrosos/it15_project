@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace production_system.Services
@@ -12,7 +12,6 @@ namespace production_system.Services
     public class ExchangeRateService : IExchangeRateService
     {
         private readonly HttpClient _httpClient;
-        private readonly string _apiKey;
         private readonly string _baseUrl;
         private readonly ILogger<ExchangeRateService> _logger;
 

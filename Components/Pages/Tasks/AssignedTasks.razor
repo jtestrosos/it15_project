@@ -9,10 +9,13 @@
 @inject IServiceScopeFactory ScopeFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
+@inject production_system.Services.FacilityFilterService FacilityFilter
 
 <PageTitle>NodeSync | @(isSuperadmin ? "Worker Tasks" : "My Work Orders")</PageTitle>
 
 <div class="container-fluid">
+    <production_system.Components.Shared.FacilitySelector OnFacilityChanged="HandleFacilityChanged" />
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1 class="h3 mb-0 text-gray-800">@(isSuperadmin ? "Worker Tasks" : "My Work Orders")</h1>
@@ -235,6 +238,11 @@
         }
     }
 
+    private async Task HandleFacilityChanged()
+    {
+        await LoadTasks();
+    }
+
     private async Task<List<WorkOrder>> LoadOrdersFromDb()
     {
         using var scope = ScopeFactory.CreateScope();
@@ -246,7 +254,14 @@
             .Include(w => w.User)
             .AsQueryable();
 
-        if (!isSuperadmin)
+        if (isSuperadmin)
+        {
+            if (FacilityFilter.SelectedFacilityId.HasValue)
+            {
+                query = query.Where(w => w.FacilityID == FacilityFilter.SelectedFacilityId.Value);
+            }
+        }
+        else
         {
             query = query.Where(w => w.UserID == userId);
         }

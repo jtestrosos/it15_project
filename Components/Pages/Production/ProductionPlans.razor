@@ -8,8 +8,11 @@
 @attribute [Authorize(Roles = "ProductionManager,Superadmin")]
 @inject IServiceScopeFactory ScopeFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject production_system.Services.FacilityFilterService FacilityFilter
 
 <PageTitle>NodeSync | Production Plans</PageTitle>
+
+<production_system.Components.Shared.FacilitySelector OnFacilityChanged="HandleFacilityChanged" />
 
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
@@ -192,14 +195,28 @@ else
         await LoadData();
     }
 
+    private int? GetEffectiveFacilityId()
+    {
+        if (isSuperAdmin)
+            return FacilityFilter.SelectedFacilityId;
+        return userFacilityId;
+    }
+
+    private async Task HandleFacilityChanged()
+    {
+        await LoadData();
+    }
+
     private async Task LoadData()
     {
+        var effectiveFacilityId = GetEffectiveFacilityId();
+
         using var scope = ScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var productQuery = context.Products.Where(p => !p.IsArchived).AsQueryable();
-        if (!isSuperAdmin && userFacilityId.HasValue)
+        if (effectiveFacilityId.HasValue)
         {
-            productQuery = productQuery.Where(p => p.FacilityID == userFacilityId.Value);
+            productQuery = productQuery.Where(p => p.FacilityID == effectiveFacilityId.Value);
         }
         products = await productQuery.ToListAsync();
 
@@ -209,9 +226,9 @@ else
             .OrderByDescending(p => p.PlanID)
             .AsQueryable();
 
-        if (!isSuperAdmin && userFacilityId.HasValue)
+        if (effectiveFacilityId.HasValue)
         {
-            planQuery = planQuery.Where(p => p.FacilityID == userFacilityId.Value);
+            planQuery = planQuery.Where(p => p.FacilityID == effectiveFacilityId.Value);
         }
 
         if (ShowArchived)
@@ -298,7 +315,7 @@ else
         else
         {
             NewPlan.UserID = currentUserId;
-            NewPlan.FacilityID = userFacilityId;
+            NewPlan.FacilityID = GetEffectiveFacilityId() ?? userFacilityId;
             context.ProductionPlans.Add(NewPlan);
             
             var log = new production_system.Models.ActivityLog

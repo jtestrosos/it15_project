@@ -1447,3 +1447,36 @@ main {
 ::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
+
+/* ── Table Sorting ────────────────────────────── */
+th.sortable {
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    padding-right: 1.5rem !important;
+}
+
+th.sortable:hover {
+    background-color: #e9ecef;
+}
+
+th.sortable::after {
+    content: '\2195'; /* Up/Down arrow */
+    position: absolute;
+    right: 0.5rem;
+    color: #adb5bd;
+    font-size: 0.8rem;
+    opacity: 0.5;
+}
+
+th.sortable.sort-asc::after {
+    content: '\2191'; /* Up arrow */
+    color: var(--ns-primary);
+    opacity: 1;
+}
+
+th.sortable.sort-desc::after {
+    content: '\2193'; /* Down arrow */
+    color: var(--ns-primary);
+    opacity: 1;
+}

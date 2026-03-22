@@ -1,15 +1,18 @@
-﻿@page "/admin/logs"
+@page "/admin/logs"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
 @using production_system.Data
 @using production_system.Models
 
-@attribute [Authorize(Roles = "Superadmin,Administrator")]
+@attribute [Authorize(Roles = "Superadmin,Administrator,ProductionManager,ProductionWorker")]
 @inject IServiceScopeFactory ScopeFactory
 @inject UserManager<ApplicationUser> UserManager
+@inject production_system.Services.FacilityFilterService FacilityFilter
 
 <PageTitle>NodeSync | Audit Logs</PageTitle>
+
+<production_system.Components.Shared.FacilitySelector OnFacilityChanged="HandleFacilityChanged" />
 
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
@@ -82,6 +85,8 @@ else
 
     private async Task LoadLogs()
     {
+        var effectiveFacilityId = isSuperAdmin ? FacilityFilter.SelectedFacilityId : userFacilityId;
+
         using var scope = ScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var query = context.ActivityLogs
@@ -89,9 +94,9 @@ else
             .OrderByDescending(l => l.Timestamp)
             .AsQueryable();
 
-        if (!isSuperAdmin && userFacilityId.HasValue)
+        if (effectiveFacilityId.HasValue)
         {
-            query = query.Where(l => l.FacilityID == userFacilityId.Value);
+            query = query.Where(l => l.FacilityID == effectiveFacilityId.Value);
         }
 
         logs = await query
@@ -111,6 +116,11 @@ else
         }
     }
     
+    private async Task HandleFacilityChanged()
+    {
+        await LoadLogs();
+    }
+
     private string GetUserRole(string? userId)
     {
         if (string.IsNullOrEmpty(userId)) return "";

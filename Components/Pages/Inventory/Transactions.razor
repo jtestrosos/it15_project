@@ -1,4 +1,4 @@
-﻿@page "/inventory/transactions"
+@page "/inventory/transactions"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using production_system.Data
@@ -6,8 +6,11 @@
 
 @attribute [Authorize(Roles = "ProductionManager,Superadmin")]
 @inject IServiceScopeFactory ScopeFactory
+@inject production_system.Services.FacilityFilterService FacilityFilter
 
 <PageTitle>NodeSync | Stock Transactions</PageTitle>
+
+<production_system.Components.Shared.FacilitySelector OnFacilityChanged="HandleFacilityChanged" />
 
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
@@ -82,10 +85,28 @@ else
 
     [Inject] private production_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
 
+    private int? GetEffectiveFacilityId()
+    {
+        if (isSuperAdmin)
+            return FacilityFilter.SelectedFacilityId;
+        return userFacilityId;
+    }
+
+    private async Task HandleFacilityChanged()
+    {
+        await LoadTransactions();
+    }
+
     protected override async Task OnInitializedAsync()
     {
         isSuperAdmin = await FacilityAccess.IsSuperAdminAsync();
         userFacilityId = await FacilityAccess.GetCurrentUserFacilityIdAsync();
+        await LoadTransactions();
+    }
+
+    private async Task LoadTransactions()
+    {
+        var effectiveFacilityId = GetEffectiveFacilityId();
 
         using var scope = ScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -94,9 +115,9 @@ else
             .Include(t => t.User)
             .AsQueryable();
 
-        if (!isSuperAdmin && userFacilityId.HasValue)
+        if (effectiveFacilityId.HasValue)
         {
-            query = query.Where(t => t.FacilityID == userFacilityId.Value);
+            query = query.Where(t => t.FacilityID == effectiveFacilityId.Value);
         }
 
         transactions = await query
