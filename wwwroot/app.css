@@ -1168,6 +1168,33 @@ main {
     color: white !important;
 }
 
+.text-success {
+    color: var(--ns-success) !important;
+}
+
+.btn-success {
+    background-color: var(--ns-success) !important;
+    border-color: var(--ns-success) !important;
+    color: white !important;
+}
+
+.btn-success:hover {
+    background-color: #047857 !important; /* emerald-700 for hover */
+    border-color: #047857 !important;
+    opacity: 1;
+}
+
+.btn-outline-success {
+    color: var(--ns-success) !important;
+    border: 1px solid var(--ns-success) !important;
+    background-color: transparent !important;
+}
+
+.btn-outline-success:hover {
+    background-color: var(--ns-success) !important;
+    color: white !important;
+}
+
 .badge-warning, .bg-warning {
     background: var(--ns-warning) !important;
     color: white !important;
