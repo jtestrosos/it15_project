@@ -2,16 +2,21 @@ using production_system.Data;
 using production_system.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Microsoft.AspNetCore.SignalR;
 
 namespace production_system.Services
 {
     public class NotificationService
     {
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IHubContext<Hubs.NotificationHub> _hubContext;
 
-        public NotificationService(IServiceScopeFactory scopeFactory)
+        public NotificationService(
+            IServiceScopeFactory scopeFactory,
+            IHubContext<Hubs.NotificationHub> hubContext)
         {
             _scopeFactory = scopeFactory;
+            _hubContext = hubContext;
         }
 
         /// <summary>
@@ -203,7 +208,7 @@ namespace production_system.Services
                     context.SystemNotifications.Add(new SystemNotification
                     {
                         FacilityID = reading.FacilityID,
-                        TargetRole = null, // Broadcast to everyone in facility (Workers, Managers, Admins)
+                        TargetRole = null, // Broadcast to everyone in facility
                         Title = $"Environment {reading.AlertStatus}",
                         Message = $"Temperature: {reading.Temperature}°C, Humidity: {reading.Humidity}% — Status: {reading.AlertStatus}",
                         Category = "EnvironmentAlert",
@@ -214,7 +219,7 @@ namespace production_system.Services
                 }
             }
 
-            // â”€â”€ 3. Overdue Work Orders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── 3. Overdue Work Orders ─────────────────────────────
             var overdueOrders = await context.WorkOrders
                 .Include(o => o.Plan)
                 .Where(o => o.Status == "In Progress" && o.Plan.PlannedEndDate < now)
@@ -243,7 +248,7 @@ namespace production_system.Services
                         CreatedAt = now
                     });
                     
-            // Also notify the Production Manager (broadcast to role)
+                    // Also notify the Production Manager (broadcast to role)
                     context.SystemNotifications.Add(new SystemNotification
                     {
                         FacilityID = order.FacilityID,
@@ -258,7 +263,7 @@ namespace production_system.Services
                 }
             }
 
-            // â”€â”€ 3.5. Pending Work Orders (for Workers) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── 3.5. Pending Work Orders (for Workers) ──────────────
             var pendingOrders = await context.WorkOrders
                 .Where(o => o.Status == "Pending" && !string.IsNullOrEmpty(o.UserID))
                 .ToListAsync();
@@ -287,7 +292,7 @@ namespace production_system.Services
                 }
             }
 
-            // â”€â”€ 4. Pending Production Plans (for Managers) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── 4. Pending Production Plans (for Managers) ──────────
             var pendingPlans = await context.ProductionPlans
                 .Where(p => p.Status == "Draft" && p.PlannedStartDate <= now.AddDays(2))
                 .ToListAsync();
@@ -316,9 +321,7 @@ namespace production_system.Services
                 }
             }
 
-            await context.SaveChangesAsync();
-
-            // â”€â”€ 5. Missing API Keys (for Superadmin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── 5. Missing API Keys (for Superadmin) ────────────────
             var facilitiesWithMissingKeys = await context.Facilities
                 .Where(f => string.IsNullOrEmpty(f.APIKeyOpenWeather) || string.IsNullOrEmpty(f.APIKeyExchangeRate))
                 .ToListAsync();
@@ -347,7 +350,7 @@ namespace production_system.Services
                 }
             }
 
-            // â”€â”€ 6. Unassigned Users (for Administrator) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── 6. Unassigned Users (for Administrator) ─────────────
             var unassignedUsersCount = await context.Users
                 .Where(u => u.FacilityID == null && !u.IsArchived)
                 .CountAsync();
@@ -376,7 +379,60 @@ namespace production_system.Services
                 }
             }
 
-            // â”€â”€ 7. Cleanup old dismissed notifications (older than 30 days)
+            // ── 7. SECURITY AUDIT FLAG (Special requirement) ──
+            var lastAuditCheck = now.AddMinutes(-30);
+            var suspiciousLogs = await context.ActivityLogs
+                .Where(l => l.Timestamp > lastAuditCheck && (l.ActionType == "Security" || l.ActionType.Contains("Failed")))
+                .CountAsync();
+
+            if (suspiciousLogs > 5)
+            {
+                var existingAudit = await context.SystemNotifications.AnyAsync(n => 
+                    n.Category == "Security" && n.CreatedAt > cutoff && !n.IsDismissed);
+                if (!existingAudit)
+                {
+                    context.SystemNotifications.Add(new SystemNotification
+                    {
+                        FacilityID = null,
+                        TargetRole = "Superadmin",
+                        Title = "Security Audit Flag",
+                        Message = "High volume of suspicious activity detected in the last 30 minutes.",
+                        Category = "Security",
+                        Severity = "Critical",
+                        LinkUrl = "/admin/users",
+                        CreatedAt = now
+                    });
+                    
+                    // Also alert Administrator
+                    context.SystemNotifications.Add(new SystemNotification
+                    {
+                        FacilityID = null,
+                        TargetRole = "Administrator",
+                        Title = "Security Audit Flag",
+                        Message = "Anomalous security logs detected.",
+                        Category = "Security",
+                        Severity = "Critical",
+                        LinkUrl = "/admin/users",
+                        CreatedAt = now
+                    });
+                }
+            }
+
+            // Capture new items before save
+            var newNotifications = context.ChangeTracker.Entries<SystemNotification>()
+                .Where(e => e.State == EntityState.Added)
+                .Select(e => e.Entity)
+                .ToList();
+
+            await context.SaveChangesAsync();
+
+            // ── 8. REAL-TIME BROADCAST ──
+            foreach (var n in newNotifications)
+            {
+                await BroadcastRealTimeAsync(n);
+            }
+
+            // ── 9. Cleanup old dismissed notifications (older than 30 days)
             var oldCutoff = now.AddDays(-30);
             var old = await context.SystemNotifications
                 .Where(n => n.IsDismissed && n.CreatedAt < oldCutoff)
@@ -387,6 +443,24 @@ namespace production_system.Services
                 await context.SaveChangesAsync();
             }
         }
+
+        private async Task BroadcastRealTimeAsync(SystemNotification n)
+        {
+            // If targeted to a specific user
+            if (!string.IsNullOrEmpty(n.UserID))
+            {
+                await _hubContext.Clients.Group($"User_{n.UserID}").SendAsync("ReceiveNotification", n);
+            }
+            // Else broadcast to role or everyone
+            else if (!string.IsNullOrEmpty(n.TargetRole))
+            {
+                await _hubContext.Clients.Group(n.TargetRole).SendAsync("ReceiveNotification", n);
+            }
+            else
+            {
+                // Global broadcast (all users)
+                await _hubContext.Clients.All.SendAsync("ReceiveNotification", n);
+            }
+        }
     }
 }
-

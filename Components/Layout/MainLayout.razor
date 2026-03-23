@@ -74,6 +74,15 @@
     </main>
 </div>
 
+<!-- SignalR Real-time Notifications Listener (No UI, just JS trigger) -->
+<production_system.Components.Shared.RealTimeNotifications />
+
+<!-- Toast Container for incoming alerts -->
+<div id="notification-toast-container" 
+     class="toast-container position-fixed bottom-0 end-0 p-3" 
+     style="z-index: 2000;">
+</div>
+
 <style>
     /* ── Sidebar toggle (CSS-only, no JS required) ──── */
     .sidebar-toggle-checkbox {

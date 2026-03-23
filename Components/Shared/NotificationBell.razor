@@ -5,6 +5,9 @@
 @inject NotificationService NotificationService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject production_system.Services.FacilityAccessService FacilityAccess
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@implements IDisposable
 @rendermode InteractiveServer
 
 <div class="notif-wrapper">
@@ -332,16 +335,26 @@
     {
         await LoadUserContext();
         await RefreshNotifications();
+    }
 
-        // Auto-refresh every 60 seconds
-        refreshTimer = new System.Threading.Timer(async _ =>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
         {
-            await InvokeAsync(async () =>
-            {
-                await RefreshNotifications();
-                StateHasChanged();
-            });
-        }, null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
+            // Register this component as a listener for real-time notification events
+            var dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("notificationService.registerListener", dotNetRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnNotificationReceived()
+    {
+        // When SignalR receives a message, refresh the unread items
+        await InvokeAsync(async () => {
+            await RefreshNotifications();
+            StateHasChanged();
+        });
     }
 
     private async Task LoadUserContext()
@@ -410,6 +423,12 @@
             await NotificationService.MarkAsReadAsync(n.NotificationID);
             n.IsRead = true;
             unreadCount = Math.Max(0, unreadCount - 1);
+        }
+
+        if (!string.IsNullOrEmpty(n.LinkUrl))
+        {
+            isOpen = false;
+            Navigation.NavigateTo(n.LinkUrl);
         }
     }
 
