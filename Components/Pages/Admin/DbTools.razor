@@ -137,32 +137,46 @@
     <div class="col-md-6">
         <div class="card border-0 shadow-sm h-100 glass-card">
             <div class="card-header bg-transparent py-3 border-0">
-                <h6 class="mb-0 fw-bold text-dark">
-                    <i class="bi bi-cloud-download-fill text-primary me-2"></i>DATA RECOVERY & BACKUP
+                <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                    <i class="bi bi-shield-lock-fill text-info me-2"></i>DATA RECOVERY & BACKUP
                 </h6>
             </div>
-            <div class="card-body d-flex flex-column">
+            <div class="card-body">
                 <p class="text-muted small mb-4">Export the entire system state to a portable JSON format. This backup can be used to restore or migrate your data.</p>
-                
-                <div class="mt-auto p-4 rounded-4 bg-light border border-opacity-10 text-center shadow-sm" style="background: linear-gradient(135deg, #f8f9fa 0%, #fffcf0 100%);">
-                    <div class="d-flex align-items-center justify-content-center gap-3 mb-4">
-                        <div class="rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center shadow-sm" style="width: 52px; height: 52px; border: 1px solid rgba(255, 150, 79, 0.1);">
-                            <i class="bi bi-braces-asterisk fs-4"></i>
+
+                <div class="d-flex flex-column gap-3">
+                    <!-- Action Item: Global Backup -->
+                    <div class="p-4 bg-white rounded-3 border-start border-info border-4 shadow-sm activity-item">
+                        <div class="activity-content">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-dark mb-0">System-Wide Export</h6>
+                                <span class="badge bg-info-light text-info border border-info border-opacity-25 fw-bold px-3">JSON 2.1</span>
+                            </div>
+                            
+                            <div class="d-flex flex-column gap-2 mb-4">
+                                <div class="d-flex align-items-center text-muted" style="font-size: 0.75rem;">
+                                    <i class="bi bi-check-circle-fill text-info me-2" style="font-size: 0.6rem;"></i> <strong>Full Database Capture:</strong> Includes all 12 system tables.
+                                </div>
+                                <div class="d-flex align-items-center text-muted" style="font-size: 0.75rem;">
+                                    <i class="bi bi-check-circle-fill text-info me-2" style="font-size: 0.6rem;"></i> <strong>Standard Encoding:</strong> UTF-8 compliant for global compatibility.
+                                </div>
+                                <div class="d-flex align-items-center text-muted" style="font-size: 0.75rem;">
+                                    <i class="bi bi-check-circle-fill text-info me-2" style="font-size: 0.6rem;"></i> <strong>Human Readable:</strong> Formatted for easy inspection and debugging.
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-info text-white flex-grow-1 fw-700 py-2 shadow-sm rounded-3" @onclick="BackupDatabase" disabled="@isLoading">
+                                    <i class="bi bi-cloud-arrow-down-fill me-2 fs-6"></i>DOWNLOAD GLOBAL ARCHIVE
+                                </button>
+                                <div class="px-3 d-flex align-items-center justify-content-center rounded-3 bg-light border border-opacity-10 text-center shadow-sm d-none d-sm-flex" style="min-width: 80px;">
+                                    <div>
+                                        <div class="text-muted" style="font-size: 0.55rem; font-weight: 700; text-transform: uppercase;">UTF-8</div>
+                                        <div class="fw-bold text-info" style="font-size: 0.75rem;">SECURE</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="text-start">
-                            <div class="fw-bold text-dark" style="font-size: 0.95rem;">Global Archive</div>
-                            <div class="text-muted" style="font-size: 0.7rem; font-weight: 500;">Format: application/json</div>
-                        </div>
-                    </div>
-                    
-                    <button class="btn btn-warning w-100 fw-bold py-2 rounded-pill shadow-sm text-dark" @onclick="BackupDatabase" disabled="@(isLoading)">
-                        <i class="bi bi-cloud-arrow-down-fill me-2"></i>Download Global Backup
-                    </button>
-                    
-                    <div class="mt-3 d-flex align-items-center justify-content-center gap-2">
-                        <span class="badge bg-white text-warning border border-warning border-opacity-25 py-1 px-2" style="font-size: 0.65rem;">UTF-8</span>
-                        <span class="badge bg-white text-warning border border-warning border-opacity-25 py-1 px-2" style="font-size: 0.65rem;">JSON</span>
-                        <span class="badge bg-white text-warning border border-warning border-opacity-25 py-1 px-2" style="font-size: 0.65rem;">FULL EXPORT</span>
                     </div>
                 </div>
             </div>
