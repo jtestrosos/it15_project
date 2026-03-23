@@ -166,10 +166,10 @@ else
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="text-muted small">@(string.IsNullOrWhiteSpace(comp.Description) ? "â€”" : comp.Description)</td>
+                                    <td class="text-muted small">@(string.IsNullOrWhiteSpace(comp.Description) ? "—" : comp.Description)</td>
                                     <td>&#8369;@comp.UnitCost.ToString("N2")</td>
                                     <td><span class="badge bg-secondary">@comp.MinStockLevel</span></td>
-                                    <td class="text-muted small">@(string.IsNullOrWhiteSpace(comp.SupplierInfo) ? "â€”" : comp.SupplierInfo)</td>
+                                    <td class="text-muted small">@(string.IsNullOrWhiteSpace(comp.SupplierInfo) ? "—" : comp.SupplierInfo)</td>
                                     <AuthorizeView Roles="ProductionManager">
                                         <Authorized>
                                             <td class="text-center">

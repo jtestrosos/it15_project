@@ -376,7 +376,7 @@ else
             context.EnvironmentalMonitors.Add(reading);
             await context.SaveChangesAsync();
             
-            statusMessage = "Reading logged successfully!";
+            statusMessage = $"Reading logged successfully! (Temp: {reading.Temperature}°C, Humidity: {reading.Humidity}%)";
             await LoadRecentReadings();
         }
         catch (Exception ex)

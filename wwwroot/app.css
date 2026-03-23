@@ -1299,6 +1299,15 @@ main {
     color: #92400e;
 }
 
+.alert-dismissible .btn-close {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    right: 0.5rem !important;
+    margin: 0 !important;
+    padding: 1rem !important;
+}
+
+
 .alert-low-stock {
     background: var(--ns-danger-light);
     border-color: #fca5a5;

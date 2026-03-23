@@ -138,7 +138,7 @@ namespace production_system.Services
             var now = DateTime.UtcNow;
             var cutoff = now.AddHours(-6); // Don't duplicate alerts within 6 hours
 
-            // â”€â”€ 1. Low Stock Alerts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── 1. Low Stock Alerts ────────────────────────────────
             var components = await context.Components
                 .Where(c => !c.IsArchived)
                 .ToListAsync();
@@ -183,7 +183,7 @@ namespace production_system.Services
                 }
             }
 
-            // â”€â”€ 2. Environment Alerts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            // ── 2. Environment Alerts ──────────────────────────────
             var recentReadings = await context.EnvironmentalMonitors
                 .Where(e => e.RecordedDate > now.AddHours(-2))
                 .Where(e => e.AlertStatus == "Critical" || e.AlertStatus == "Warning" || e.AlertStatus == "Cold Warning" || e.AlertStatus == "High Humidity")
@@ -205,7 +205,7 @@ namespace production_system.Services
                         FacilityID = reading.FacilityID,
                         TargetRole = null, // Broadcast to everyone in facility (Workers, Managers, Admins)
                         Title = $"Environment {reading.AlertStatus}",
-                        Message = $"Temperature: {reading.Temperature}Â°C, Humidity: {reading.Humidity}% â€” Status: {reading.AlertStatus}",
+                        Message = $"Temperature: {reading.Temperature}°C, Humidity: {reading.Humidity}% — Status: {reading.AlertStatus}",
                         Category = "EnvironmentAlert",
                         Severity = severity,
                         LinkUrl = "/monitoring/environment",
@@ -307,7 +307,7 @@ namespace production_system.Services
                         FacilityID = plan.FacilityID,
                         TargetRole = "ProductionManager",
                         Title = $"Production Plan #{plan.PlanID} starts soon",
-                        Message = $"Planned start: {plan.PlannedStartDate:MMM dd}. Status still \"Draft\" â€” needs approval.",
+                        Message = $"Planned start: {plan.PlannedStartDate:MMM dd}. Status still \"Draft\" — needs approval.",
                         Category = "Production",
                         Severity = "Info",
                         LinkUrl = "/production/plans",
