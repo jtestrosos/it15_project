@@ -96,7 +96,7 @@
                         <div class="card-footer bg-transparent border-0 pb-3 pt-0">
                             @if (order.Status == "Pending")
                             {
-                                <button class="btn btn-warning w-100 fw-bold text-white" @onclick="() => ConfirmStartTask(order)">
+                                <button class="btn w-100 fw-bold text-white shadow-sm" style="background-color: var(--ns-warning, #EA580C);" @onclick="() => ConfirmStartTask(order)">
                                     <i class="bi bi-play-fill me-1"></i> Start Work
                                 </button>
                             }
@@ -125,7 +125,7 @@
     <div class="modal fade show d-block" style="background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px);" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-                <div class="modal-header border-0 text-white @(modalAction == "Start" ? "bg-warning" : "")" style="@(modalAction == "Complete" ? "background-color: var(--ns-primary, #8F00FF);" : "")">
+                <div class="modal-header border-0 text-white" style="@(modalAction == "Start" ? "background-color: var(--ns-warning, #EA580C);" : (modalAction == "Complete" ? "background-color: var(--ns-primary, #8F00FF);" : ""))">
                     <h5 class="modal-title fw-bold text-white">
                         <i class="bi @(modalAction == "Start" ? "bi-play-circle-fill" : "bi-check-circle-fill") me-2 text-white"></i>
                         Confirm @modalAction Task
@@ -134,7 +134,7 @@
                 </div>
                 <div class="modal-body p-4 text-center">
                     <div class="mb-3">
-                        <i class="bi @(modalAction == "Start" ? "bi-rocket-takeoff text-warning" : "bi-check2-square")" style="font-size: 3rem; @(modalAction == "Complete" ? "color: var(--ns-primary, #8F00FF);" : "")"></i>
+                        <i class="bi @(modalAction == "Start" ? "bi-rocket-takeoff" : "bi-check2-square")" style="font-size: 3rem; @(modalAction == "Start" ? "color: var(--ns-warning, #EA580C);" : (modalAction == "Complete" ? "color: var(--ns-primary, #8F00FF);" : ""))"></i>
                     </div>
                     <h5 class="fs-4 text-dark mb-3">Are you sure you want to <strong>@modalAction.ToLower()</strong> this task?</h5>
                     <div class="card bg-light border-0 text-start shadow-sm mx-auto" style="max-width: 350px;">
@@ -151,7 +151,9 @@
                 </div>
                 <div class="modal-footer border-0 p-4 pt-0 d-flex justify-content-center gap-2">
                     <button type="button" class="btn btn-light px-4 fw-bold text-secondary" @onclick="CloseModal">Cancel</button>
-                    <button type="button" class="btn @(modalAction == "Start" ? "btn-warning" : "") text-white px-4 fw-bold shadow-sm" style="@(modalAction == "Complete" ? "background-color: var(--ns-primary, #8F00FF);" : "")" @onclick="HandleConfirm">
+                    <button type="button" class="btn text-white px-4 fw-bold shadow-sm" 
+                            style="@(modalAction == "Start" ? "background-color: var(--ns-warning, #EA580C);" : (modalAction == "Complete" ? "background-color: var(--ns-primary, #8F00FF);" : ""))" 
+                            @onclick="HandleConfirm">
                         Yes, @modalAction
                     </button>
                 </div>
