@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/TwoFactorAuthentication"
+@page "/Account/Manage/TwoFactorAuthentication"
 
 @using Microsoft.AspNetCore.Http.Features
 @using Microsoft.AspNetCore.Identity
@@ -11,62 +11,103 @@
 <PageTitle>NodeSync | Account Settings</PageTitle>
 
 <StatusMessage />
-<h3>Two-Factor Authentication (2FA)</h3>
-@if (canTrack)
-{
-    if (is2faEnabled)
-    {
-        if (recoveryCodesLeft == 0)
-        {
-            <div class="alert alert-danger">
-                <strong>You have no recovery codes left.</strong>
-                <p>You must <a href="Account/Manage/GenerateRecoveryCodes">generate a new set of recovery codes</a> before you can log in with a recovery code.</p>
-            </div>
-        }
-        else if (recoveryCodesLeft == 1)
-        {
-            <div class="alert alert-danger">
-                <strong>You have 1 recovery code left.</strong>
-                <p>You can <a href="Account/Manage/GenerateRecoveryCodes">generate a new set of recovery codes</a>.</p>
-            </div>
-        }
-        else if (recoveryCodesLeft <= 3)
-        {
-            <div class="alert alert-warning">
-                <strong>You have @recoveryCodesLeft recovery codes left.</strong>
-                <p>You should <a href="Account/Manage/GenerateRecoveryCodes">generate a new set of recovery codes</a>.</p>
-            </div>
-        }
-
-        if (isMachineRemembered)
-        {
-            <form style="display: inline-block" @formname="forget-browser" @onsubmit="OnSubmitForgetBrowserAsync" method="post">
-                <AntiforgeryToken />
-                <button type="submit" class="btn btn-primary">Forget this browser</button>
-            </form>
-        }
-
-        <a href="Account/Manage/Disable2fa" class="btn btn-primary">Disable 2FA</a>
-        <a href="Account/Manage/GenerateRecoveryCodes" class="btn btn-primary">Reset recovery codes</a>
-    }
-
-    <h4>Authenticator app</h4>
-    @if (!hasAuthenticator)
-    {
-        <a href="Account/Manage/EnableAuthenticator" class="btn btn-primary">Add authenticator app</a>
-    }
-    else
-    {
-        <a href="Account/Manage/EnableAuthenticator" class="btn btn-primary">Set up authenticator app</a>
-    }
-}
-else
-{
-    <div class="alert alert-danger">
-        <strong>Privacy and cookie policy have not been accepted.</strong>
-        <p>You must accept the policy before you can enable two factor authentication.</p>
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-shield-check me-1"></i> Two-Factor Authentication (2FA)
     </div>
-}
+    <div class="card-body p-4">
+        @if (canTrack)
+        {
+            @if (is2faEnabled)
+            {
+                if (recoveryCodesLeft == 0)
+                {
+                    <div class="alert alert-danger border-0 shadow-sm mb-4">
+                        <h6 class="fw-bold"><i class="bi bi-exclamation-octagon-fill me-2"></i>No recovery codes left!</h6>
+                        <p class="small mb-0">You must <a href="Account/Manage/GenerateRecoveryCodes" class="fw-bold">generate a new set of recovery codes</a> before you can log in with a recovery code.</p>
+                    </div>
+                }
+                else if (recoveryCodesLeft == 1)
+                {
+                    <div class="alert alert-danger border-0 shadow-sm mb-4">
+                        <h6 class="fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>Critical: 1 recovery code left</h6>
+                        <p class="small mb-0">You should <a href="Account/Manage/GenerateRecoveryCodes" class="fw-bold">generate a new set of recovery codes</a> now.</p>
+                    </div>
+                }
+                else if (recoveryCodesLeft <= 3)
+                {
+                    <div class="alert alert-warning border-0 shadow-sm mb-4">
+                        <h6 class="fw-bold"><i class="bi bi-shield-exclamation me-2"></i>Low recovery codes: @recoveryCodesLeft left</h6>
+                        <p class="small mb-0">We recommend that you <a href="Account/Manage/GenerateRecoveryCodes" class="fw-bold text-dark">generate a new set of recovery codes</a>.</p>
+                    </div>
+                }
+            }
+
+            <div class="row">
+                <div class="col-xl-6">
+                    <h5 class="fw-bold mb-3">Authenticator App</h5>
+                    <p class="text-muted small mb-4">
+                        Protect your account by using an authenticator app (like Google Authenticator or Microsoft Authenticator) as a second step when you log in.
+                    </p>
+
+                    @if (is2faEnabled)
+                    {
+                        <div class="d-flex flex-wrap gap-2 mb-4">
+                            @if (isMachineRemembered)
+                            {
+                                <form style="display: inline-block" @formname="forget-browser" @onsubmit="OnSubmitForgetBrowserAsync" method="post">
+                                    <AntiforgeryToken />
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm rounded-pill px-3">Forget browser</button>
+                                </form>
+                            }
+                            <a href="Account/Manage/Disable2fa" class="btn btn-outline-danger btn-sm rounded-pill px-3">Disable 2FA</a>
+                            <a href="Account/Manage/GenerateRecoveryCodes" class="btn btn-outline-primary btn-sm rounded-pill px-3">Reset codes</a>
+                        </div>
+                    }
+
+                    <div class="d-grid mt-2">
+                        @if (!hasAuthenticator)
+                        {
+                            <a href="Account/Manage/EnableAuthenticator" class="btn btn-primary py-2 fw-bold rounded-3 shadow-sm">
+                                <i class="bi bi-plus-circle me-1"></i> Add authenticator app
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="Account/Manage/EnableAuthenticator" class="btn btn-primary py-2 fw-bold rounded-3 shadow-sm">
+                                <i class="bi bi-gear-fill me-1"></i> Set up authenticator app
+                            </a>
+                        }
+                    </div>
+                </div>
+
+                <div class="col-xl-6 mt-4 mt-xl-0">
+                    <div class="p-4 rounded-4" style="background: rgba(143,0,255,0.04); border: 1px solid rgba(143,0,255,0.1);">
+                        <h6 class="fw-bold mb-3 text-primary"><i class="bi bi-shield-lock-fill me-2"></i>Security Benefits</h6>
+                        <ul class="list-unstyled small text-muted mb-0">
+                            <li class="mb-3 d-flex align-items-center"><i class="bi bi-check-circle-fill text-success me-3"></i> Adds an extra layer of account protection</li>
+                            <li class="mb-3 d-flex align-items-center"><i class="bi bi-shield-check text-success me-3"></i> Prevents unauthorized login attempts</li>
+                            <li class="mb-3 d-flex align-items-center"><i class="bi bi-phone-fill text-success me-3"></i> Verification codes are generated offline</li>
+                            <li class="d-flex align-items-center"><i class="bi bi-key-fill text-success me-3"></i> Works even if your password is compromised</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning border-0 shadow-sm rounded-3 p-4">
+                <div class="d-flex align-items-start">
+                    <i class="bi bi-exclamation-triangle-fill fs-3 me-3 text-warning"></i>
+                    <div>
+                        <h6 class="fw-bold mb-1">Tracking Consent Required</h6>
+                        <p class="mb-0 small text-muted">You must accept our privacy and cookie policy before you can enable Two-Factor Authentication. This ensures we can securely manage your session across multiple devices.</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
 
 @code {
     private bool canTrack;
