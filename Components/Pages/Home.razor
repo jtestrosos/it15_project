@@ -13,87 +13,106 @@
 <PageTitle>NodeSync | Dashboard</PageTitle>
 
 <div class="page-header mb-4">
-    <h1>Dashboard</h1>
-    <p class="mb-0 opacity-75">Welcome to the NodeSync Production System!</p>
+    <div class="row align-items-center">
+        <div class="col-8">
+            <h1 class="display-6 fw-800 mb-1">Operational Dashboard</h1>
+            <p class="text-muted mb-0">NodeSync Integrated Production & Logistics Management</p>
+        </div>
+        <div class="col-4 text-end">
+            <div class="badge bg-primary bg-opacity-10 text-primary p-2 px-3 rounded-pill border border-primary border-opacity-25">
+                <i class="bi bi-calendar3 me-2"></i>@DateTime.Now.ToString("MMMM dd, yyyy")
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- ========================================== -->
 <!-- PRODUCTION WORKER DASHBOARD                -->
 <!-- ========================================== -->
 <AuthorizeView Roles="ProductionWorker" Context="workerContext">
-    <div class="row g-4 mb-4">
-        <!-- Pending Tasks -->
+    <div class="row g-4 mb-5">
+        <!-- Tasks KPI -->
         <div class="col-md-4">
-            <div class="dashboard-widget">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="widget-icon me-3" style="background-color: #EA580C; color: white;">
-                        <i class="bi bi-list-task"></i>
-                    </div>
-                    <div>
-                        <div class="widget-value">@workerPendingTasks</div>
-                        <div class="widget-label">My Pending Tasks</div>
-                    </div>
+            <div class="dash-kpi dash-kpi-purple">
+                <div class="dash-kpi-icon">
+                    <i class="bi bi-list-stars"></i>
+                </div>
+                <div class="dash-kpi-body">
+                    <div class="dash-kpi-value">@workerPendingTasks</div>
+                    <div class="dash-kpi-label">Active Tasks</div>
                 </div>
             </div>
         </div>
-        <!-- Performance -->
+        <!-- Completed KPI -->
         <div class="col-md-4">
-            <div class="dashboard-widget">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="widget-icon me-3" style="background-color: #059669; color: white;">
-                        <i class="bi bi-check2-circle"></i>
-                    </div>
-                    <div>
-                        <div class="widget-value">@workerCompletedToday</div>
-                        <div class="widget-label">Completed Today</div>
-                    </div>
+            <div class="dash-kpi dash-kpi-green">
+                <div class="dash-kpi-icon">
+                    <i class="bi bi-patch-check"></i>
+                </div>
+                <div class="dash-kpi-body">
+                    <div class="dash-kpi-value">@workerCompletedToday</div>
+                    <div class="dash-kpi-label">Finished Today</div>
                 </div>
             </div>
         </div>
-        <!-- Environment (Using placeholder data if service fails/unconfigured) -->
+        <!-- Climate KPI -->
         <div class="col-md-4">
-            <div class="dashboard-widget">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="widget-icon me-3" style="@GetEnvIconStyle()">
-                        <i class="bi bi-thermometer-half"></i>
-                    </div>
-                    <div>
-                        <div class="widget-value">@(currentTemp == "--" || currentTemp == "N/A" ? currentTemp : currentTemp + " °C")</div>
-                        <div class="widget-label">ESD Safety: @(isSafe ? "Safe" : "Risk")</div>
-                    </div>
+            <div class="dash-kpi @(isSafe ? "dash-kpi-cyan" : "dash-kpi-amber")">
+                <div class="dash-kpi-icon">
+                    <i class="bi bi-thermometer-half"></i>
                 </div>
+                <div class="dash-kpi-body">
+                    <div class="dash-kpi-value">@(currentTemp == "--" || currentTemp == "N/A" ? "--" : currentTemp + "°C")</div>
+                    <div class="dash-kpi-label">Workshop: @(isSafe ? "Optimal" : "Check ESD")</div>
+                </div>
+                @if (!isSafe && currentTemp != "N/A" && currentTemp != "--")
+                {
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-danger p-1 rounded-circle"><i class="bi bi-exclamation-triangle"></i></span>
+                    </div>
+                }
             </div>
         </div>
     </div>
     
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">My Work Orders</h5>
+            <div class="card border-0 shadow-sm overflow-hidden">
+                <div class="card-header bg-white py-3 border-bottom-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-kanban me-2 text-primary"></i>My Assigned Work Orders</h5>
+                        <a href="tasks/assigned" class="btn btn-sm btn-outline-primary">View Full List</a>
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     @if (workerOrders.Any())
                     {
                          <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
+                            <table class="table table-hover align-middle mb-0">
+                                <thead style="background: #f8f9fa;">
                                     <tr>
-                                        <th>Order ID</th>
-                                        <th>Description</th>
-                                        <th>Status</th>
-                                        <th>Action</th>
+                                        <th class="ps-4 py-3">Reference</th>
+                                        <th class="py-3">Task Details</th>
+                                        <th class="py-3">Status</th>
+                                        <th class="py-3 text-end pe-4">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var order in workerOrders)
                                     {
                                         <tr>
-                                            <td>@order.OrderID</td>
-                                            <td>@order.OrderDescription</td>
-                                            <td><span class="badge @GetStatusClass(order.Status)">@order.Status</span></td>
+                                            <td class="ps-4 fw-600">#@order.OrderID</td>
                                             <td>
-                                                <a href="tasks/assigned" class="btn btn-sm btn-primary">View</a>
+                                                <div class="fw-500">@order.OrderDescription</div>
+                                                <div class="text-muted small">Target Qty: @order.BatchQuantity</div>
+                                            </td>
+                                            <td>
+                                                <span class="badge rounded-pill @GetStatusClass(order.Status)">@order.Status</span>
+                                            </td>
+                                            <td class="text-end pe-4">
+                                                <a href="tasks/assigned" class="btn btn-sm btn-light border">
+                                                    Open <i class="bi bi-arrow-right ms-1"></i>
+                                                </a>
                                             </td>
                                         </tr>
                                     }
@@ -103,7 +122,13 @@
                     }
                     else
                     {
-                        <p class="text-muted text-center py-4">No pending work assigned to you.</p>
+                        <div class="text-center py-5">
+                            <div class="bg-light rounded-circle d-inline-flex p-3 mb-3">
+                                <i class="bi bi-check-all text-success fs-3"></i>
+                            </div>
+                            <h6 class="fw-bold">All caught up!</h6>
+                            <p class="text-muted small mb-0">No active production tasks assigned to you right now.</p>
+                        </div>
                     }
                 </div>
             </div>
@@ -115,56 +140,40 @@
 <!-- PRODUCTION MANAGER DASHBOARD               -->
 <!-- ========================================== -->
 <AuthorizeView Roles="ProductionManager" Context="managerContext">
-    <div class="row g-4 mb-4">
+    <div class="row g-4 mb-5">
         <div class="col-md-6 col-lg-3">
-            <div class="dashboard-widget">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="widget-icon me-3" style="background-color: #8F00FF; color: white;">
-                        <i class="bi bi-clipboard-data"></i>
-                    </div>
-                    <div>
-                        <div class="widget-value">@managerActivePlans</div>
-                        <div class="widget-label">Active Plans</div>
-                    </div>
+            <div class="dash-kpi dash-kpi-purple">
+                <div class="dash-kpi-icon"><i class="bi bi-kanban-fill"></i></div>
+                <div class="dash-kpi-body">
+                    <div class="dash-kpi-value">@managerActivePlans</div>
+                    <div class="dash-kpi-label">Active Operations</div>
                 </div>
             </div>
         </div>
         <div class="col-md-6 col-lg-3">
-             <div class="dashboard-widget">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="widget-icon me-3 bg-danger text-white">
-                         <i class="bi bi-exclamation-triangle"></i>
-                    </div>
-                    <div>
-                        <div class="widget-value">@managerBottlenecks</div>
-                        <div class="widget-label">Bottlenecks</div>
-                    </div>
+             <div class="dash-kpi dash-kpi-red">
+                <div class="dash-kpi-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+                <div class="dash-kpi-body">
+                    <div class="dash-kpi-value">@managerBottlenecks</div>
+                    <div class="dash-kpi-label">Bottlenecks</div>
                 </div>
             </div>
         </div>
         <div class="col-md-6 col-lg-3">
-            <div class="dashboard-widget">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="widget-icon me-3 @(lowStockCount > 0 ? "bg-warning text-dark" : "bg-success text-white")">
-                         <i class="bi bi-box-seam"></i>
-                    </div>
-                    <div>
-                        <div class="widget-value">@lowStockCount</div>
-                        <div class="widget-label">Low Stock Items</div>
-                    </div>
+            <div class="dash-kpi @(lowStockCount > 0 ? "dash-kpi-amber" : "dash-kpi-green")">
+                <div class="dash-kpi-icon"><i class="bi bi-box-seam-fill"></i></div>
+                <div class="dash-kpi-body">
+                    <div class="dash-kpi-value">@lowStockCount</div>
+                    <div class="dash-kpi-label">Low Stock Alerts</div>
                 </div>
             </div>
         </div>
         <div class="col-md-6 col-lg-3">
-            <div class="dashboard-widget">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="widget-icon me-3 bg-success text-white">
-                         <i class="bi bi-currency-dollar"></i>
-                    </div>
-                    <div>
-                        <div class="widget-value">&#8369;@todayCost.ToString("N0")</div>
-                        <div class="widget-label">Costs Today</div>
-                    </div>
+            <div class="dash-kpi dash-kpi-blue">
+                <div class="dash-kpi-icon"><i class="bi bi-wallet2"></i></div>
+                <div class="dash-kpi-body">
+                    <div class="dash-kpi-value">&#8369;@todayCost.ToString("N0")</div>
+                    <div class="dash-kpi-label">Costs Recorded</div>
                 </div>
             </div>
         </div>
@@ -172,32 +181,38 @@
 
     <div class="row g-4">
         <div class="col-lg-8">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0">Production Overview</h5>
+            <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                <div class="card-header bg-white py-3">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-speedometer2 me-2 text-primary"></i>Live Production Status</h6>
                 </div>
-                <div class="card-body">
-                    <h5>Recent Orders</h5>
+                <div class="card-body p-0">
                      @if (managerRecentOrders.Any())
                     {
                         <div class="table-responsive">
-                            <table class="table table-sm table-striped">
-                                <thead>
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
                                     <tr>
-                                        <th>ID</th>
+                                        <th class="ps-4">ID</th>
                                         <th>Description</th>
-                                        <th>Status</th>
-                                        <th>User</th>
+                                        <th>Progress</th>
+                                        <th>Assignee</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var order in managerRecentOrders)
                                     {
                                         <tr>
-                                            <td>@order.OrderID</td>
+                                            <td class="ps-4 fw-600">#@order.OrderID</td>
                                             <td>@order.OrderDescription</td>
-                                            <td><span class="badge @GetStatusClass(order.Status)">@order.Status</span></td>
-                                            <td>@order.User?.UserName</td>
+                                            <td><span class="badge rounded-pill @GetStatusClass(order.Status)">@order.Status</span></td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px; font-size: 0.75rem;">
+                                                        @(order.User?.UserName?.Substring(0, 1).ToUpper() ?? "U")
+                                                    </div>
+                                                    <span class="small">@(order.User?.UserName ?? "Unassigned")</span>
+                                                </div>
+                                            </td>
                                         </tr>
                                     }
                                 </tbody>
@@ -206,42 +221,44 @@
                     }
                     else
                     {
-                         <p class="text-muted text-center py-2">No recent production activity.</p>
+                         <div class="text-center py-5 text-muted">No recent activity detected.</div>
                     }
                 </div>
             </div>
         </div>
         <div class="col-lg-4">
-             <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-0 pt-4 pb-0">
-                    <h6 class="mb-0 fw-bold text-dark text-uppercase tracking-wide">
-                        <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Low Stock Alerts
+             <div class="card border-0 shadow-sm h-100 glass-card">
+                <div class="card-header bg-transparent py-3 border-0">
+                    <h6 class="mb-0 fw-bold text-dark">
+                        <i class="bi bi-exclamation-octagon-fill text-danger me-2"></i>Critical Inventory
                     </h6>
                 </div>
                 <div class="card-body">
                     @if (lowStockComponents.Any())
                     {
-                        <div class="d-flex flex-column gap-3 mt-2">
+                        <div class="d-flex flex-column gap-3">
                             @foreach (var component in lowStockComponents)
                             {
-                                <div class="p-3 bg-light rounded-3 border-start border-danger border-4 shadow-sm">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <h6 class="mb-0 fw-bold text-dark">@component.ComponentName</h6>
-                                        <span class="badge bg-danger">@component.CurrentStock Left</span>
+                                <div class="p-3 bg-white rounded-3 border-start border-danger border-4 shadow-sm activity-item">
+                                    <div class="activity-content">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span class="fw-bold text-dark">@component.ComponentName</span>
+                                            <span class="badge bg-danger">@component.CurrentStock</span>
+                                        </div>
+                                        <div class="text-muted small">Minimum Required: @component.MinStockLevel</div>
                                     </div>
-                                    <small class="text-muted"><i class="bi bi-box-seam me-1"></i>Min Required: @component.MinStockLevel</small>
                                 </div>
                             }
                         </div>
                     }
                     else
                     {
-                        <div class="text-center py-5 d-flex flex-column align-items-center justify-content-center h-100">
+                        <div class="text-center py-5">
                             <div class="p-3 bg-success bg-opacity-10 rounded-circle d-inline-flex mb-3 text-success">
-                                <i class="bi bi-check-circle-fill fs-2"></i>
+                                <i class="bi bi-shield-check fs-2"></i>
                             </div>
-                            <h6 class="fw-bold mb-1 text-success">Inventory Healthy</h6>
-                            <p class="text-muted small mb-0">No components are running dangerously low.</p>
+                            <h6 class="fw-bold text-success">Stock Healthy</h6>
+                            <p class="text-muted small mb-0">All key components are sufficiently stocked.</p>
                         </div>
                     }
                 </div>
@@ -254,43 +271,31 @@
 <!-- ADMINISTRATOR DASHBOARD                    -->
 <!-- ========================================== -->
 <AuthorizeView Roles="Administrator" Context="adminContext">
-     <div class="row g-4 mb-4">
+     <div class="row g-4 mb-5">
         <div class="col-md-4">
-            <div class="dashboard-widget">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="widget-icon me-3 bg-primary text-white">
-                        <i class="bi bi-people"></i>
-                    </div>
-                    <div>
-                        <div class="widget-value">@adminTotalUsers</div>
-                        <div class="widget-label">Total Users</div>
-                    </div>
+            <div class="dash-kpi dash-kpi-purple">
+                <div class="dash-kpi-icon"><i class="bi bi-people-fill"></i></div>
+                <div class="dash-kpi-body">
+                    <div class="dash-kpi-value">@adminTotalUsers</div>
+                    <div class="dash-kpi-label">Active Personnel</div>
                 </div>
             </div>
         </div>
          <div class="col-md-4">
-            <div class="dashboard-widget">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="widget-icon me-3 bg-warning text-dark">
-                        <i class="bi bi-person-exclamation"></i>
-                    </div>
-                    <div>
-                        <div class="widget-value">@adminArchivedUsers</div>
-                        <div class="widget-label">Archived Users</div>
-                    </div>
+            <div class="dash-kpi dash-kpi-amber">
+                <div class="dash-kpi-icon"><i class="bi bi-person-x-fill"></i></div>
+                <div class="dash-kpi-body">
+                    <div class="dash-kpi-value">@adminArchivedUsers</div>
+                    <div class="dash-kpi-label">Deactivated Accounts</div>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="dashboard-widget">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="widget-icon me-3 bg-info text-white">
-                        <i class="bi bi-activity"></i>
-                    </div>
-                    <div>
-                        <div class="widget-value">@adminRecentLogsCount</div>
-                        <div class="widget-label">Activities (24h)</div>
-                    </div>
+            <div class="dash-kpi dash-kpi-blue">
+                <div class="dash-kpi-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                <div class="dash-kpi-body">
+                    <div class="dash-kpi-value">@adminRecentLogsCount</div>
+                    <div class="dash-kpi-label">Recent Audits (24h)</div>
                 </div>
             </div>
         </div>
@@ -298,31 +303,38 @@
 
     <div class="row">
          <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Recent System Activity</h5>
+            <div class="card border-0 shadow-sm overflow-hidden">
+                <div class="card-header bg-white py-3 border-bottom-0">
+                    <h6 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2 text-primary"></i>System Security & Audit Log</h6>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                      @if (adminRecentLogs.Any())
                     {
                         <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
                                     <tr>
-                                        <th>User</th>
-                                        <th>Action</th>
+                                        <th class="ps-4">Personnel</th>
+                                        <th>Security Event</th>
                                         <th>Details</th>
-                                        <th>Time</th>
+                                        <th class="pe-4 text-end">Occurrence</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var log in adminRecentLogs)
                                     {
                                         <tr>
-                                            <td>@log.User?.UserName</td>
-                                            <td><span class="badge bg-secondary">@log.ActionType</span></td>
-                                            <td>@log.Details</td>
-                                            <td class="text-muted small">@log.Timestamp.ToString("g")</td>
+                                            <td class="ps-4">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="tb-dropdown-avatar me-2" style="width: 28px; height: 28px; font-size: 0.8rem;">
+                                                        @(log.User?.UserName?.Substring(0,1).ToUpper() ?? "?")
+                                                    </div>
+                                                    <span class="fw-500">@(log.User?.UserName ?? "System")</span>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge rounded-pill bg-secondary bg-opacity-10 text-dark border">@log.ActionType</span></td>
+                                            <td class="small">@log.Details</td>
+                                            <td class="pe-4 text-end text-muted small">@log.Timestamp.ToString("g")</td>
                                         </tr>
                                     }
                                 </tbody>
@@ -331,7 +343,7 @@
                     }
                     else
                     {
-                        <p class="text-muted text-center py-4">No recent audit logs found.</p>
+                        <div class="text-center py-5 text-muted">No recent security events logged.</div>
                     }
                 </div>
             </div>
@@ -344,55 +356,31 @@
 <!-- SUPERADMIN DASHBOARD                       -->
 <!-- ========================================== -->
 <AuthorizeView Roles="Superadmin" Context="superContext">
-    <style>
-        .super-card {
-            border-top: 4px solid #fff !important;
-            transition: all 0.2s ease-in-out;
-            cursor: default;
-        }
-        .super-card:hover {
-            border-top: 4px solid #8F00FF !important;
-        }
-        .super-card .card-icon-accent {
-            color: #000 !important;
-            transition: color 0.2s ease-in-out;
-        }
-        .super-card:hover .card-icon-accent {
-            color: #8F00FF !important;
-        }
-    </style>
     <div class="row g-4 mb-4">
         <div class="col-md-6 col-lg-4">
-            <div class="card bg-white h-100 border-0 shadow-sm super-card">
-                <div class="card-body text-center">
-                    <i class="bi bi-server fs-1 mb-3 card-icon-accent"></i>
-                    <h3 class="text-dark fw-bold">System Status</h3>
-                    <p class="mb-0 fw-bold fs-5" style="color: #059669;">ONLINE</p>
-                    <small class="text-secondary fw-semibold">Database Connected</small>
+            <div class="dash-kpi dash-kpi-green shadow-sm border-0 glass-card">
+                <div class="dash-kpi-icon"><i class="bi bi-cpu-fill"></i></div>
+                <div class="dash-kpi-body">
+                    <div class="dash-kpi-value text-success">ONLINE</div>
+                    <div class="dash-kpi-label">Core Engine Status</div>
                 </div>
             </div>
         </div>
         <div class="col-md-6 col-lg-4">
-            <div class="card bg-white h-100 border-0 shadow-sm super-card">
-                <div class="card-body text-center">
-                    <i class="bi bi-cloud-arrow-up fs-1 mb-3 card-icon-accent"></i>
-                    <h3 class="text-dark fw-bold">API Configuration</h3>
-                    @{
-                        bool isComplete = superFacilityCount > 0 && superConfiguredFacilityCount == superFacilityCount;
-                        string configColor = isComplete ? "#059669" : "#EA580C";
-                    }
-                    <p class="mb-0 fw-bold fs-5" style="color: @configColor;">@superConfiguredFacilityCount / @superFacilityCount Configured</p>
-                    <small class="text-secondary fw-semibold">OpenWeather & ExchangeRate</small>
+            <div class="dash-kpi dash-kpi-purple shadow-sm border-0 glass-card">
+                <div class="dash-kpi-icon"><i class="bi bi-hdd-network-fill"></i></div>
+                <div class="dash-kpi-body">
+                    <div class="dash-kpi-value">@superConfiguredFacilityCount/@superFacilityCount</div>
+                    <div class="dash-kpi-label">Node Connectivity</div>
                 </div>
             </div>
         </div>
          <div class="col-md-6 col-lg-4">
-            <div class="card bg-white h-100 border-0 shadow-sm super-card">
-                <div class="card-body text-center">
-                    <i class="bi bi-building fs-1 mb-3 card-icon-accent"></i>
-                    <h3 class="text-dark fw-bold">Facilities</h3>
-                    <p class="mb-0 fs-4 text-dark fw-bold">@superFacilityCount</p>
-                    <small class="text-secondary fw-semibold">Registered Facilities</small>
+            <div class="dash-kpi dash-kpi-blue shadow-sm border-0 glass-card">
+                <div class="dash-kpi-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+                <div class="dash-kpi-body">
+                    <div class="dash-kpi-value">@superFacilityCount</div>
+                    <div class="dash-kpi-label">Active Facilities</div>
                 </div>
             </div>
         </div>

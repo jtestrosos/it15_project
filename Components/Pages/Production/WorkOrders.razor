@@ -10,6 +10,7 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject NavigationManager NavigationManager
 @inject production_system.Services.FacilityFilterService FacilityFilter
+@inject IJSRuntime JS
 
 <PageTitle>NodeSync | Work Orders</PageTitle>
 
@@ -340,6 +341,9 @@ else
 
     private async Task ArchiveOrder(WorkOrder order)
     {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to archive (cancel) Work Order #{order.OrderID}?");
+        if (!confirmed) return;
+
         using var scope = ScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var dbOrder = await context.WorkOrders.FindAsync(order.OrderID);

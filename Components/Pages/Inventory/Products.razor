@@ -8,6 +8,7 @@
 @inject IServiceScopeFactory ScopeFactory
 @inject NavigationManager NavigationManager
 @inject production_system.Services.FacilityFilterService FacilityFilter
+@inject IJSRuntime JS
 
 <PageTitle>NodeSync | Product Catalog</PageTitle>
 
@@ -294,6 +295,9 @@ else
 
     private async Task ArchiveProduct(Product product)
     {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to archive product '{product.ProductName}'?");
+        if (!confirmed) return;
+
         using var scope = ScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var dbProduct = await context.Products.FindAsync(product.ProductID);

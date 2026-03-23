@@ -307,9 +307,7 @@ else
         </div>
     }
 
-    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-         TAB: INVENTORY
-    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <!-- TAB: INVENTORY -->
     @if (ActiveTab == "inventory")
     {
         <div class="rpt-section">
@@ -629,12 +627,28 @@ else
     private List<InventoryTransaction> FilteredTransactions => AllTransactions.Where(t => t.TransactionDate >= FilterFrom && t.TransactionDate <= FilterTo).ToList();
     private List<Cost>                 FilteredCosts        => AllCosts.Where(c => c.RecordedDate >= FilterFrom && c.RecordedDate <= FilterTo).ToList();
 
-    private int LowStockCount => AllComponents.Where(c => !c.IsArchived).Count(comp =>
+    private int LowStockCount
     {
-        var inbound  = AllTransactions.Where(t => t.ComponentID == comp.ComponentID && t.TransactionType == "Inbound").Sum(t => t.Quantity);
-        var outbound = AllTransactions.Where(t => t.ComponentID == comp.ComponentID && t.TransactionType == "Outbound").Sum(t => t.Quantity);
-        return (inbound - outbound) < comp.MinStockLevel;
-    });
+        get
+        {
+            if (AllComponents == null || AllTransactions == null) return 0;
+            
+            // Optimization: Pre-calculate stock levels to avoid O(C*T) scans
+            var stockDict = AllTransactions
+                .GroupBy(t => t.ComponentID)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Where(t => t.TransactionType == "Inbound").Sum(t => t.Quantity) 
+                         - g.Where(t => t.TransactionType == "Outbound").Sum(t => t.Quantity)
+                );
+
+            return AllComponents.Where(c => !c.IsArchived).Count(comp =>
+            {
+                stockDict.TryGetValue(comp.ComponentID, out var currStock);
+                return currStock < comp.MinStockLevel;
+            });
+        }
+    }
 
     private async Task HandleFacilityChanged()
     {

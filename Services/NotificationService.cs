@@ -1,4 +1,4 @@
-﻿using production_system.Data;
+using production_system.Data;
 using production_system.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;

@@ -326,13 +326,13 @@
     private void UpdateWeatherKey(int facilityId, string? value)
     {
         var facility = facilities.FirstOrDefault(f => f.FacilityID == facilityId);
-        if (facility != null) facility.APIKeyOpenWeather = value;
+        if (facility != null) facility.APIKeyOpenWeather = value ?? string.Empty;
     }
 
     private void UpdateExchangeKey(int facilityId, string? value)
     {
         var facility = facilities.FirstOrDefault(f => f.FacilityID == facilityId);
-        if (facility != null) facility.APIKeyExchangeRate = value;
+        if (facility != null) facility.APIKeyExchangeRate = value ?? string.Empty;
     }
 
     private async Task SaveFacilityKeys(int facilityId)

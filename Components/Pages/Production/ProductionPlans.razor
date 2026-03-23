@@ -9,6 +9,7 @@
 @inject IServiceScopeFactory ScopeFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject production_system.Services.FacilityFilterService FacilityFilter
+@inject IJSRuntime JS
 
 <PageTitle>NodeSync | Production Plans</PageTitle>
 
@@ -336,6 +337,9 @@ else
 
     private async Task ArchivePlan(ProductionPlan plan)
     {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to archive Production Plan #{plan.PlanID} for '{plan.Product?.ProductName}'?");
+        if (!confirmed) return;
+
         using var scope = ScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var dbPlan = await context.ProductionPlans.FindAsync(plan.PlanID);
