@@ -49,7 +49,7 @@ namespace production_system.Data
 
                 // Create default Admin account
                 var adminEmail = "admin@nodesync.com";
-                var adminPassword = "password";
+                var adminPassword = "NodeSync2026!";
 
                 var existingAdmin = await userManager.FindByEmailAsync(adminEmail);
                 if (existingAdmin == null)
@@ -89,7 +89,7 @@ namespace production_system.Data
 
                 // Create default Manager account
                 var managerEmail = "manager@nodesync.com";
-                var managerPassword = "password";
+                var managerPassword = "NodeSync2026!";
 
                 var existingManager = await userManager.FindByEmailAsync(managerEmail);
                 if (existingManager == null)
@@ -122,7 +122,7 @@ namespace production_system.Data
 
                 // Create default Worker account
                 var workerEmail = "worker@nodesync.com";
-                var workerPassword = "password";
+                var workerPassword = "NodeSync2026!";
 
                 var existingWorker = await userManager.FindByEmailAsync(workerEmail);
                 if (existingWorker == null)
@@ -155,7 +155,7 @@ namespace production_system.Data
 
                 // Create default Superadmin account
                 var superadminEmail = "superadmin@nodesync.com";
-                var superadminPassword = "password";
+                var superadminPassword = "NodeSync2026!";
 
                 var existingSuperadmin = await userManager.FindByEmailAsync(superadminEmail);
                 if (existingSuperadmin == null)
@@ -209,12 +209,12 @@ namespace production_system.Data
             foreach (var table in tables)
             {
                 try {
-                    await context.Database.ExecuteSqlRawAsync($"TRUNCATE TABLE {table}");
+                    await context.Database.ExecuteSqlAsync($"TRUNCATE TABLE [{table}]");
                 } catch {
                     // Fallback for tables with Foreign Key constraints that don't allow TRUNCATE
                     // We delete all and then reset the check-seed manually
-                    await context.Database.ExecuteSqlRawAsync($"DELETE FROM [{table}]");
-                    await context.Database.ExecuteSqlRawAsync($"DBCC CHECKIDENT ('[{table}]', RESEED, 0)");
+                    await context.Database.ExecuteSqlAsync($"DELETE FROM [{table}]");
+                    await context.Database.ExecuteSqlAsync($"DBCC CHECKIDENT ('[{table}]', RESEED, 0)");
                 }
             }
             await context.SaveChangesAsync();

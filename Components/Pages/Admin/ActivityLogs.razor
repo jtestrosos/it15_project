@@ -10,14 +10,68 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject production_system.Services.FacilityFilterService FacilityFilter
 
-<PageTitle>NodeSync | Audit Logs</PageTitle>
+<PageTitle>NodeSync | Activity Logs</PageTitle>
 
 <production_system.Components.Shared.FacilitySelector OnFacilityChanged="HandleFacilityChanged" />
 
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
         <h1 class="h3 mb-0 text-gray-800">Audit Logs</h1>
-        <p class="text-muted mb-0">Audit system actions and user activity.</p>
+        <p class="text-muted mb-0">Monitor security events, system operations, and audit trails.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <span class="badge bg-light text-dark border py-2 px-3">
+            <i class="bi bi-clock me-1"></i> Last 200 records
+        </span>
+    </div>
+</div>
+
+@* Category Summary Cards *@
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 log-summary-card @(activeTab == "Security" ? "active-security" : "")" 
+             @onclick='() => SetTab("Security")' style="cursor: pointer;">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+                <div class="log-icon-circle security-icon">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <div>
+                    <div class="fw-bold text-dark">Security Logs</div>
+                    <div class="small text-muted">Login, logout, access, role changes</div>
+                </div>
+                <span class="badge bg-danger ms-auto">@GetCategoryCount("Security")</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 log-summary-card @(activeTab == "System" ? "active-system" : "")" 
+             @onclick='() => SetTab("System")' style="cursor: pointer;">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+                <div class="log-icon-circle system-icon">
+                    <i class="bi bi-gear-fill"></i>
+                </div>
+                <div>
+                    <div class="fw-bold text-dark">System Logs</div>
+                    <div class="small text-muted">CRUD operations, profile, errors</div>
+                </div>
+                <span class="badge bg-primary ms-auto">@GetCategoryCount("System")</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100 log-summary-card @(activeTab == "Audit" ? "active-audit" : "")" 
+             @onclick='() => SetTab("Audit")' style="cursor: pointer;">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+                <div class="log-icon-circle audit-icon">
+                    <i class="bi bi-receipt-cutoff"></i>
+                </div>
+                <div>
+                    <div class="fw-bold text-dark">Audit Logs</div>
+                    <div class="small text-muted">Transactions, orders, payments</div>
+                </div>
+                <span class="badge bg-success ms-auto">@GetCategoryCount("Audit")</span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -31,50 +85,135 @@
 else
 {
     <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span><i class="bi bi-clock-history me-1"></i> Recent Activity</span>
-            <span class="badge bg-light text-dark border">@logs.Count record(s)</span>
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi @GetTabIcon(activeTab) me-1"></i>
+                <span class="fw-bold">@activeTab Logs</span>
+                <span class="badge bg-light text-dark border">@FilteredLogs.Count record(s)</span>
+            </div>
+            <div class="d-flex gap-2">
+                @* Severity Filter *@
+                <select class="form-select form-select-sm" style="width: auto;" @bind="severityFilter">
+                    <option value="">All Severities</option>
+                    <option value="Info">ℹ️ Info</option>
+                    <option value="Warning">⚠️ Warning</option>
+                    <option value="Critical">🔴 Critical</option>
+                </select>
+                @* Search *@
+                <div class="input-group input-group-sm" style="width: 220px;">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" placeholder="Search details..."
+                           @bind="searchTerm" @bind:event="oninput" />
+                </div>
+            </div>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="ps-4">Time</th>
-                            <th>User</th>
-                            <th>Action</th>
-                            <th>Details</th>
-                            <th>IP Address</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var log in logs)
-                        {
+            @if (!FilteredLogs.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-2" style="opacity: 0.3;"></i>
+                    <p>No @activeTab.ToLower() logs found.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
                             <tr>
-                                <td class="ps-4 text-nowrap">@log.Timestamp.ToString("g")</td>
-                                <td>
-                                    <div class="fw-bold">@log.User?.UserName</div>
-                                    <div class="small text-muted">@GetUserRole(log.UserID)</div>
-                                </td>
-                                <td><span class="badge bg-secondary text-light">@log.ActionType</span></td>
-                                <td>@log.Details</td>
-                                <td class="text-muted small">@log.IPAddress</td>
+                                <th class="ps-4" style="width: 160px;">Time</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Details</th>
+                                <th style="width: 80px;">Severity</th>
+                                <th style="width: 110px;">IP Address</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in FilteredLogs)
+                            {
+                                <tr class="@GetRowClass(log.Severity)">
+                                    <td class="ps-4 text-nowrap small">@log.Timestamp.ToLocalTime().ToString("MMM dd, HH:mm:ss")</td>
+                                    <td>
+                                        <div class="fw-bold small">@(log.User?.UserName ?? "System")</div>
+                                        <div class="text-muted" style="font-size: 0.7rem;">@GetUserRole(log.UserID)</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetActionBadgeClass(log.ActionType) text-light">@log.ActionType</span>
+                                        @if (!string.IsNullOrEmpty(log.EntityType))
+                                        {
+                                            <span class="text-muted ms-1" style="font-size: 0.7rem;">@log.EntityType</span>
+                                        }
+                                    </td>
+                                    <td class="small text-muted" style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        @log.Details
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetSeverityBadge(log.Severity)">@GetSeverityIcon(log.Severity) @log.Severity</span>
+                                    </td>
+                                    <td class="text-muted small">@log.IPAddress</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
     </div>
 }
+
+<style>
+    .log-summary-card {
+        transition: all 0.2s ease;
+        border: 2px solid transparent !important;
+    }
+    .log-summary-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+    }
+    .active-security { border-color: #dc3545 !important; background: rgba(220, 53, 69, 0.03); }
+    .active-system { border-color: #0d6efd !important; background: rgba(13, 110, 253, 0.03); }
+    .active-audit { border-color: #198754 !important; background: rgba(25, 135, 84, 0.03); }
+
+    .log-icon-circle {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+    .security-icon { background: rgba(220, 53, 69, 0.1); color: #dc3545; }
+    .system-icon { background: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+    .audit-icon { background: rgba(25, 135, 84, 0.1); color: #198754; }
+
+    .severity-critical { background: rgba(220, 53, 69, 0.05); }
+    .severity-warning { background: rgba(255, 193, 7, 0.08); }
+</style>
 
 @code {
     private List<ActivityLog>? logs;
     private Dictionary<string, string> userRoles = new();
     private int? userFacilityId;
     private bool isSuperAdmin;
+    private string activeTab = "Security";
+    private string severityFilter = "";
+    private string searchTerm = "";
 
     [Inject] private production_system.Services.FacilityAccessService FacilityAccess { get; set; } = default!;
+
+    private List<ActivityLog> FilteredLogs =>
+        (logs ?? new())
+            .Where(l => l.LogCategory == activeTab)
+            .Where(l => string.IsNullOrEmpty(severityFilter) || l.Severity == severityFilter)
+            .Where(l => string.IsNullOrWhiteSpace(searchTerm)
+                || (l.Details ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+                || (l.ActionType ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+                || (l.User?.UserName ?? "").Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(l => l.Timestamp)
+            .ToList();
 
     protected override async Task OnInitializedAsync()
     {
@@ -100,7 +239,7 @@ else
         }
 
         logs = await query
-            .Take(100)
+            .Take(200)
             .ToListAsync();
         
         // Load roles for all users in the logs
@@ -121,10 +260,73 @@ else
         await LoadLogs();
     }
 
+    private void SetTab(string tab)
+    {
+        activeTab = tab;
+        severityFilter = "";
+        searchTerm = "";
+    }
+
+    private int GetCategoryCount(string category)
+    {
+        return (logs ?? new()).Count(l => l.LogCategory == category);
+    }
+
     private string GetUserRole(string? userId)
     {
         if (string.IsNullOrEmpty(userId)) return "";
         return userRoles.GetValueOrDefault(userId, "");
     }
-}
 
+    private string GetTabIcon(string tab) => tab switch
+    {
+        "Security" => "bi-shield-lock-fill",
+        "System" => "bi-gear-fill",
+        "Audit" => "bi-receipt-cutoff",
+        _ => "bi-clock-history"
+    };
+
+    private string GetActionBadgeClass(string actionType) => actionType switch
+    {
+        "Login Success" => "bg-success",
+        "Logout" => "bg-secondary",
+        "Login Failed" => "bg-warning text-dark",
+        "Login Blocked" => "bg-danger",
+        "Account Locked" => "bg-danger",
+        "reCAPTCHA Failed" => "bg-danger",
+        "reCAPTCHA Missing" => "bg-warning text-dark",
+        "Password Changed" => "bg-info",
+        "Password Reset" => "bg-warning text-dark",
+        "User Created" => "bg-success",
+        "User Archived" => "bg-warning text-dark",
+        "User Restored" => "bg-info",
+        "Role Changed" => "bg-purple",
+        "Product Created" or "Component Created" => "bg-success",
+        "Product Updated" or "Component Updated" => "bg-info",
+        "Product Archived" or "Component Archived" => "bg-warning text-dark",
+        "Product Restored" or "Component Restored" => "bg-success",
+        "Profile Updated" => "bg-info",
+        _ => "bg-secondary"
+    };
+
+    private string GetSeverityBadge(string severity) => severity switch
+    {
+        "Critical" => "bg-danger",
+        "Warning" => "bg-warning text-dark",
+        _ => "bg-light text-dark border"
+    };
+
+    private string GetSeverityIcon(string severity) => severity switch
+    {
+        "Critical" => "🔴",
+        "Warning" => "⚠️",
+        _ => "ℹ️"
+    };
+
+    private string GetRowClass(string severity) => severity switch
+    {
+        "Critical" => "severity-critical",
+        "Warning" => "severity-warning",
+        _ => ""
+    };
+}

@@ -9,6 +9,7 @@
 @inject NavigationManager NavigationManager
 @inject production_system.Services.FacilityFilterService FacilityFilter
 @inject IJSRuntime JS
+@inject production_system.Services.AuditLogService AuditLog
 
 <PageTitle>NodeSync | Product Catalog</PageTitle>
 
@@ -279,6 +280,8 @@ else
                 dbProduct.ProductName = FormProduct.ProductName;
                 dbProduct.Description = FormProduct.Description;
                 await context.SaveChangesAsync();
+                var userId = await FacilityAccess.GetCurrentUserIdAsync();
+                await AuditLog.LogSystemEventAsync(userId ?? "", "Product Updated", $"Updated product '{dbProduct.ProductName}' (ID: {dbProduct.ProductID})", production_system.Models.LogSeverity.Info, "Product", dbProduct.ProductID.ToString());
             }
         }
         else
@@ -287,6 +290,8 @@ else
             FormProduct.IsArchived = false;
             context.Products.Add(FormProduct);
             await context.SaveChangesAsync();
+            var userId = await FacilityAccess.GetCurrentUserIdAsync();
+            await AuditLog.LogSystemEventAsync(userId ?? "", "Product Created", $"Created new product '{FormProduct.ProductName}' (ID: {FormProduct.ProductID})", production_system.Models.LogSeverity.Info, "Product", FormProduct.ProductID.ToString());
         }
 
         await LoadProducts();
@@ -305,6 +310,8 @@ else
         {
             dbProduct.IsArchived = true;
             await context.SaveChangesAsync();
+            var userId = await FacilityAccess.GetCurrentUserIdAsync();
+            await AuditLog.LogSystemEventAsync(userId ?? "", "Product Archived", $"Archived product '{product.ProductName}' (ID: {product.ProductID})", production_system.Models.LogSeverity.Warning, "Product", product.ProductID.ToString());
         }
         await LoadProducts();
     }
@@ -318,6 +325,8 @@ else
         {
             dbProduct.IsArchived = false;
             await context.SaveChangesAsync();
+            var userId = await FacilityAccess.GetCurrentUserIdAsync();
+            await AuditLog.LogSystemEventAsync(userId ?? "", "Product Restored", $"Restored product '{product.ProductName}' (ID: {product.ProductID})", production_system.Models.LogSeverity.Info, "Product", product.ProductID.ToString());
         }
         await LoadProducts();
     }

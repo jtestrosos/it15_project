@@ -10,6 +10,7 @@
 @inject NavigationManager NavigationManager
 @inject production_system.Services.FacilityFilterService FacilityFilter
 @inject IJSRuntime JS
+@inject production_system.Services.AuditLogService AuditLog
 
 <AuthorizeView Roles="ProductionWorker">
     <Authorized>
@@ -294,12 +295,18 @@ else
                 existing.UnitCost = NewComponent.UnitCost;
                 existing.MinStockLevel = NewComponent.MinStockLevel;
                 existing.SupplierInfo = NewComponent.SupplierInfo;
+                await context.SaveChangesAsync();
+                var userId = await FacilityAccess.GetCurrentUserIdAsync();
+                await AuditLog.LogSystemEventAsync(userId ?? "", "Component Updated", $"Updated component '{existing.ComponentName}' (ID: {existing.ComponentID})", production_system.Models.LogSeverity.Info, "Component", existing.ComponentID.ToString());
             }
         }
         else
         {
             NewComponent.FacilityID = GetEffectiveFacilityId() ?? userFacilityId;
             context.Components.Add(NewComponent);
+            await context.SaveChangesAsync();
+            var userId = await FacilityAccess.GetCurrentUserIdAsync();
+            await AuditLog.LogSystemEventAsync(userId ?? "", "Component Created", $"Created new component '{NewComponent.ComponentName}' (ID: {NewComponent.ComponentID})", production_system.Models.LogSeverity.Info, "Component", NewComponent.ComponentID.ToString());
         }
 
         await context.SaveChangesAsync();
@@ -320,6 +327,8 @@ else
         {
             existing.IsArchived = true;
             await context.SaveChangesAsync();
+            var userId = await FacilityAccess.GetCurrentUserIdAsync();
+            await AuditLog.LogSystemEventAsync(userId ?? "", "Component Archived", $"Archived component '{component.ComponentName}' (ID: {component.ComponentID})", production_system.Models.LogSeverity.Warning, "Component", component.ComponentID.ToString());
             await LoadComponents();
         }
     }
@@ -334,6 +343,8 @@ else
         {
             existing.IsArchived = false;
             await context.SaveChangesAsync();
+            var userId = await FacilityAccess.GetCurrentUserIdAsync();
+            await AuditLog.LogSystemEventAsync(userId ?? "", "Component Restored", $"Restored component '{component.ComponentName}' (ID: {component.ComponentID})", production_system.Models.LogSeverity.Info, "Component", component.ComponentID.ToString());
             await LoadComponents();
         }
     }

@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text.Json;
 using production_system.Components.Account.Pages;
 using production_system.Components.Account.Pages.Manage;
@@ -44,8 +44,12 @@ namespace Microsoft.AspNetCore.Routing
             accountGroup.MapPost("/Logout", async (
                 ClaimsPrincipal user,
                 [FromServices] SignInManager<ApplicationUser> signInManager,
+                [FromServices] production_system.Services.AuditLogService auditLog,
                 [FromForm] string returnUrl) =>
             {
+                var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+                var email = user.FindFirstValue(ClaimTypes.Email) ?? "Unknown";
+                await auditLog.LogSecurityEventAsync(userId, "Logout", $"User '{email}' logged out", production_system.Models.LogSeverity.Info, "User", userId);
                 await signInManager.SignOutAsync();
                 return TypedResults.LocalRedirect($"~/{returnUrl}");
             }).DisableAntiforgery();

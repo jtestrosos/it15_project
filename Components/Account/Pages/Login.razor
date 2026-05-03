@@ -6,12 +6,16 @@
 @using Microsoft.AspNetCore.Identity
 @using production_system.Data
 @using production_system.Components.Account.Shared
+@using production_system.Services
 
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject IRecaptchaService RecaptchaService
+@inject IConfiguration Configuration
+@inject AuditLogService AuditLog
 
 <PageTitle>NodeSync | Login</PageTitle>
 
@@ -23,7 +27,7 @@
 
     <StatusMessage Message="@errorMessage" />
     
-    <EditForm EditContext="editContext" method="post" OnSubmit="LoginUser" FormName="login">
+    <EditForm EditContext="editContext" method="post" OnSubmit="LoginUser" FormName="login" id="login-form">
         <DataAnnotationsValidator />
         <ValidationSummary class="validation-errors" role="alert" />
         
@@ -59,6 +63,21 @@
             </label>
             <a href="Account/ForgotPassword" class="forgot-link">Forgot password?</a>
         </div>
+
+        @* reCAPTCHA v2 checkbox — only shown after failed attempts *@
+        @if (showRecaptcha)
+        {
+            <div class="recaptcha-alert">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                    <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+                </svg>
+                <span>Security verification required due to multiple failed attempts.</span>
+            </div>
+            <div class="recaptcha-container">
+                <div class="g-recaptcha" data-sitekey="@recaptchaSiteKey" data-theme="light"></div>
+            </div>
+        }
         
         <button type="submit" class="btn-login" id="login-submit-btn">
             <span>Sign In</span>
@@ -81,11 +100,55 @@
     </EditForm>
 </div>
 
+@* Load reCAPTCHA v2 script only when the widget needs to be shown *@
+@if (showRecaptcha)
+{
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+}
 
+<style>
+    .recaptcha-container {
+        display: flex;
+        justify-content: center;
+        margin: 0.5rem 0 0.75rem;
+        overflow: hidden;
+    }
+
+    .recaptcha-container .g-recaptcha {
+        transform: scale(0.85);
+        transform-origin: center;
+    }
+
+    @@media (max-width: 360px) {
+        .recaptcha-container .g-recaptcha {
+            transform: scale(0.75);
+        }
+    }
+
+    .recaptcha-alert {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 0.75rem;
+        background: #fef3c7;
+        border: 1px solid #fcd34d;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        color: #92400e;
+        margin-bottom: 0.25rem;
+    }
+
+    .recaptcha-alert svg {
+        flex-shrink: 0;
+        color: #d97706;
+    }
+</style>
 
 @code {
     private string? errorMessage;
     private EditContext editContext = default!;
+    private string recaptchaSiteKey = "";
+    private bool showRecaptcha = false;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -99,12 +162,24 @@
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
-
         editContext = new EditContext(Input);
+        recaptchaSiteKey = Configuration["Recaptcha:SiteKey"] ?? "";
 
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+        }
+        else if (HttpMethods.IsPost(HttpContext.Request.Method) && !string.IsNullOrEmpty(Input.Email))
+        {
+            // On POST, check the user's failed attempt count to decide if reCAPTCHA should appear
+            var user = await UserManager.FindByEmailAsync(Input.Email);
+            if (user != null)
+            {
+                var failedCount = await UserManager.GetAccessFailedCountAsync(user);
+                var role = await GetPrimaryRoleAsync(user);
+                int captchaThreshold = GetCaptchaThreshold(role);
+                showRecaptcha = failedCount >= captchaThreshold;
+            }
         }
     }
 
@@ -127,6 +202,7 @@
                 if (user != null && user.IsArchived)
                 {
                     await SignInManager.SignOutAsync();
+                    await AuditLog.LogSecurityEventAsync(user.Id, "Login Blocked", $"Archived user '{Input.Email}' attempted passkey login", production_system.Models.LogSeverity.Warning, "User", user.Id);
                     errorMessage = "Error: Your account has been archived. Please contact an administrator.";
                     return;
                 }
@@ -139,18 +215,42 @@
                 return;
             }
 
+            // If reCAPTCHA is required, validate it
+            if (showRecaptcha)
+            {
+                var recaptchaResponse = HttpContext.Request.Form["g-recaptcha-response"].ToString();
+                if (string.IsNullOrEmpty(recaptchaResponse))
+                {
+                    await AuditLog.LogSecurityEventAsync("", "reCAPTCHA Missing", $"Login attempt without reCAPTCHA for '{Input.Email}'", production_system.Models.LogSeverity.Warning);
+                    errorMessage = "Error: Please complete the security verification checkbox.";
+                    return;
+                }
+
+                var isRecaptchaValid = await RecaptchaService.VerifyTokenAsync(recaptchaResponse);
+                if (!isRecaptchaValid)
+                {
+                    await AuditLog.LogSecurityEventAsync("", "reCAPTCHA Failed", $"reCAPTCHA verification failed for '{Input.Email}' - possible bot attack", production_system.Models.LogSeverity.Critical);
+                    errorMessage = "Error: Security verification failed. Please try again.";
+                    return;
+                }
+            }
+
+            // Check for archived user
             var user = await UserManager.FindByEmailAsync(Input.Email);
             if (user != null && user.IsArchived)
             {
-                errorMessage = "Error: Your account has been archived. Please contact an administrator.";
+                await AuditLog.LogSecurityEventAsync(user.Id, "Login Blocked", $"Archived user '{Input.Email}' attempted login", production_system.Models.LogSeverity.Warning, "User", user.Id);
+                errorMessage = "Error: Invalid email or password.";
                 return;
             }
 
-            result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+            result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
         }
 
         if (result.Succeeded)
         {
+            var loggedInUser = await UserManager.FindByEmailAsync(Input.Email);
+            await AuditLog.LogSecurityEventAsync(loggedInUser?.Id ?? "", "Login Success", $"User '{Input.Email}' logged in successfully", production_system.Models.LogSeverity.Info, "User", loggedInUser?.Id);
             Logger.LogInformation("User logged in.");
             RedirectManager.RedirectTo(ReturnUrl ?? "/");
         }
@@ -162,13 +262,77 @@
         }
         else if (result.IsLockedOut)
         {
+            var lockedUser = await UserManager.FindByEmailAsync(Input.Email);
+            if (lockedUser != null)
+            {
+                var role = await GetPrimaryRoleAsync(lockedUser);
+                // Admins get a longer lockout (30 min instead of 15)
+                if (role == "Administrator")
+                {
+                    await UserManager.SetLockoutEndDateAsync(lockedUser, DateTimeOffset.UtcNow.AddMinutes(30));
+                }
+                await AuditLog.LogSecurityEventAsync(lockedUser.Id, "Account Locked", $"Account locked for '{Input.Email}' (role: {role})", production_system.Models.LogSeverity.Critical, "User", lockedUser.Id);
+            }
             Logger.LogWarning("User account locked out.");
             RedirectManager.RedirectTo("Account/Lockout");
         }
         else
         {
-            errorMessage = "Error: Invalid login attempt.";
+            // Login failed — check if we need role-specific early lockout
+            var failedUser = await UserManager.FindByEmailAsync(Input.Email);
+            if (failedUser != null)
+            {
+                var role = await GetPrimaryRoleAsync(failedUser);
+                var failedCount = await UserManager.GetAccessFailedCountAsync(failedUser);
+
+                // Superadmin: lock at 3 attempts (stricter than the global 5)
+                if (role == "Superadmin" && failedCount >= 3)
+                {
+                    await UserManager.SetLockoutEndDateAsync(failedUser, DateTimeOffset.UtcNow.AddMinutes(15));
+                    await AuditLog.LogSecurityEventAsync(failedUser.Id, "Account Locked", $"Superadmin '{Input.Email}' locked after {failedCount} failed attempts (early lockout)", production_system.Models.LogSeverity.Critical, "User", failedUser.Id);
+                    RedirectManager.RedirectTo("Account/Lockout");
+                    return;
+                }
+
+                // Log warning when reCAPTCHA threshold is hit
+                int captchaThreshold = GetCaptchaThreshold(role);
+                if (failedCount == captchaThreshold)
+                {
+                    await AuditLog.LogSecurityEventAsync(failedUser.Id, "reCAPTCHA Triggered", $"reCAPTCHA activated for '{Input.Email}' (role: {role}) after {failedCount} failed attempts", production_system.Models.LogSeverity.Warning, "User", failedUser.Id);
+                }
+
+                await AuditLog.LogSecurityEventAsync(failedUser.Id, "Login Failed", $"Failed login attempt #{failedCount} for '{Input.Email}' (role: {role})", production_system.Models.LogSeverity.Warning, "User", failedUser.Id);
+
+                // Update showRecaptcha flag for the re-rendered page
+                showRecaptcha = failedCount >= captchaThreshold;
+            }
+            // Never reveal which field (email vs password) was wrong
+            errorMessage = "Error: Invalid email or password.";
         }
+    }
+
+    /// <summary>
+    /// Returns the reCAPTCHA threshold per role:
+    /// Superadmin = 1 (show after 1 failure), others = 2 (show after 2 failures)
+    /// </summary>
+    private int GetCaptchaThreshold(string? role) => role switch
+    {
+        "Superadmin" => 1,
+        _ => 2
+    };
+
+    /// <summary>
+    /// Get the user's primary (highest) role.
+    /// </summary>
+    private async Task<string?> GetPrimaryRoleAsync(ApplicationUser user)
+    {
+        var roles = await UserManager.GetRolesAsync(user);
+        // Return highest privilege role
+        if (roles.Contains("Superadmin")) return "Superadmin";
+        if (roles.Contains("Administrator")) return "Administrator";
+        if (roles.Contains("ProductionManager")) return "ProductionManager";
+        if (roles.Contains("ProductionWorker")) return "ProductionWorker";
+        return roles.FirstOrDefault();
     }
 
     private sealed class InputModel
@@ -187,4 +351,3 @@
         public PasskeyInputModel? Passkey { get; set; }
     }
 }
-

@@ -40,12 +40,16 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     {
         options.SignIn.RequireConfirmedAccount = false;
         options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
-        // Relax password requirements for development
-        options.Password.RequireDigit = false;
-        options.Password.RequireLowercase = false;
-        options.Password.RequireUppercase = false;
+        // Strong password policy (IAS Compliance)
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
         options.Password.RequireNonAlphanumeric = false;
-        options.Password.RequiredLength = 4;
+        options.Password.RequiredLength = 8;
+        // Account lockout policy (IAS Compliance)
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.AllowedForNewUsers = true;
     })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -69,22 +73,30 @@ builder.Services.AddScoped<production_system.Services.FacilityFilterService>();
 // Register NotificationService for system alerts
 builder.Services.AddSingleton<production_system.Services.NotificationService>();
 
+// Register RecaptchaService for Google reCAPTCHA verification
+builder.Services.AddHttpClient<production_system.Services.IRecaptchaService, production_system.Services.RecaptchaService>();
+
+// Register HttpContextAccessor for IP/user resolution in services
+builder.Services.AddHttpContextAccessor();
+
+// Register AuditLogService for centralized security, system, and audit logging
+builder.Services.AddScoped<production_system.Services.AuditLogService>();
+
 var app = builder.Build();
 
 // Seed roles and admin account
 await DbInitializer.SeedRolesAndAdminAsync(app.Services);
 
 // Configure the HTTP request pipeline.
-app.UseDeveloperExceptionPage();
-
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseMigrationsEndPoint();
 }
 else
 {
-    // Ensure we don't mask any detailed errors on the deployed website right now
-    // app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    // Show generic error page in production (IAS Compliance - no stack traces)
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);

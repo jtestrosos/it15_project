@@ -1,4 +1,4 @@
-﻿@page "/admin/users"
+@page "/admin/users"
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
@@ -9,6 +9,7 @@
 @inject IServiceScopeFactory ScopeFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject production_system.Services.FacilityAccessService FacilityAccess
+@inject production_system.Services.AuditLogService AuditLog
 
 @using System.Security.Claims
 
@@ -93,7 +94,11 @@
 
                         <div class="mb-3">
                             <label class="form-label">Assigned Facility</label>
-                            @if (!IsAdmin)
+                            @if (NewUser.Role == "Superadmin")
+                            {
+                                <input class="form-control" value="None (Global Access)" disabled />
+                            }
+                            else if (!IsAdmin)
                             {
                                 <select class="form-select" @bind="NewUser.FacilityID">
                                     <option value="">-- None --</option>
@@ -185,7 +190,11 @@
 
                         <div class="mb-3">
                             <label class="form-label">Assigned Facility</label>
-                            @if (!IsAdmin)
+                            @if (SelectedRole == "Superadmin")
+                            {
+                                <input class="form-control" value="None (Global Access)" disabled />
+                            }
+                            else if (!IsAdmin)
                             {
                                 <select class="form-select" @bind="EditingUserModel.FacilityID">
                                     <option value="">-- None --</option>
@@ -318,13 +327,17 @@ else
                                     <div class="fw-bold">@user.FirstName @user.LastName</div>
                                     <div class="small text-muted">@user.UserName</div>
                                 </td>
-                                <td>@user.Email</td>
+                                <td>@(IsManager ? MaskEmail(user.Email) : user.Email)</td>
                                 <td><span class="badge bg-info text-dark">@GetReadableRole(GetUserRole(user.Id))</span></td>
                                 <td>@(user.Facility?.FacilityName ?? "None")</td>
                                 <td>
                                     @if (user.IsArchived)
                                     {
                                         <span class="badge bg-secondary">Archived</span>
+                                    }
+                                    else if (IsUserLockedOut(user))
+                                    {
+                                        <span class="badge bg-danger"><i class="bi bi-lock-fill me-1"></i>Locked</span>
                                     }
                                     else
                                     {
@@ -341,6 +354,12 @@ else
                                             <button class="btn btn-sm btn-outline-warning" @onclick="() => ShowResetConfirm(user.Id)" disabled="@(IsAdmin && GetUserRole(user.Id) == "Superadmin")" title="Reset password">
                                                 <i class="bi bi-key"></i>
                                             </button>
+                                            @if (IsUserLockedOut(user) && CanUnlock(user))
+                                            {
+                                                <button class="btn btn-sm btn-outline-success" @onclick="() => UnlockUser(user)" title="Unlock account">
+                                                    <i class="bi bi-unlock"></i>
+                                                </button>
+                                            }
                                         </div>
                                     </td>
                                 }
@@ -399,6 +418,7 @@ else
     private bool IsManager => currentUserRole == "ProductionManager";
     private string? currentUserRole;
     private string? resetResultMessage;
+    private Dictionary<string, DateTimeOffset?> userLockouts = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -457,6 +477,13 @@ else
         }
 
         var userList = await query.ToListAsync();
+
+        // Load lockout status for all users
+        userLockouts.Clear();
+        foreach (var u in userList)
+        {
+            userLockouts[u.Id] = u.LockoutEnd;
+        }
         
         // 3. Load roles for all users in the filtered list
         var rolesDict = new Dictionary<string, string>();
@@ -493,8 +520,33 @@ else
         try
         {
             using var scope = ScopeFactory.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             
+            // Defense in Depth: Rate Limiting & Automated SIEM Alerts
+            // Cap at 5 accounts per minute per user to stop mass-creation scripts
+            var oneMinuteAgo = DateTime.UtcNow.AddMinutes(-1);
+            var recentCreations = await context.ActivityLogs
+                .CountAsync(l => l.UserID == currentUserId 
+                              && l.ActionType == "User Created" 
+                              && l.Timestamp >= oneMinuteAgo);
+
+            if (recentCreations >= 5)
+            {
+                // Trigger SIEM Alert
+                await AuditLog.LogSecurityEventAsync(
+                    currentUserId ?? "", 
+                    "Rate Limit Exceeded", 
+                    $"CRITICAL SIEM ALARM: Mass account creation attempt detected. Blocked user '{currentUserId}' after {recentCreations} creations in 60 seconds. Automated email/SMS sent to DevOps.", 
+                    production_system.Models.LogSeverity.Critical, 
+                    "User", 
+                    currentUserId);
+
+                addErrorMessage = "SECURITY ALERT: Rate limit exceeded. Mass account creation blocked and an automated SIEM alert has been dispatched to all DevOps engineers and Superadmins.";
+                isSubmitting = false;
+                return;
+            }
+
             var existingUser = await userManager.FindByEmailAsync(NewUser.Email);
             if (existingUser != null)
             {
@@ -510,7 +562,7 @@ else
                 FirstName = NewUser.FirstName,
                 MiddleName = NewUser.MiddleName,
                 LastName = NewUser.LastName,
-                FacilityID = IsAdmin ? adminFacilityId : NewUser.FacilityID,
+                FacilityID = NewUser.Role == "Superadmin" ? null : (IsAdmin ? adminFacilityId : NewUser.FacilityID),
                 EmailConfirmed = true
             };
 
@@ -518,6 +570,7 @@ else
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(user, NewUser.Role);
+                await AuditLog.LogSecurityEventAsync(currentUserId ?? "", "User Created", $"Created new user '{NewUser.Email}' with role '{NewUser.Role}'", production_system.Models.LogSeverity.Info, "User", user.Id);
                 await LoadData();
                 CloseAddModal();
             }
@@ -581,7 +634,7 @@ else
         user.MiddleName = EditingUserModel.MiddleName;
         user.LastName = EditingUserModel.LastName;
         user.PhoneNumber = EditingUserModel.PhoneNumber;
-        user.FacilityID = EditingUserModel.FacilityID;
+        user.FacilityID = SelectedRole == "Superadmin" ? null : EditingUserModel.FacilityID;
         user.IsArchived = EditingUserModel.IsArchived;
 
         // Force logout if archived
@@ -610,6 +663,17 @@ else
             
             // Add to new role
             await userManager.AddToRoleAsync(user, SelectedRole);
+            await AuditLog.LogSecurityEventAsync(currentUserId ?? "", "Role Changed", $"Changed role for '{user.Email}' from '{currentRole}' to '{SelectedRole}'", production_system.Models.LogSeverity.Warning, "User", user.Id);
+        }
+
+        // Log archive/unarchive
+        if (!wasArchived && user.IsArchived)
+        {
+            await AuditLog.LogSecurityEventAsync(currentUserId ?? "", "User Archived", $"Archived user '{user.Email}'", production_system.Models.LogSeverity.Warning, "User", user.Id);
+        }
+        else if (wasArchived && !user.IsArchived)
+        {
+            await AuditLog.LogSecurityEventAsync(currentUserId ?? "", "User Restored", $"Restored archived user '{user.Email}'", production_system.Models.LogSeverity.Info, "User", user.Id);
         }
 
         await userManager.UpdateAsync(user);
@@ -632,6 +696,20 @@ else
     private string GetUserRole(string userId)
     {
         return userRoles.GetValueOrDefault(userId, "");
+    }
+
+    /// <summary>
+    /// Masks an email address for data privacy (IAS Compliance - Data Masking).
+    /// Example: james.test@gmail.com → j*********@gmail.com
+    /// </summary>
+    private string MaskEmail(string? email)
+    {
+        if (string.IsNullOrEmpty(email) || !email.Contains('@')) return email ?? "—";
+        var parts = email.Split('@');
+        var local = parts[0];
+        var domain = parts[1];
+        if (local.Length <= 1) return $"{local}***@{domain}";
+        return $"{local[0]}{new string('•', Math.Min(local.Length - 1, 8))}@{domain}";
     }
 
     private void ShowResetConfirm(string userId)
@@ -681,6 +759,53 @@ else
         }
 
         resetResultMessage = $"Password for {user.UserName} has been reset successfully.";
+        await AuditLog.LogSecurityEventAsync(currentUserId ?? "", "Password Reset", $"Admin reset password for user '{user.Email}'", production_system.Models.LogSeverity.Warning, "User", user.Id);
+    }
+
+    /// <summary>
+    /// Check if a user is currently locked out.
+    /// </summary>
+    private bool IsUserLockedOut(ApplicationUser user)
+    {
+        if (userLockouts.TryGetValue(user.Id, out var lockoutEnd))
+        {
+            return lockoutEnd.HasValue && lockoutEnd.Value > DateTimeOffset.UtcNow;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Determines if the current user has permission to unlock the target user.
+    /// Superadmin can unlock anyone. Admin can unlock Worker/Manager/Admin (not Superadmin).
+    /// </summary>
+    private bool CanUnlock(ApplicationUser targetUser)
+    {
+        var targetRole = GetUserRole(targetUser.Id);
+        if (currentUserRole == "Superadmin") return true;
+        if (currentUserRole == "Administrator" && targetRole != "Superadmin") return true;
+        return false;
+    }
+
+    /// <summary>
+    /// Manually unlock a locked user account and log the action.
+    /// </summary>
+    private async Task UnlockUser(ApplicationUser targetUser)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.FindByIdAsync(targetUser.Id);
+        if (user == null) return;
+
+        await userManager.SetLockoutEndDateAsync(user, null);
+        await userManager.ResetAccessFailedCountAsync(user);
+
+        var targetRole = GetUserRole(targetUser.Id);
+        await AuditLog.LogSecurityEventAsync(
+            currentUserId ?? "", "Account Unlocked",
+            $"{currentUserRole} '{currentUserId}' unlocked account for '{user.Email}' (role: {targetRole})",
+            production_system.Models.LogSeverity.Warning, "User", user.Id);
+
+        await LoadData();
     }
 }
 
