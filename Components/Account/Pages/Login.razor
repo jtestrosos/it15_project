@@ -125,7 +125,7 @@
     private string? errorMessage;
     private EditContext editContext = default!;
     private string recaptchaSiteKey = "";
-    private bool showRecaptcha = false;
+    private bool showRecaptcha = true; // Always true for v3 evaluation on Attempt #1
     
     // In-memory tracker for non-existent emails to prevent brute-force enumeration
     private static readonly Dictionary<string, (int FailedCount, DateTimeOffset? LockoutEnd)> UnknownUserTracking = new();
@@ -151,23 +151,7 @@
         }
         else if (HttpMethods.IsPost(HttpContext.Request.Method) && !string.IsNullOrEmpty(Input.Email))
         {
-            // On POST, check the user's failed attempt count to decide if reCAPTCHA should appear
-            var user = await UserManager.FindByEmailAsync(Input.Email);
-            if (user != null)
-            {
-                var failedCount = await UserManager.GetAccessFailedCountAsync(user);
-                var role = await GetPrimaryRoleAsync(user);
-                int captchaThreshold = GetCaptchaThreshold(role);
-                showRecaptcha = failedCount >= captchaThreshold;
-            }
-            else
-            {
-                // Check unknown user tracking
-                if (UnknownUserTracking.TryGetValue(Input.Email, out var track))
-                {
-                    showRecaptcha = track.FailedCount >= 2;
-                }
-            }
+            // We now evaluate reCAPTCHA on Attempt #1, so showRecaptcha remains true.
         }
     }
 
@@ -215,28 +199,52 @@
                 return;
             }
 
-            // If reCAPTCHA is required, validate it via v3 token
-            if (showRecaptcha)
+            // Evaluate reCAPTCHA v3 Score based on Role
+            var recaptchaToken = Input.RecaptchaToken;
+            if (string.IsNullOrEmpty(recaptchaToken))
             {
-                var recaptchaToken = Input.RecaptchaToken;
-                if (string.IsNullOrEmpty(recaptchaToken))
-                {
-                    await AuditLog.LogSecurityEventAsync("", "reCAPTCHA Missing", $"Login attempt without reCAPTCHA for '{Input.Email}'", production_system.Models.LogSeverity.Warning);
-                    errorMessage = "Error: Please wait for security verification to complete.";
-                    return;
-                }
+                await AuditLog.LogSecurityEventAsync("", "reCAPTCHA Missing", $"Login attempt without reCAPTCHA for '{Input.Email}'", production_system.Models.LogSeverity.Warning);
+                errorMessage = "Error: Please wait for security verification to complete.";
+                return;
+            }
 
-                var isRecaptchaValid = await RecaptchaService.VerifyTokenAsync(recaptchaToken);
-                if (!isRecaptchaValid)
+            var (isValid, score) = await RecaptchaService.VerifyTokenAsync(recaptchaToken);
+            if (!isValid)
+            {
+                await AuditLog.LogSecurityEventAsync("", "reCAPTCHA Failed", $"reCAPTCHA v3 verification returned invalid for '{Input.Email}'", production_system.Models.LogSeverity.Warning);
+                errorMessage = "Error: Security verification failed. Please try again later.";
+                return;
+            }
+
+            // Determine role to apply the correct strictness threshold
+            var user = await UserManager.FindByEmailAsync(Input.Email);
+            string? role = user != null ? await GetPrimaryRoleAsync(user) : "Worker"; // Unknown users get Worker treatment
+
+            double requiredScore = role == "Superadmin" ? 0.7 : 0.5;
+
+            if (score < requiredScore)
+            {
+                if (role == "Superadmin")
                 {
-                    await AuditLog.LogSecurityEventAsync("", "reCAPTCHA Failed", $"reCAPTCHA v3 verification failed for '{Input.Email}' - possible bot attack", production_system.Models.LogSeverity.Critical);
-                    errorMessage = "Error: Security verification failed (Bot detected). Please try again later.";
-                    return;
+                    await AuditLog.LogSecurityEventAsync(user?.Id ?? "", "Bot Blocked (Strict)", $"Superadmin bot login blocked. Score: {score} < {requiredScore} for '{Input.Email}'", production_system.Models.LogSeverity.Critical);
+                    Logger.LogWarning($"[EMAIL DISPATCH] To: IT_Team | Subject: CRITICAL: Bot Attack on Superadmin | Body: A bot (Score: {score}) attempted to login to {Input.Email}. Immediate investigation required.");
+                    errorMessage = "Error: Security verification failed. IT has been alerted.";
                 }
+                else if (role == "Administrator")
+                {
+                    await AuditLog.LogSecurityEventAsync(user?.Id ?? "", "Bot Blocked", $"Administrator bot login blocked. Score: {score} < {requiredScore} for '{Input.Email}'", production_system.Models.LogSeverity.Warning);
+                    errorMessage = "Error: Security verification failed (Bot detected). Please try again later.";
+                }
+                else
+                {
+                    // Worker / Manager / Unknown
+                    await AuditLog.LogSecurityEventAsync(user?.Id ?? "", "Bot Blocked", $"Standard bot login blocked. Score: {score} < {requiredScore} for '{Input.Email}'", production_system.Models.LogSeverity.Info);
+                    errorMessage = "Error: Bot activity detected. Please verify your email or try again later.";
+                }
+                return;
             }
 
             // Check for archived user
-            var user = await UserManager.FindByEmailAsync(Input.Email);
             if (user != null && user.IsArchived)
             {
                 await AuditLog.LogSecurityEventAsync(user.Id, "Login Blocked", $"Archived user '{Input.Email}' attempted login", production_system.Models.LogSeverity.Warning, "User", user.Id);
@@ -304,16 +312,7 @@
                     return;
                 }
 
-                // Log warning when reCAPTCHA threshold is hit
-                int captchaThreshold = GetCaptchaThreshold(role);
-                if (failedCount == captchaThreshold)
-                {
-                    await AuditLog.LogSecurityEventAsync(failedUser.Id, "reCAPTCHA Triggered", $"reCAPTCHA activated for '{Input.Email}' (role: {role}) after {failedCount} failed attempts", production_system.Models.LogSeverity.Warning, "User", failedUser.Id);
-                }
-
                 await AuditLog.LogSecurityEventAsync(failedUser.Id, "Login Failed", $"Failed login attempt #{failedCount} for '{Input.Email}' (role: {role})", production_system.Models.LogSeverity.Warning, "User", failedUser.Id);
-
-                showRecaptcha = failedCount >= captchaThreshold;
             }
             else
             {
@@ -334,13 +333,7 @@
                 {
                     UnknownUserTracking[Input.Email] = track;
                     
-                    if (track.FailedCount == 2)
-                    {
-                        await AuditLog.LogSecurityEventAsync("", "reCAPTCHA Triggered", $"reCAPTCHA activated for unknown email '{Input.Email}' after {track.FailedCount} failed attempts", production_system.Models.LogSeverity.Warning);
-                    }
-                    
                     await AuditLog.LogSecurityEventAsync("", "Login Failed", $"Failed login attempt #{track.FailedCount} for unknown email '{Input.Email}'", production_system.Models.LogSeverity.Warning);
-                    showRecaptcha = track.FailedCount >= 2;
                 }
             }
             // Never reveal which field (email vs password) was wrong
@@ -348,15 +341,7 @@
         }
     }
 
-    /// <summary>
-    /// Returns the reCAPTCHA threshold per role:
-    /// Superadmin = 1 (show after 1 failure), others = 2 (show after 2 failures)
-    /// </summary>
-    private int GetCaptchaThreshold(string? role) => role switch
-    {
-        "Superadmin" => 1,
-        _ => 2
-    };
+
 
     /// <summary>
     /// Get the user's primary (highest) role.

@@ -5,7 +5,7 @@ namespace production_system.Services;
 
 public interface IRecaptchaService
 {
-    Task<bool> VerifyTokenAsync(string token);
+    Task<(bool Success, double Score)> VerifyTokenAsync(string token);
 }
 
 public class RecaptchaService : IRecaptchaService
@@ -21,12 +21,12 @@ public class RecaptchaService : IRecaptchaService
         _logger = logger;
     }
 
-    public async Task<bool> VerifyTokenAsync(string token)
+    public async Task<(bool Success, double Score)> VerifyTokenAsync(string token)
     {
         if (string.IsNullOrWhiteSpace(token))
         {
             _logger.LogWarning("reCAPTCHA token is empty.");
-            return false;
+            return (false, 0.0);
         }
 
         try
@@ -44,7 +44,7 @@ public class RecaptchaService : IRecaptchaService
             if (result is null)
             {
                 _logger.LogWarning("reCAPTCHA verification returned null response.");
-                return false;
+                return (false, 0.0);
             }
 
             if (!result.Success)
@@ -53,12 +53,12 @@ public class RecaptchaService : IRecaptchaService
                     result.ErrorCodes != null ? string.Join(", ", result.ErrorCodes) : "none");
             }
 
-            return result.Success;
+            return (result.Success, result.Score);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error verifying reCAPTCHA token.");
-            return false;
+            return (false, 0.0);
         }
     }
 
@@ -72,6 +72,9 @@ public class RecaptchaService : IRecaptchaService
 
         [JsonPropertyName("hostname")]
         public string? Hostname { get; set; }
+
+        [JsonPropertyName("score")]
+        public double Score { get; set; }
 
         [JsonPropertyName("error-codes")]
         public string[]? ErrorCodes { get; set; }
