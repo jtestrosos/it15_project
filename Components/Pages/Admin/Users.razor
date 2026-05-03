@@ -250,9 +250,13 @@
                     @if (string.IsNullOrEmpty(resetResultMessage))
                     {
                         <p class="mb-2">Reset password for <strong>@ResetTargetUser.UserName</strong>?</p>
-                        <p class="text-muted small mb-0">The password will be set to:</p>
-                        <div class="bg-light rounded p-2 mt-1 text-center">
-                            <code class="fs-6">NodeSync2026!</code>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">New Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                <input type="text" class="form-control" @bind="resetPasswordValue" />
+                            </div>
+                            <div class="form-text">Must be at least 8 characters, with a mix of uppercase, lowercase, and numbers.</div>
                         </div>
                     }
                     else
@@ -264,8 +268,8 @@
                         @if (!resetResultMessage.StartsWith("Error"))
                         {
                             <div class="bg-light rounded p-2 mt-2 text-center">
-                                <span class="small text-muted">Temporary password:</span><br/>
-                                <code class="fs-6">NodeSync2026!</code>
+                                <span class="small text-muted">Temporary password set to:</span><br/>
+                                <code class="fs-6">@resetPasswordValue</code>
                             </div>
                             <p class="text-muted small mt-2 mb-0">Instruct the user to change this password upon login.</p>
                         }
@@ -418,6 +422,7 @@ else
     private bool IsManager => currentUserRole == "ProductionManager";
     private string? currentUserRole;
     private string? resetResultMessage;
+    private string resetPasswordValue = "NodeSync2026!";
     private Dictionary<string, DateTimeOffset?> userLockouts = new();
 
     protected override async Task OnInitializedAsync()
@@ -719,6 +724,7 @@ else
         {
             ResetTargetUser = user;
             resetResultMessage = null;
+            resetPasswordValue = "NodeSync2026!"; // reset to default each time opened
             ShowResetPasswordModal = true;
         }
     }
@@ -751,7 +757,7 @@ else
             return;
         }
 
-        var addResult = await userManager.AddPasswordAsync(user, "NodeSync2026!");
+        var addResult = await userManager.AddPasswordAsync(user, resetPasswordValue);
         if (!addResult.Succeeded)
         {
             resetResultMessage = $"Error: {string.Join(", ", addResult.Errors.Select(e => e.Description))}";

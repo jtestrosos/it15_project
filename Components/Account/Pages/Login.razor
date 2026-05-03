@@ -64,19 +64,9 @@
             <a href="Account/ForgotPassword" class="forgot-link">Forgot password?</a>
         </div>
 
-        @* reCAPTCHA v2 checkbox — only shown after failed attempts *@
         @if (showRecaptcha)
         {
-            <div class="recaptcha-alert">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                    <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
-                </svg>
-                <span>Security verification required due to multiple failed attempts.</span>
-            </div>
-            <div class="recaptcha-container">
-                <div class="g-recaptcha" data-sitekey="@recaptchaSiteKey" data-theme="light"></div>
-            </div>
+            <input type="hidden" name="Input.RecaptchaToken" id="recaptcha-token" />
         }
         
         <button type="submit" class="btn-login" id="login-submit-btn">
@@ -100,48 +90,35 @@
     </EditForm>
 </div>
 
-@* Load reCAPTCHA v2 script only when the widget needs to be shown *@
+@* Load reCAPTCHA v3 script only when verification is needed *@
 @if (showRecaptcha)
 {
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js?render=@recaptchaSiteKey" async defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var form = document.getElementById('login-form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    var tokenInput = document.getElementById('recaptcha-token');
+                    // If we haven't generated a token yet, stop submit and get one
+                    if (tokenInput && !tokenInput.value) {
+                        e.preventDefault();
+                        grecaptcha.ready(function() {
+                            grecaptcha.execute('@recaptchaSiteKey', {action: 'login'}).then(function(token) {
+                                tokenInput.value = token;
+                                form.submit(); // Now submit the form natively
+                            });
+                        });
+                    }
+                });
+            }
+        });
+    </script>
 }
 
 <style>
-    .recaptcha-container {
-        display: flex;
-        justify-content: center;
-        margin: 0.5rem 0 0.75rem;
-        overflow: hidden;
-    }
-
-    .recaptcha-container .g-recaptcha {
-        transform: scale(0.85);
-        transform-origin: center;
-    }
-
-    @@media (max-width: 360px) {
-        .recaptcha-container .g-recaptcha {
-            transform: scale(0.75);
-        }
-    }
-
-    .recaptcha-alert {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.6rem 0.75rem;
-        background: #fef3c7;
-        border: 1px solid #fcd34d;
-        border-radius: 8px;
-        font-size: 0.75rem;
-        color: #92400e;
-        margin-bottom: 0.25rem;
-    }
-
-    .recaptcha-alert svg {
-        flex-shrink: 0;
-        color: #d97706;
-    }
+    .grecaptcha-badge { 
+        visibility: hidden; 
 </style>
 
 @code {
@@ -149,6 +126,9 @@
     private EditContext editContext = default!;
     private string recaptchaSiteKey = "";
     private bool showRecaptcha = false;
+    
+    // In-memory tracker for non-existent emails to prevent brute-force enumeration
+    private static readonly Dictionary<string, (int FailedCount, DateTimeOffset? LockoutEnd)> UnknownUserTracking = new();
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -180,6 +160,14 @@
                 int captchaThreshold = GetCaptchaThreshold(role);
                 showRecaptcha = failedCount >= captchaThreshold;
             }
+            else
+            {
+                // Check unknown user tracking
+                if (UnknownUserTracking.TryGetValue(Input.Email, out var track))
+                {
+                    showRecaptcha = track.FailedCount >= 2;
+                }
+            }
         }
     }
 
@@ -189,6 +177,18 @@
         {
             errorMessage = $"Error: {Input.Passkey.Error}";
             return;
+        }
+
+        // Check early lockout for unknown users
+        if (UnknownUserTracking.TryGetValue(Input.Email, out var tracking))
+        {
+            if (tracking.LockoutEnd.HasValue && tracking.LockoutEnd.Value > DateTimeOffset.UtcNow)
+            {
+                await AuditLog.LogSecurityEventAsync("", "Account Locked", $"Lockout enforced for non-existent email '{Input.Email}'", production_system.Models.LogSeverity.Critical);
+                Logger.LogWarning("Unknown user email locked out.");
+                RedirectManager.RedirectTo("Account/Lockout");
+                return;
+            }
         }
 
         SignInResult result;
@@ -215,22 +215,22 @@
                 return;
             }
 
-            // If reCAPTCHA is required, validate it
+            // If reCAPTCHA is required, validate it via v3 token
             if (showRecaptcha)
             {
-                var recaptchaResponse = HttpContext.Request.Form["g-recaptcha-response"].ToString();
-                if (string.IsNullOrEmpty(recaptchaResponse))
+                var recaptchaToken = Input.RecaptchaToken;
+                if (string.IsNullOrEmpty(recaptchaToken))
                 {
                     await AuditLog.LogSecurityEventAsync("", "reCAPTCHA Missing", $"Login attempt without reCAPTCHA for '{Input.Email}'", production_system.Models.LogSeverity.Warning);
-                    errorMessage = "Error: Please complete the security verification checkbox.";
+                    errorMessage = "Error: Please wait for security verification to complete.";
                     return;
                 }
 
-                var isRecaptchaValid = await RecaptchaService.VerifyTokenAsync(recaptchaResponse);
+                var isRecaptchaValid = await RecaptchaService.VerifyTokenAsync(recaptchaToken);
                 if (!isRecaptchaValid)
                 {
-                    await AuditLog.LogSecurityEventAsync("", "reCAPTCHA Failed", $"reCAPTCHA verification failed for '{Input.Email}' - possible bot attack", production_system.Models.LogSeverity.Critical);
-                    errorMessage = "Error: Security verification failed. Please try again.";
+                    await AuditLog.LogSecurityEventAsync("", "reCAPTCHA Failed", $"reCAPTCHA v3 verification failed for '{Input.Email}' - possible bot attack", production_system.Models.LogSeverity.Critical);
+                    errorMessage = "Error: Security verification failed (Bot detected). Please try again later.";
                     return;
                 }
             }
@@ -271,7 +271,11 @@
                 {
                     await UserManager.SetLockoutEndDateAsync(lockedUser, DateTimeOffset.UtcNow.AddMinutes(30));
                 }
+                
                 await AuditLog.LogSecurityEventAsync(lockedUser.Id, "Account Locked", $"Account locked for '{Input.Email}' (role: {role})", production_system.Models.LogSeverity.Critical, "User", lockedUser.Id);
+                
+                // Automated SIEM Notification (Simulated Email)
+                Logger.LogWarning($"[EMAIL DISPATCH] To: {lockedUser.Email} | Subject: Security Alert: Account Locked | Body: Your account has been locked due to multiple failed login attempts.");
             }
             Logger.LogWarning("User account locked out.");
             RedirectManager.RedirectTo("Account/Lockout");
@@ -285,11 +289,17 @@
                 var role = await GetPrimaryRoleAsync(failedUser);
                 var failedCount = await UserManager.GetAccessFailedCountAsync(failedUser);
 
-                // Superadmin: lock at 3 attempts (stricter than the global 5)
+                // Superadmin: lock at 3 attempts (stricter than the global 5) and make it INDEFINITE
                 if (role == "Superadmin" && failedCount >= 3)
                 {
-                    await UserManager.SetLockoutEndDateAsync(failedUser, DateTimeOffset.UtcNow.AddMinutes(15));
-                    await AuditLog.LogSecurityEventAsync(failedUser.Id, "Account Locked", $"Superadmin '{Input.Email}' locked after {failedCount} failed attempts (early lockout)", production_system.Models.LogSeverity.Critical, "User", failedUser.Id);
+                    // Indefinite Lockout: completely freeze the account until manual unlock
+                    await UserManager.SetLockoutEndDateAsync(failedUser, DateTimeOffset.MaxValue);
+                    
+                    await AuditLog.LogSecurityEventAsync(failedUser.Id, "Account Locked", $"Superadmin '{Input.Email}' locked indefinitely after {failedCount} failed attempts. Manual unlock required.", production_system.Models.LogSeverity.Critical, "User", failedUser.Id);
+                    
+                    // Automated SIEM Notification (Simulated Email)
+                    Logger.LogWarning($"[EMAIL DISPATCH] To: {failedUser.Email} | Subject: CRITICAL: Superadmin Account Locked | Body: Your Superadmin account has been locked indefinitely due to multiple failed login attempts. A manual unlock by another Superadmin is required.");
+                    
                     RedirectManager.RedirectTo("Account/Lockout");
                     return;
                 }
@@ -303,8 +313,35 @@
 
                 await AuditLog.LogSecurityEventAsync(failedUser.Id, "Login Failed", $"Failed login attempt #{failedCount} for '{Input.Email}' (role: {role})", production_system.Models.LogSeverity.Warning, "User", failedUser.Id);
 
-                // Update showRecaptcha flag for the re-rendered page
                 showRecaptcha = failedCount >= captchaThreshold;
+            }
+            else
+            {
+                // Treat non-existent users exactly like Workers (2 fails = reCAPTCHA, 5 fails = Lockout)
+                var track = UnknownUserTracking.GetValueOrDefault(Input.Email, (0, null));
+                track.FailedCount++;
+                
+                if (track.FailedCount >= 5)
+                {
+                    track.LockoutEnd = DateTimeOffset.UtcNow.AddMinutes(15);
+                    UnknownUserTracking[Input.Email] = track;
+                    
+                    await AuditLog.LogSecurityEventAsync("", "Account Locked", $"Unknown email '{Input.Email}' locked out after {track.FailedCount} failed attempts", production_system.Models.LogSeverity.Critical);
+                    RedirectManager.RedirectTo("Account/Lockout");
+                    return;
+                }
+                else
+                {
+                    UnknownUserTracking[Input.Email] = track;
+                    
+                    if (track.FailedCount == 2)
+                    {
+                        await AuditLog.LogSecurityEventAsync("", "reCAPTCHA Triggered", $"reCAPTCHA activated for unknown email '{Input.Email}' after {track.FailedCount} failed attempts", production_system.Models.LogSeverity.Warning);
+                    }
+                    
+                    await AuditLog.LogSecurityEventAsync("", "Login Failed", $"Failed login attempt #{track.FailedCount} for unknown email '{Input.Email}'", production_system.Models.LogSeverity.Warning);
+                    showRecaptcha = track.FailedCount >= 2;
+                }
             }
             // Never reveal which field (email vs password) was wrong
             errorMessage = "Error: Invalid email or password.";
@@ -347,6 +384,8 @@
 
         [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
+
+        public string? RecaptchaToken { get; set; }
 
         public PasskeyInputModel? Passkey { get; set; }
     }
