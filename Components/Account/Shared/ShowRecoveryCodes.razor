@@ -1,21 +1,38 @@
-﻿<StatusMessage Message="@StatusMessage" />
-<h3>Recovery codes</h3>
-<div class="alert alert-warning" role="alert">
-    <p>
-        <strong>Put these codes in a safe place.</strong>
-    </p>
-    <p>
-        If you lose your device and don't have the recovery codes you will lose access to your account.
-    </p>
-</div>
-<div class="row">
-    <div class="col-md-12">
-        @foreach (var recoveryCode in RecoveryCodes)
-        {
-            <div>
-                <code class="recovery-code">@recoveryCode</code>
+<StatusMessage Message="@StatusMessage" />
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-warning text-dark d-flex align-items-center fw-bold">
+        <i class="bi bi-shield-exclamation me-2 fs-5"></i>
+        Save Your Recovery Codes
+    </div>
+    <div class="card-body p-4">
+        <div class="alert border-0 mb-4" style="background: rgba(255, 193, 7, 0.1); color: #856404; border-radius: 8px;" role="alert">
+            <h6 class="alert-heading fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Critical Security Step</h6>
+            <p class="mb-1">
+                <strong>Put these codes in a safe place.</strong>
+            </p>
+            <p class="mb-0 small">
+                If you lose your authenticator device and don't have these recovery codes, you will lose access to your account.
+            </p>
+        </div>
+
+        <div class="bg-light p-4 rounded border">
+            <div class="row g-3">
+                @foreach (var recoveryCode in RecoveryCodes)
+                {
+                    <div class="col-sm-6 col-md-4">
+                        <div class="p-2 border rounded text-center bg-white shadow-sm font-monospace fw-bold fs-6 text-primary" style="letter-spacing: 1px;">
+                            @recoveryCode
+                        </div>
+                    </div>
+                }
             </div>
-        }
+        </div>
+
+        <div class="mt-4 d-flex justify-content-end">
+            <button class="btn btn-outline-primary px-4" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i> Print Codes
+            </button>
+        </div>
     </div>
 </div>
 

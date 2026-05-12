@@ -1,8 +1,10 @@
-﻿@page "/Account/LoginWithRecoveryCode"
+@page "/Account/LoginWithRecoveryCode"
+@layout AccountLayout
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
 @using production_system.Data
+@using production_system.Components.Account.Shared
 
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
