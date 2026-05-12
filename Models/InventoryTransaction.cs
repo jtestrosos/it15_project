@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace production_system.Models
@@ -24,6 +24,7 @@ namespace production_system.Models
         public production_system.Data.ApplicationUser User { get; set; } = null!;
 
         [StringLength(25)]
+        [RegularExpression(@"^[a-zA-Z\s]+$", ErrorMessage = "Transaction type may only contain letters and spaces.")]
         public string TransactionType { get; set; } = "Inbound"; // e.g., Inbound, Outbound, Adjustment
 
         [Range(1, int.MaxValue, ErrorMessage = "Transaction quantity must be at least 1.")]

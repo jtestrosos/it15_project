@@ -29,7 +29,6 @@
     
     <EditForm EditContext="editContext" method="post" OnSubmit="LoginUser" FormName="login" id="login-form">
         <DataAnnotationsValidator />
-        <ValidationSummary class="validation-errors" role="alert" />
         
         <div class="form-group">
             <label for="Input.Email">
@@ -249,6 +248,7 @@
             {
                 await AuditLog.LogSecurityEventAsync(user.Id, "Login Blocked", $"Archived user '{Input.Email}' attempted login", production_system.Models.LogSeverity.Warning, "User", user.Id);
                 errorMessage = "Error: Invalid email or password.";
+                Input.Password = "";
                 return;
             }
 
@@ -338,6 +338,7 @@
             }
             // Never reveal which field (email vs password) was wrong
             errorMessage = "Error: Invalid email or password.";
+            Input.Password = "";
         }
     }
 

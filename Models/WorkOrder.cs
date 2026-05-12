@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace production_system.Models
@@ -18,10 +18,12 @@ namespace production_system.Models
         [ForeignKey("UserID")]
         public production_system.Data.ApplicationUser User { get; set; } = null!;
 
-        [StringLength(100)]
+        [StringLength(100, ErrorMessage = "Order description cannot exceed 100 characters.")]
+        [RegularExpression(@"^[a-zA-Z0-9\s\-\(\)&.,;:!?'/]+$", ErrorMessage = "Order description contains invalid characters.")]
         public string OrderDescription { get; set; } = string.Empty;
 
         [StringLength(25)]
+        [RegularExpression(@"^[a-zA-Z\s]+$", ErrorMessage = "Status may only contain letters and spaces.")]
         public string Status { get; set; } = "Pending";
 
         public DateTime? StartTime { get; set; }

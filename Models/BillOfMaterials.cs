@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace production_system.Models
@@ -22,6 +22,7 @@ namespace production_system.Models
         public int QuantityRequired { get; set; }
 
         [StringLength(25)]
+        [RegularExpression(@"^[a-zA-Z0-9\s]+$", ErrorMessage = "Unit of measure may only contain letters, numbers, and spaces.")]
         public string UnitOfMeasure { get; set; } = "Units";
 
         public bool IsArchived { get; set; }

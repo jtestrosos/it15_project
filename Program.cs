@@ -82,6 +82,10 @@ builder.Services.AddHttpContextAccessor();
 // Register AuditLogService for centralized security, system, and audit logging
 builder.Services.AddScoped<production_system.Services.AuditLogService>();
 
+// Register Encryption Services (IAS Compliance - Data Encryption)
+builder.Services.AddSingleton<production_system.Services.IEncryptionService, production_system.Services.AesEncryptionService>();
+builder.Services.AddScoped<production_system.Services.IRsaDemoService, production_system.Services.RsaDemoService>();
+
 var app = builder.Build();
 
 // Seed roles and admin account

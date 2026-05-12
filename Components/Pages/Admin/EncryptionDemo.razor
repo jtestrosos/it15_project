@@ -1,0 +1,343 @@
+@page "/admin/encryption"
+@using Microsoft.AspNetCore.Authorization
+@using production_system.Services
+@attribute [Authorize(Roles = "Superadmin")]
+
+@inject IEncryptionService AesService
+@inject IRsaDemoService RsaService
+
+<PageTitle>NodeSync | Encryption Demo</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1"><i class="bi bi-lock me-2"></i>Data Encryption (IAS Compliance)</h2>
+            <p class="text-muted mb-0">Symmetric (AES-256) and Asymmetric (RSA-2048) encryption demonstration</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- AES-256 Symmetric Encryption -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-primary text-white d-flex align-items-center">
+                    <i class="bi bi-shield-lock me-2 fs-5"></i>
+                    <div>
+                        <h5 class="mb-0">AES-256-CBC (Symmetric)</h5>
+                        <small class="opacity-75">Same key encrypts &amp; decrypts</small>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>How it works:</strong> AES-256-CBC uses a single 256-bit secret key. A random IV (Initialization Vector)
+                        is generated per encryption to ensure identical plaintexts produce different ciphertexts.
+                        Used for encrypting sensitive database columns (e.g. API keys, supplier info).
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Plaintext Input</label>
+                        <textarea class="form-control" rows="2" @bind="aesPlainText" placeholder="Enter sensitive data to encrypt..."></textarea>
+                    </div>
+
+                    <div class="d-flex gap-2 mb-3">
+                        <button class="btn btn-primary" @onclick="EncryptAes" disabled="@string.IsNullOrWhiteSpace(aesPlainText)">
+                            <i class="bi bi-lock me-1"></i> Encrypt
+                        </button>
+                        <button class="btn btn-outline-success" @onclick="DecryptAes" disabled="@string.IsNullOrWhiteSpace(aesCipherText)">
+                            <i class="bi bi-unlock me-1"></i> Decrypt
+                        </button>
+                        <button class="btn btn-outline-secondary ms-auto" @onclick="ClearAes">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Clear
+                        </button>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(aesCipherText))
+                    {
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-danger">Encrypted Output (Base64)</label>
+                            <textarea class="form-control font-monospace small text-danger" rows="3" readonly>@aesCipherText</textarea>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(aesDecryptedText))
+                    {
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-success">Decrypted Output</label>
+                            <div class="form-control bg-light text-success fw-bold">@aesDecryptedText</div>
+                        </div>
+                    }
+
+                    <hr />
+                    <h6 class="fw-bold mb-2"><i class="bi bi-database me-1"></i> Live Column Encryption Test</h6>
+                    <p class="small text-muted mb-2">Simulates encrypting a sensitive field before saving to the database.</p>
+                    <div class="mb-2">
+                        <label class="form-label small">Supplier Info (simulated field)</label>
+                        <input type="text" class="form-control" @bind="liveFieldValue" placeholder="e.g. Acme Corp - Contact: john@acme.com" />
+                    </div>
+                    <div class="d-flex gap-2 mb-2">
+                        <button class="btn btn-sm btn-warning" @onclick="EncryptLiveField" disabled="@string.IsNullOrWhiteSpace(liveFieldValue)">
+                            <i class="bi bi-lock me-1"></i> Encrypt for DB
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" @onclick="DecryptLiveField" disabled="@string.IsNullOrWhiteSpace(liveFieldEncrypted)">
+                            <i class="bi bi-unlock me-1"></i> Decrypt from DB
+                        </button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(liveFieldEncrypted))
+                    {
+                        <div class="small">
+                            <span class="badge bg-danger">Stored in DB:</span>
+                            <code class="d-block mt-1 text-break" style="word-break: break-all;">@liveFieldEncrypted</code>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(liveFieldDecrypted))
+                    {
+                        <div class="small mt-2">
+                            <span class="badge bg-success">Read from DB:</span>
+                            <span class="fw-bold ms-1">@liveFieldDecrypted</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- RSA Asymmetric Encryption -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-success text-white d-flex align-items-center">
+                    <i class="bi bi-key me-2 fs-5"></i>
+                    <div>
+                        <h5 class="mb-0">RSA-2048 (Asymmetric)</h5>
+                        <small class="opacity-75">Public key encrypts, Private key decrypts</small>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success py-2 small mb-3">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <strong>How it works:</strong> RSA uses a keypair. The <strong>public key</strong> encrypts data (anyone can do this).
+                        Only the holder of the matching <strong>private key</strong> can decrypt it.
+                        Used for secure key exchange, digital signatures, and encrypting small secrets.
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Plaintext Input</label>
+                        <textarea class="form-control" rows="2" @bind="rsaPlainText" placeholder="Enter data to encrypt with RSA..." maxlength="190"></textarea>
+                        <div class="form-text">Max ~190 characters (RSA-2048 with OAEP-SHA256 padding limit)</div>
+                    </div>
+
+                    <div class="d-flex gap-2 mb-3">
+                        <button class="btn btn-success" @onclick="EncryptRsa" disabled="@string.IsNullOrWhiteSpace(rsaPlainText)">
+                            <i class="bi bi-lock me-1"></i> Encrypt (Public Key)
+                        </button>
+                        <button class="btn btn-outline-warning" @onclick="DecryptRsa" disabled="@string.IsNullOrWhiteSpace(rsaCipherText)">
+                            <i class="bi bi-unlock me-1"></i> Decrypt (Private Key)
+                        </button>
+                    </div>
+
+                    <div class="d-flex gap-2 mb-3">
+                        <button class="btn btn-outline-primary btn-sm" @onclick="GenerateNewKeys">
+                            <i class="bi bi-arrow-repeat me-1"></i> Generate New Keypair
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" @onclick="ClearRsa">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Clear
+                        </button>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(rsaCipherText))
+                    {
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-danger">Encrypted Output (Base64)</label>
+                            <textarea class="form-control font-monospace small text-danger" rows="3" readonly>@rsaCipherText</textarea>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(rsaDecryptedText))
+                    {
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-success">Decrypted Output</label>
+                            <div class="form-control bg-light text-success fw-bold">@rsaDecryptedText</div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(rsaError))
+                    {
+                        <div class="alert alert-danger py-2 small">
+                            <i class="bi bi-exclamation-triangle me-1"></i> @rsaError
+                        </div>
+                    }
+
+                    <hr />
+                    <h6 class="fw-bold mb-2"><i class="bi bi-key me-1"></i> Current RSA Keypair</h6>
+                    <div class="accordion" id="rsaKeysAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#publicKeyCollapse">
+                                    <i class="bi bi-eye me-2"></i> Public Key (shareable)
+                                </button>
+                            </h2>
+                            <div id="publicKeyCollapse" class="accordion-collapse collapse" data-bs-parent="#rsaKeysAccordion">
+                                <div class="accordion-body p-2">
+                                    <pre class="small mb-0 text-break" style="white-space: pre-wrap; font-size: 0.7rem;">@RsaService.PublicKeyPem</pre>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#privateKeyCollapse">
+                                    <i class="bi bi-eye-slash me-2 text-danger"></i> Private Key (SECRET - never share)
+                                </button>
+                            </h2>
+                            <div id="privateKeyCollapse" class="accordion-collapse collapse" data-bs-parent="#rsaKeysAccordion">
+                                <div class="accordion-body p-2">
+                                    <pre class="small mb-0 text-break text-danger" style="white-space: pre-wrap; font-size: 0.7rem;">@RsaService.PrivateKeyPem</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Encryption Summary Table -->
+    <div class="card shadow-sm border-0 mt-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="bi bi-table me-2"></i>Encryption Methods Comparison (IAS Reference)</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Feature</th>
+                            <th>AES-256-CBC (Symmetric)</th>
+                            <th>RSA-2048 (Asymmetric)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-semibold">Key Type</td>
+                            <td>Single shared secret key</td>
+                            <td>Public + Private keypair</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-semibold">Speed</td>
+                            <td><span class="badge bg-success">Fast</span> Ideal for bulk data</td>
+                            <td><span class="badge bg-warning text-dark">Slow</span> Small data only</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-semibold">Max Data Size</td>
+                            <td>Unlimited (block cipher)</td>
+                            <td>~190 bytes (with OAEP-SHA256)</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-semibold">Use Case</td>
+                            <td>Database column encryption, file encryption</td>
+                            <td>Key exchange, digital signatures</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-semibold">NodeSync Usage</td>
+                            <td>API keys, supplier info, sensitive fields</td>
+                            <td>Demonstration &amp; educational reference</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-semibold">Algorithm</td>
+                            <td><code>AES-256-CBC + PKCS7 + Random IV</code></td>
+                            <td><code>RSA-2048 + OAEP-SHA256</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // AES State
+    private string aesPlainText = "";
+    private string aesCipherText = "";
+    private string aesDecryptedText = "";
+    private string liveFieldValue = "";
+    private string liveFieldEncrypted = "";
+    private string liveFieldDecrypted = "";
+
+    // RSA State
+    private string rsaPlainText = "";
+    private string rsaCipherText = "";
+    private string rsaDecryptedText = "";
+    private string? rsaError;
+
+    // AES Operations
+    private void EncryptAes()
+    {
+        aesCipherText = AesService.Encrypt(aesPlainText);
+        aesDecryptedText = "";
+    }
+
+    private void DecryptAes()
+    {
+        aesDecryptedText = AesService.Decrypt(aesCipherText);
+    }
+
+    private void ClearAes()
+    {
+        aesPlainText = "";
+        aesCipherText = "";
+        aesDecryptedText = "";
+    }
+
+    private void EncryptLiveField()
+    {
+        liveFieldEncrypted = AesService.Encrypt(liveFieldValue);
+        liveFieldDecrypted = "";
+    }
+
+    private void DecryptLiveField()
+    {
+        liveFieldDecrypted = AesService.Decrypt(liveFieldEncrypted);
+    }
+
+    // RSA Operations
+    private void EncryptRsa()
+    {
+        rsaError = null;
+        try
+        {
+            rsaCipherText = RsaService.Encrypt(rsaPlainText, RsaService.PublicKeyPem);
+            rsaDecryptedText = "";
+        }
+        catch (Exception ex)
+        {
+            rsaError = $"Encryption failed: {ex.Message}";
+        }
+    }
+
+    private void DecryptRsa()
+    {
+        rsaError = null;
+        try
+        {
+            rsaDecryptedText = RsaService.Decrypt(rsaCipherText, RsaService.PrivateKeyPem);
+        }
+        catch (Exception ex)
+        {
+            rsaError = $"Decryption failed: {ex.Message}";
+        }
+    }
+
+    private void GenerateNewKeys()
+    {
+        RsaService.GenerateNewKeyPair();
+        rsaCipherText = "";
+        rsaDecryptedText = "";
+        rsaError = null;
+    }
+
+    private void ClearRsa()
+    {
+        rsaPlainText = "";
+        rsaCipherText = "";
+        rsaDecryptedText = "";
+        rsaError = null;
+    }
+}

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace production_system.Models
@@ -28,6 +28,7 @@ namespace production_system.Models
         public DateTime PlannedEndDate { get; set; }
 
         [StringLength(25)]
+        [RegularExpression(@"^[a-zA-Z\s]+$", ErrorMessage = "Status may only contain letters and spaces.")]
         public string Status { get; set; } = "Draft";
 
         public int? FacilityID { get; set; }

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace production_system.Models
@@ -18,9 +18,11 @@ namespace production_system.Models
         public Component? Component { get; set; }
 
         [StringLength(25)]
+        [RegularExpression(@"^[a-zA-Z\s]+$", ErrorMessage = "Cost type may only contain letters and spaces.")]
         public string CostType { get; set; } = string.Empty; // Material, Labor, Overhead
 
         [Column(TypeName = "decimal(10,2)")]
+        [Range(0, 9999999999.99, ErrorMessage = "Amount must be a positive value.")]
         public decimal Amount { get; set; }
 
         [Column(TypeName = "decimal(10,4)")]
