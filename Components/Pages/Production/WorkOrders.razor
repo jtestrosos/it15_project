@@ -11,6 +11,7 @@
 @inject NavigationManager NavigationManager
 @inject production_system.Services.FacilityFilterService FacilityFilter
 @inject IJSRuntime JS
+@inject production_system.Services.AuditLogService AuditLog
 
 <PageTitle>NodeSync | Work Orders</PageTitle>
 
@@ -19,7 +20,7 @@
 <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
         <h1 class="h3 mb-0 text-gray-800">Work Orders</h1>
-        <p class="text-muted mb-0">Assign production tasks to workers.</p>
+        <p class="text-muted mb-0">Assign production tasks to Production Workers.</p>
     </div>
     <div class="d-flex flex-column gap-2 align-items-end">
         <button class="btn btn-outline-secondary" @onclick="ToggleArchivedView">
@@ -57,9 +58,9 @@
                             </InputSelect>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Assign To Worker</label>
+                            <label class="form-label">Assign To Production Worker</label>
                             <InputSelect class="form-select" @bind-Value="NewOrder.UserID">
-                                <option value="">Select Worker</option>
+                                <option value="">Select Production Worker</option>
                                 @foreach (var w in workers)
                                 {
                                     <option value="@w.Id">@w.UserName</option>
@@ -127,7 +128,7 @@ else
                                 <th class="ps-4">ID</th>
                                 <th>Description</th>
                                 <th>Product</th>
-                                <th>Worker</th>
+                                <th>Assigned Worker</th>
                                 <th>Status</th>
                                 <th>Progress</th>
                                 <th class="text-center" style="width: 120px;">Actions</th>
@@ -310,15 +311,7 @@ else
         context.WorkOrders.Add(NewOrder);
         await context.SaveChangesAsync();
         
-        var log = new production_system.Models.ActivityLog
-        {
-            UserID = currentUserId ?? "",
-            ActionType = "Create Work Order",
-            Details = $"Created new Work Order for Plan #{NewOrder.PlanID}",
-            Timestamp = DateTime.Now,
-            FacilityID = userFacilityId
-        };
-        context.ActivityLogs.Add(log);
+        await AuditLog.LogAuditEventAsync(currentUserId ?? "", "Work Order Created", $"Created Work Order #{NewOrder.OrderID} for Plan #{NewOrder.PlanID}: '{NewOrder.OrderDescription}'", production_system.Models.LogSeverity.Info, "WorkOrder", NewOrder.OrderID.ToString(), userFacilityId);
 
         var notification = new production_system.Models.SystemNotification
         {
@@ -350,18 +343,10 @@ else
         if (dbOrder != null)
         {
             dbOrder.Status = "Canceled";
-            
-            var log = new production_system.Models.ActivityLog
-            {
-                UserID = currentUserId ?? "",
-                ActionType = "Archive Work Order",
-                Details = $"Archived Work Order #{order.OrderID}",
-                Timestamp = DateTime.Now,
-                FacilityID = userFacilityId
-            };
-            context.ActivityLogs.Add(log);
-
             await context.SaveChangesAsync();
+            
+            await AuditLog.LogAuditEventAsync(currentUserId ?? "", "Work Order Archived", $"Archived (canceled) Work Order #{order.OrderID}: '{order.OrderDescription}'", production_system.Models.LogSeverity.Warning, "WorkOrder", order.OrderID.ToString(), userFacilityId);
+
             await LoadData();
         }
     }
@@ -374,18 +359,10 @@ else
         if (dbOrder != null)
         {
             dbOrder.Status = "Pending";
-            
-            var log = new production_system.Models.ActivityLog
-            {
-                UserID = currentUserId ?? "",
-                ActionType = "Restore Work Order",
-                Details = $"Restored Work Order #{order.OrderID}",
-                Timestamp = DateTime.Now,
-                FacilityID = userFacilityId
-            };
-            context.ActivityLogs.Add(log);
-
             await context.SaveChangesAsync();
+            
+            await AuditLog.LogAuditEventAsync(currentUserId ?? "", "Work Order Restored", $"Restored Work Order #{order.OrderID}: '{order.OrderDescription}'", production_system.Models.LogSeverity.Info, "WorkOrder", order.OrderID.ToString(), userFacilityId);
+
             await LoadData();
         }
     }

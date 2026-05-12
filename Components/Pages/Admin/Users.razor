@@ -84,7 +84,7 @@
                             <select class="form-select" @bind="NewUser.Role" required>
                                 @if (!IsAdmin)
                                 {
-                                    <option value="Superadmin">Superadmin</option>
+                                    <option value="Superadmin">Super Administrator</option>
                                     <option value="Administrator">Administrator</option>
                                 }
                                 <option value="ProductionManager">Production Manager</option>
@@ -179,7 +179,7 @@
                             <select class="form-select" @bind="SelectedRole" disabled="@(IsAdmin && GetUserRole(EditingUserModel.Id) == "Superadmin")">
                                 @if (!IsAdmin)
                                 {
-                                    <option value="Superadmin">Superadmin</option>
+                                    <option value="Superadmin">Super Administrator</option>
                                 }
                                 <option value="Administrator">Administrator</option>
                                 <option value="ProductionManager">Production Manager</option>

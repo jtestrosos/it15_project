@@ -8,6 +8,7 @@
 @inject IServiceScopeFactory ScopeFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
+@inject production_system.Services.AuditLogService AuditLog
 
 <PageTitle>NodeSync | Facilities</PageTitle>
 
@@ -238,6 +239,9 @@ else
         using var scope = ScopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+
         if (IsEditing && editingFacilityId.HasValue)
         {
             var dbFacility = await context.Facilities.FindAsync(editingFacilityId.Value);
@@ -247,12 +251,16 @@ else
                 dbFacility.Location = NewFacility.Location;
                 dbFacility.SubscriptionStatus = NewFacility.SubscriptionStatus;
                 await context.SaveChangesAsync();
+                
+                await AuditLog.LogSystemEventAsync(userId, "Facility Updated", $"Updated facility '{dbFacility.FacilityName}'", production_system.Models.LogSeverity.Info, "Facility", dbFacility.FacilityID.ToString());
             }
         }
         else
         {
             context.Facilities.Add(NewFacility);
             await context.SaveChangesAsync();
+            
+            await AuditLog.LogSystemEventAsync(userId, "Facility Created", $"Created new facility '{NewFacility.FacilityName}'", production_system.Models.LogSeverity.Info, "Facility", NewFacility.FacilityID.ToString());
         }
 
         await LoadFacilities();
@@ -271,6 +279,11 @@ else
         {
             dbFacility.SubscriptionStatus = "Inactive";
             await context.SaveChangesAsync();
+            
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+            await AuditLog.LogSystemEventAsync(userId, "Facility Archived", $"Set facility '{facility.FacilityName}' to Inactive", production_system.Models.LogSeverity.Warning, "Facility", facility.FacilityID.ToString());
+            
             await LoadFacilities();
         }
     }
@@ -284,6 +297,11 @@ else
         {
             dbFacility.SubscriptionStatus = "Active";
             await context.SaveChangesAsync();
+            
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "";
+            await AuditLog.LogSystemEventAsync(userId, "Facility Restored", $"Restored facility '{facility.FacilityName}' to Active", production_system.Models.LogSeverity.Info, "Facility", facility.FacilityID.ToString());
+            
             await LoadFacilities();
         }
     }

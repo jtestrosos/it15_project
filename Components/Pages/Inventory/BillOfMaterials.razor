@@ -9,6 +9,7 @@
 @inject NavigationManager NavigationManager
 @inject production_system.Services.FacilityFilterService FacilityFilter
 @inject IJSRuntime JS
+@inject production_system.Services.AuditLogService AuditLog
 
 <PageTitle>NodeSync | Bill of Materials</PageTitle>
 
@@ -255,6 +256,10 @@ else
         NewBOM.FacilityID = GetEffectiveFacilityId() ?? userFacilityId;
         context.BillOfMaterials.Add(NewBOM);
         await context.SaveChangesAsync();
+
+        var userId = await FacilityAccess.GetCurrentUserIdAsync();
+        await AuditLog.LogSystemEventAsync(userId ?? "", "BOM Item Created", $"Added component #{NewBOM.ComponentID} to product #{NewBOM.ProductID} (Qty: {NewBOM.QuantityRequired})", production_system.Models.LogSeverity.Info, "BillOfMaterial", NewBOM.BOMID.ToString(), userFacilityId);
+
         await LoadData();
         CloseCreateModal();
     }
@@ -270,6 +275,10 @@ else
         if (dbBom == null) return;
         dbBom.IsArchived = true;
         await context.SaveChangesAsync();
+
+        var userId = await FacilityAccess.GetCurrentUserIdAsync();
+        await AuditLog.LogSystemEventAsync(userId ?? "", "BOM Item Archived", $"Archived BOM #{bom.BOMID}: {bom.Product?.ProductName} → {bom.Component?.ComponentName}", production_system.Models.LogSeverity.Warning, "BillOfMaterial", bom.BOMID.ToString(), userFacilityId);
+
         await LoadData();
     }
 
@@ -281,6 +290,10 @@ else
         if (dbBom == null) return;
         dbBom.IsArchived = false;
         await context.SaveChangesAsync();
+
+        var userId = await FacilityAccess.GetCurrentUserIdAsync();
+        await AuditLog.LogSystemEventAsync(userId ?? "", "BOM Item Restored", $"Restored BOM #{bom.BOMID}: {bom.Product?.ProductName} → {bom.Component?.ComponentName}", production_system.Models.LogSeverity.Info, "BillOfMaterial", bom.BOMID.ToString(), userFacilityId);
+
         await LoadData();
     }
 

@@ -9,6 +9,7 @@
 @inject IServiceScopeFactory ScopeFactory
 @inject IExchangeRateService ExchangeRateService
 @inject production_system.Services.FacilityFilterService FacilityFilter
+@inject production_system.Services.AuditLogService AuditLog
 
 <PageTitle>NodeSync | Production Costs</PageTitle>
 
@@ -367,6 +368,10 @@ else
         NewCost.FacilityID = GetEffectiveFacilityId() ?? userFacilityId;
         context.Costs.Add(NewCost);
         await context.SaveChangesAsync();
+
+        var currentUserId = await FacilityAccess.GetCurrentUserIdAsync();
+        await AuditLog.LogAuditEventAsync(currentUserId ?? "", "Cost Recorded", $"Recorded {NewCost.CostType} cost of ₱{NewCost.Amount:N2} (Rate: {NewCost.CurrencyRate}) for Order #{NewCost.OrderID}", production_system.Models.LogSeverity.Info, "Cost", NewCost.CostID.ToString(), userFacilityId);
+
         await LoadData();
         CloseCreateModal();
     }

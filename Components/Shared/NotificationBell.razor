@@ -329,7 +329,6 @@
     private string? userId;
     private int? facilityId;
     private List<string> userRoles = new();
-    private System.Threading.Timer? refreshTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -480,7 +479,6 @@
 
     public void Dispose()
     {
-        refreshTimer?.Dispose();
     }
 }
 

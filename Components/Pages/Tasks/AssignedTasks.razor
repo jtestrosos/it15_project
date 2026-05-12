@@ -10,6 +10,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject production_system.Services.FacilityFilterService FacilityFilter
+@inject production_system.Services.AuditLogService AuditLog
 
 <PageTitle>NodeSync | @(isSuperadmin ? "Worker Tasks" : "My Work Orders")</PageTitle>
 
@@ -323,18 +324,10 @@
         if (dbOrder == null) return;
         dbOrder.Status = "In Progress";
         dbOrder.StartTime = DateTime.Now;
-        
-        var log = new ActivityLog
-        {
-            UserID = userId ?? "",
-            ActionType = "Task Started",
-            Details = $"Started work on Order #{order.OrderID}: {order.OrderDescription}",
-            Timestamp = DateTime.Now,
-            FacilityID = order.FacilityID
-        };
-        context.ActivityLogs.Add(log);
-        
         await context.SaveChangesAsync();
+        
+        await AuditLog.LogAuditEventAsync(userId ?? "", "Task Started", $"Started work on Order #{order.OrderID}: '{order.OrderDescription}'", production_system.Models.LogSeverity.Info, "WorkOrder", order.OrderID.ToString(), order.FacilityID);
+
         order.Status = dbOrder.Status;
         order.StartTime = dbOrder.StartTime;
     }
@@ -347,18 +340,10 @@
         if (dbOrder == null) return;
         dbOrder.Status = "Completed";
         dbOrder.EndTime = DateTime.Now;
-
-        var log = new ActivityLog
-        {
-            UserID = userId ?? "",
-            ActionType = "Task Completed",
-            Details = $"Completed work on Order #{order.OrderID}: {order.OrderDescription}",
-            Timestamp = DateTime.Now,
-            FacilityID = order.FacilityID
-        };
-        context.ActivityLogs.Add(log);
-
         await context.SaveChangesAsync();
+
+        await AuditLog.LogAuditEventAsync(userId ?? "", "Task Completed", $"Completed work on Order #{order.OrderID}: '{order.OrderDescription}'", production_system.Models.LogSeverity.Info, "WorkOrder", order.OrderID.ToString(), order.FacilityID);
+
         workOrders = await LoadOrdersFromDb();
     }
 

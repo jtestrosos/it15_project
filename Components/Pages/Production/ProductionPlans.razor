@@ -10,6 +10,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject production_system.Services.FacilityFilterService FacilityFilter
 @inject IJSRuntime JS
+@inject production_system.Services.AuditLogService AuditLog
 
 <PageTitle>NodeSync | Production Plans</PageTitle>
 
@@ -301,16 +302,6 @@ else
                 dbPlan.PlannedStartDate = NewPlan.PlannedStartDate;
                 dbPlan.PlannedEndDate = NewPlan.PlannedEndDate;
                 dbPlan.Status = NewPlan.Status;
-                
-                var log = new production_system.Models.ActivityLog
-                {
-                    UserID = currentUserId,
-                    ActionType = "Edit Production Plan",
-                    Details = $"Edited Production Plan #{NewPlan.PlanID}",
-                    Timestamp = DateTime.Now,
-                    FacilityID = userFacilityId
-                };
-                context.ActivityLogs.Add(log);
             }
         }
         else
@@ -318,19 +309,19 @@ else
             NewPlan.UserID = currentUserId;
             NewPlan.FacilityID = GetEffectiveFacilityId() ?? userFacilityId;
             context.ProductionPlans.Add(NewPlan);
-            
-            var log = new production_system.Models.ActivityLog
-            {
-                UserID = currentUserId,
-                ActionType = "Create Production Plan",
-                Details = $"Created Production Plan for Product #{NewPlan.ProductID}",
-                Timestamp = DateTime.Now,
-                FacilityID = userFacilityId
-            };
-            context.ActivityLogs.Add(log);
         }
 
         await context.SaveChangesAsync();
+
+        if (IsEditing)
+        {
+            await AuditLog.LogSystemEventAsync(currentUserId ?? "", "Production Plan Updated", $"Updated Production Plan #{NewPlan.PlanID} (Qty: {NewPlan.BatchQuantity}, Status: {NewPlan.Status})", production_system.Models.LogSeverity.Info, "ProductionPlan", NewPlan.PlanID.ToString(), userFacilityId);
+        }
+        else
+        {
+            await AuditLog.LogSystemEventAsync(currentUserId ?? "", "Production Plan Created", $"Created Production Plan #{NewPlan.PlanID} for Product #{NewPlan.ProductID} (Qty: {NewPlan.BatchQuantity})", production_system.Models.LogSeverity.Info, "ProductionPlan", NewPlan.PlanID.ToString(), userFacilityId);
+        }
+
         await LoadData();
         CloseCreateModal();
     }
@@ -347,6 +338,9 @@ else
         {
             dbPlan.Status = "Archived";
             await context.SaveChangesAsync();
+            
+            await AuditLog.LogSystemEventAsync(currentUserId ?? "", "Production Plan Archived", $"Archived Production Plan #{plan.PlanID} for '{plan.Product?.ProductName}'", production_system.Models.LogSeverity.Warning, "ProductionPlan", plan.PlanID.ToString(), userFacilityId);
+
             await LoadData();
         }
     }
@@ -360,6 +354,9 @@ else
         {
             dbPlan.Status = "Draft";
             await context.SaveChangesAsync();
+            
+            await AuditLog.LogSystemEventAsync(currentUserId ?? "", "Production Plan Restored", $"Restored Production Plan #{plan.PlanID} to Draft", production_system.Models.LogSeverity.Info, "ProductionPlan", plan.PlanID.ToString(), userFacilityId);
+
             await LoadData();
         }
     }
