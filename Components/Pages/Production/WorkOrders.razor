@@ -50,7 +50,7 @@
                         <div class="mb-3">
                             <label class="form-label">Production Plan</label>
                             <InputSelect class="form-select" @bind-Value="NewOrder.PlanID">
-                                <option value="0">Select Plan</option>
+                                <option value="0" disabled selected>Select Plan</option>
                                 @foreach (var p in plans)
                                 {
                                     <option value="@p.PlanID">#@p.PlanID - @p.Product?.ProductName (@p.BatchQuantity)</option>
@@ -60,7 +60,7 @@
                         <div class="mb-3">
                             <label class="form-label">Assign To Production Worker</label>
                             <InputSelect class="form-select" @bind-Value="NewOrder.UserID">
-                                <option value="">Select Production Worker</option>
+                                <option value="" disabled selected>Select Production Worker</option>
                                 @foreach (var w in workers)
                                 {
                                     <option value="@w.Id">@w.UserName</option>

@@ -48,7 +48,7 @@
                         <div class="mb-3">
                             <label class="form-label">Product</label>
                             <InputSelect class="form-select" @bind-Value="NewBOM.ProductID">
-                                <option value="0">Select Product</option>
+                                <option value="0" disabled selected>Select Product</option>
                                 @foreach (var p in products)
                                 {
                                     <option value="@p.ProductID">@p.ProductName</option>

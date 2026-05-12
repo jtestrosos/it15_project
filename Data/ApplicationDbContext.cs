@@ -1,12 +1,18 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 using production_system.Models;
 
 namespace production_system.Data
 {
-    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext<ApplicationUser>(options)
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
+        private readonly production_system.Services.IEncryptionService? _encryptionService;
+
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, production_system.Services.IEncryptionService? encryptionService = null) : base(options)
+        {
+            _encryptionService = encryptionService;
+        }
         public DbSet<Facility> Facilities { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Component> Components { get; set; }
@@ -23,6 +29,22 @@ namespace production_system.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+
+            if (_encryptionService != null)
+            {
+                var converter = new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<string, string>(
+                    v => _encryptionService.Encrypt(v) ?? string.Empty,
+                    v => _encryptionService.Decrypt(v) ?? string.Empty
+                );
+
+                builder.Entity<Facility>()
+                    .Property(f => f.APIKeyOpenWeather)
+                    .HasConversion(converter);
+
+                builder.Entity<Facility>()
+                    .Property(f => f.APIKeyExchangeRate)
+                    .HasConversion(converter);
+            }
 
             // Prevent cascade delete loops
             builder.Entity<ProductionPlan>()

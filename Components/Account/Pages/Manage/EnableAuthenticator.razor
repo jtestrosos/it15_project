@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/EnableAuthenticator"
+@page "/Account/Manage/EnableAuthenticator"
 
 @using System.ComponentModel.DataAnnotations
 @using System.Globalization
@@ -37,9 +37,27 @@ else
             </li>
             <li>
                 <p>Scan the QR Code or enter this key <kbd>@sharedKey</kbd> into your two factor authenticator app. Spaces and casing do not matter.</p>
-                <div class="alert alert-info">Learn how to <a href="https://go.microsoft.com/fwlink/?Linkid=852423">enable QR code generation</a>.</div>
-                <div></div>
-                <div data-url="@authenticatorUri"></div>
+                
+                <div class="d-flex justify-content-center my-4">
+                    <div id="qrCode" data-url="@authenticatorUri" style="padding: 15px; background: white; border-radius: 8px; border: 1px solid #ddd; display: inline-block;"></div>
+                </div>
+                
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+                <script>
+                    setTimeout(() => {
+                        const qrElement = document.getElementById("qrCode");
+                        if (qrElement && typeof QRCode !== 'undefined' && !qrElement.hasChildNodes()) {
+                            new QRCode(qrElement, {
+                                text: qrElement.getAttribute("data-url"),
+                                width: 200,
+                                height: 200,
+                                colorDark: "#000000",
+                                colorLight: "#ffffff",
+                                correctLevel: QRCode.CorrectLevel.M
+                            });
+                        }
+                    }, 100);
+                </script>
             </li>
             <li>
                 <p>

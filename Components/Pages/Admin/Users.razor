@@ -358,6 +358,9 @@ else
                                             <button class="btn btn-sm btn-outline-warning" @onclick="() => ShowResetConfirm(user.Id)" disabled="@(IsAdmin && GetUserRole(user.Id) == "Superadmin")" title="Reset password">
                                                 <i class="bi bi-key"></i>
                                             </button>
+                                            <button class="btn btn-sm btn-outline-info" @onclick="() => Reset2FA(user)" disabled="@(IsAdmin && (GetUserRole(user.Id) == "Superadmin" || GetUserRole(user.Id) == "Administrator"))" title="Reset 2FA">
+                                                <i class="bi bi-phone-vibrate"></i>
+                                            </button>
                                             @if (IsUserLockedOut(user) && CanUnlock(user))
                                             {
                                                 <button class="btn btn-sm btn-outline-success" @onclick="() => UnlockUser(user)" title="Unlock account">
@@ -810,6 +813,35 @@ else
             currentUserId ?? "", "Account Unlocked",
             $"{currentUserRole} '{currentUserId}' unlocked account for '{user.Email}' (role: {targetRole})",
             production_system.Models.LogSeverity.Warning, "User", user.Id);
+
+        await LoadData();
+    }
+
+    /// <summary>
+    /// Administrative 2FA Reset: Wipes the authenticator key and disables 2FA for the target user.
+    /// This forces them to set up 2FA again upon next login due to our mandatory policy.
+    /// </summary>
+    private async Task Reset2FA(ApplicationUser targetUser)
+    {
+        using var scope = ScopeFactory.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.FindByIdAsync(targetUser.Id);
+        if (user == null) return;
+
+        // Security check (RBAC)
+        var targetRole = GetUserRole(targetUser.Id);
+        if (currentUserRole == "Administrator" && (targetRole == "Superadmin" || targetRole == "Administrator"))
+        {
+            return; // Unauthorized
+        }
+
+        await userManager.ResetAuthenticatorKeyAsync(user);
+        await userManager.SetTwoFactorEnabledAsync(user, false);
+
+        await AuditLog.LogSecurityEventAsync(
+            currentUserId ?? "", "2FA Reset",
+            $"{currentUserRole} administratively reset 2FA for '{user.Email}'. User must re-enroll.",
+            production_system.Models.LogSeverity.Critical, "User", user.Id);
 
         await LoadData();
     }
