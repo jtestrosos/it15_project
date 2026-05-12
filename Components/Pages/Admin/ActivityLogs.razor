@@ -140,7 +140,7 @@ else
                                     </td>
                                     <td>
                                         <span class="badge @GetActionBadgeClass(log.ActionType) text-light">@log.ActionType</span>
-                                        @if (!string.IsNullOrEmpty(log.EntityType))
+                                        @if (!string.IsNullOrEmpty(log.EntityType) && log.EntityType.Equals("User", StringComparison.OrdinalIgnoreCase) == false)
                                         {
                                             <span class="text-muted ms-1" style="font-size: 0.7rem;">@log.EntityType</span>
                                         }
@@ -275,7 +275,15 @@ else
     private string GetUserRole(string? userId)
     {
         if (string.IsNullOrEmpty(userId)) return "";
-        return userRoles.GetValueOrDefault(userId, "");
+        var role = userRoles.GetValueOrDefault(userId, "");
+        return role switch
+        {
+            "Superadmin" => "Super Administrator",
+            "Administrator" => "Administrator",
+            "ProductionManager" => "Production Manager",
+            "ProductionWorker" => "Production Worker",
+            _ => role
+        };
     }
 
     private string GetTabIcon(string tab) => tab switch
