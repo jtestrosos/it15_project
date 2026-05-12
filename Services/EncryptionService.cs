@@ -28,22 +28,31 @@ public class AesEncryptionService : IEncryptionService
         _logger = logger;
 
         var configuredKey = configuration["Encryption:AesKey"];
-        if (!string.IsNullOrEmpty(configuredKey))
+
+        try
         {
-            _key = Convert.FromBase64String(configuredKey);
+            if (!string.IsNullOrEmpty(configuredKey))
+            {
+                _key = Convert.FromBase64String(configuredKey);
+                if (_key.Length != 32)
+                {
+                    throw new InvalidOperationException("Configured AES key must be exactly 32 bytes (256-bit).");
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException("No AES key found in configuration.");
+            }
         }
-        else
+        catch (Exception ex)
         {
-            // Auto-generate a key for development; log it so the dev can add it to appsettings
+            // Auto-generate an ephemeral key if configured key is missing or invalid (e.g. bad Base64 format)
             _key = RandomNumberGenerator.GetBytes(32); // 256-bit
-            _logger.LogWarning(
-                "[ENCRYPTION] No AES key found in configuration. Generated a new key: {Key}. " +
-                "Add this to appsettings.json under Encryption:AesKey for persistence.",
+            _logger.LogWarning(ex,
+                "[ENCRYPTION] Missing or invalid AES key in configuration. Generated ephemeral fallback key: {Key}. " +
+                "Update your production appsettings.json or Environment Variables with this valid Base64 string under Encryption:AesKey.",
                 Convert.ToBase64String(_key));
         }
-
-        if (_key.Length != 32)
-            throw new InvalidOperationException("AES key must be exactly 32 bytes (256-bit).");
     }
 
     public string Encrypt(string plainText)

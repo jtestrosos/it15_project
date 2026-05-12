@@ -56,23 +56,32 @@ public class AesEncryptionServiceTests
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v != null && v.ToString()!.Contains("No AES key found in configuration")),
-                null,
+                It.Is<It.IsAnyType>((v, t) => v != null && v.ToString()!.Contains("Missing or invalid AES key")),
+                It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
 
     [Fact]
-    public void Constructor_WithInvalidKeyLength_ThrowsInvalidOperationException()
+    public void Constructor_WithInvalidKeyFormatOrLength_GeneratesKeyAndLogsWarning()
     {
         // Arrange
-        var invalidKeyBytes = RandomNumberGenerator.GetBytes(16); // 128-bit, invalid for this service
-        var invalidKeyBase64 = Convert.ToBase64String(invalidKeyBytes);
+        var invalidKeyBase64 = "not-base-64-and-wrong-length";
         
         _mockConfiguration.Setup(c => c["Encryption:AesKey"]).Returns(invalidKeyBase64);
 
-        // Act & Assert
-        Assert.Throws<InvalidOperationException>(() => new AesEncryptionService(_mockConfiguration.Object, _mockLogger.Object));
+        // Act
+        var service = new AesEncryptionService(_mockConfiguration.Object, _mockLogger.Object);
+
+        // Assert
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v != null && v.ToString()!.Contains("Missing or invalid AES key")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     [Theory]
