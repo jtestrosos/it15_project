@@ -11,7 +11,7 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="mb-1"><i class="bi bi-lock me-2"></i>Data Encryption (IAS Compliance)</h2>
+            <h2 class="mb-1"><i class="bi bi-lock me-2"></i>Encryption Demo (IAS Compliance)</h2>
             <p class="text-muted mb-0">Symmetric (AES-256) and Asymmetric (RSA-2048) encryption demonstration</p>
         </div>
     </div>
@@ -23,8 +23,8 @@
                 <div class="card-header bg-primary text-white d-flex align-items-center">
                     <i class="bi bi-shield-lock me-2 fs-5"></i>
                     <div>
-                        <h5 class="mb-0 text-white">AES-256-CBC (Symmetric)</h5>
-                        <small class="text-white opacity-75">Same key encrypts &amp; decrypts</small>
+                        <h5 class="mb-0">AES-256-CBC (Symmetric)</h5>
+                        <small class="opacity-75">Same key encrypts &amp; decrypts</small>
                     </div>
                 </div>
                 <div class="card-body">
@@ -76,10 +76,10 @@
                         <input type="text" class="form-control" @bind="liveFieldValue" placeholder="e.g. Acme Corp - Contact: john@acme.com" />
                     </div>
                     <div class="d-flex gap-2 mb-2">
-                        <button class="btn btn-sm btn-warning text-dark" @onclick="EncryptLiveField" disabled="@string.IsNullOrWhiteSpace(liveFieldValue)">
+                        <button class="btn btn-sm btn-warning" @onclick="EncryptLiveField" disabled="@string.IsNullOrWhiteSpace(liveFieldValue)">
                             <i class="bi bi-lock me-1"></i> Encrypt for DB
                         </button>
-                        <button class="btn btn-sm btn-outline-success text-dark" @onclick="DecryptLiveField" disabled="@string.IsNullOrWhiteSpace(liveFieldEncrypted)">
+                        <button class="btn btn-sm btn-outline-success" @onclick="DecryptLiveField" disabled="@string.IsNullOrWhiteSpace(liveFieldEncrypted)">
                             <i class="bi bi-unlock me-1"></i> Decrypt from DB
                         </button>
                     </div>
@@ -107,8 +107,8 @@
                 <div class="card-header bg-success text-white d-flex align-items-center">
                     <i class="bi bi-key me-2 fs-5"></i>
                     <div>
-                        <h5 class="mb-0 text-white">RSA-2048 (Asymmetric)</h5>
-                        <small class="text-white opacity-75">Public key encrypts, Private key decrypts</small>
+                        <h5 class="mb-0">RSA-2048 (Asymmetric)</h5>
+                        <small class="opacity-75">Public key encrypts, Private key decrypts</small>
                     </div>
                 </div>
                 <div class="card-body">
@@ -126,10 +126,10 @@
                     </div>
 
                     <div class="d-flex gap-2 mb-3">
-                        <button class="btn btn-success text-dark" @onclick="EncryptRsa" disabled="@string.IsNullOrWhiteSpace(rsaPlainText)">
+                        <button class="btn btn-success" @onclick="EncryptRsa" disabled="@string.IsNullOrWhiteSpace(rsaPlainText)">
                             <i class="bi bi-lock me-1"></i> Encrypt (Public Key)
                         </button>
-                        <button class="btn btn-outline-warning text-dark" @onclick="DecryptRsa" disabled="@string.IsNullOrWhiteSpace(rsaCipherText)">
+                        <button class="btn btn-outline-warning" @onclick="DecryptRsa" disabled="@string.IsNullOrWhiteSpace(rsaCipherText)">
                             <i class="bi bi-unlock me-1"></i> Decrypt (Private Key)
                         </button>
                     </div>
@@ -202,7 +202,7 @@
     <!-- Encryption Summary Table -->
     <div class="card shadow-sm border-0 mt-4">
         <div class="card-header bg-dark text-white">
-            <h5 class="mb-0 text-white"><i class="bi bi-table me-2"></i>Encryption Methods Comparison (IAS Reference)</h5>
+            <h5 class="mb-0"><i class="bi bi-table me-2"></i>Encryption Methods Comparison (IAS Reference)</h5>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
