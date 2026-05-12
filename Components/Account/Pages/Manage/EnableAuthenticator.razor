@@ -22,6 +22,22 @@ else
 {
     <StatusMessage Message="@message" />
     <h3>Configure authenticator app</h3>
+    
+    @if (is2faEnabled)
+    {
+        <div class="alert border-0 shadow-sm mb-4" style="background: rgba(13, 110, 253, 0.05); border-left: 4px solid #0d6efd !important; border-radius: 8px;">
+            <div class="d-flex align-items-center mb-2">
+                <i class="bi bi-shield-check fs-5 text-primary me-2"></i>
+                <h6 class="fw-bold mb-0 text-primary">Authenticator App is already configured</h6>
+            </div>
+            <p class="mb-3 small text-muted">You already have an authenticator app active. Setting up a new one will invalidate your current authenticator app.</p>
+            <div class="d-flex gap-2">
+                <a href="Account/Manage/ResetAuthenticator" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold"><i class="bi bi-arrow-repeat me-1"></i>Reset Authenticator Key</a>
+                <a href="Account/Manage/Disable2fa" class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold"><i class="bi bi-shield-x me-1"></i>Disable 2FA entirely</a>
+            </div>
+        </div>
+    }
+
     <div>
         <p>To use an authenticator app go through the following steps:</p>
         <ol class="list">
@@ -91,6 +107,7 @@ else
     private string? sharedKey;
     private string? authenticatorUri;
     private IEnumerable<string>? recoveryCodes;
+    private bool is2faEnabled;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -109,6 +126,7 @@ else
             return;
         }
 
+        is2faEnabled = await UserManager.GetTwoFactorEnabledAsync(user);
         await LoadSharedKeyAndQrCodeUriAsync(user);
     }
 
