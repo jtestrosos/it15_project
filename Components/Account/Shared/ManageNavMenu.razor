@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity
 @using production_system.Data
 
 @inject SignInManager<ApplicationUser> SignInManager
@@ -35,8 +35,7 @@
 
 <style>
     .manage-nav {
-        position: sticky;
-        top: 4rem;
+        /* Sticky behavior is now handled by the parent col-lg-3 in ManageLayout.razor */
     }
 
     .manage-nav-list {

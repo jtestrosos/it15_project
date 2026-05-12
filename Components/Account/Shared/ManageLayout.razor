@@ -1,5 +1,13 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @layout production_system.Components.Layout.MainLayout
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using production_system.Data
+
+@inject AuthenticationStateProvider AuthState
+@inject IServiceProvider ServiceProvider
+@inject NavigationManager NavManager
 
 <div class="manage-account-container">
     <div class="manage-header mb-4">
@@ -14,17 +22,65 @@
         </div>
     </div>
 
-    <div class="row g-4">
-        <div class="col-lg-3">
+    <div class="row g-4 position-relative">
+        <div class="col-lg-3" style="position: sticky; top: 1.5rem; align-self: flex-start; z-index: 10;">
             <ManageNavMenu />
         </div>
-        <div class="col-lg-9">
-            <div class="manage-content-area">
+        <div class="col-lg-9 position-relative">
+            @if (Show2FaOverlay)
+            {
+                <div class="position-absolute w-100 h-100 rounded-3 d-flex align-items-center justify-content-center" 
+                     style="z-index: 100; cursor: pointer; top: 0; left: 0;" 
+                     data-bs-toggle="modal" data-bs-target="#twoFaModal">
+                     
+                    <div class="text-center p-4 bg-white rounded-4 shadow border border-warning" style="max-width: 360px; margin-top: -150px; transition: transform 0.2s ease;">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-10 rounded-circle mb-3" style="width: 56px; height: 56px;">
+                            <i class="bi bi-shield-lock-fill text-warning" style="font-size: 1.75rem;"></i>
+                        </div>
+                        <h6 class="fw-bold mb-2">2FA Activation Required</h6>
+                        <p class="text-muted small mb-0">You must activate Two-Factor Authentication to view or modify your personal data.</p>
+                        <div class="mt-3 btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">
+                            Click to Setup 2FA <i class="bi bi-arrow-right ms-1"></i>
+                        </div>
+                    </div>
+                </div>
+            }
+            <div class="manage-content-area" style="@(Show2FaOverlay ? "filter: blur(5px) grayscale(0.8); opacity: 0.35; pointer-events: none; user-select: none;" : "")">
                 @Body
             </div>
         </div>
     </div>
 </div>
+
+@if (Show2FaOverlay)
+{
+    <div class="modal fade" id="twoFaModal" tabindex="-1" aria-labelledby="twoFaModalLabel" aria-hidden="true" style="z-index: 1050;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <div class="mb-4">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle" style="width: 80px; height: 80px;">
+                            <i class="bi bi-shield-lock-fill text-primary" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold mb-3" id="twoFaModalLabel">2FA Registration Required</h4>
+                    <p class="text-muted mb-4">
+                        For your security, you must set up Two-Factor Authentication before you can modify your profile, change passwords, or access personal data.
+                    </p>
+                    <div class="d-grid gap-2">
+                        <a href="Account/Manage/EnableAuthenticator" class="btn btn-primary py-2 fw-bold">
+                            <i class="bi bi-qr-code-scan me-2"></i> Register 2FA Now
+                        </a>
+                        <button type="button" class="btn btn-light py-2 fw-bold" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 <style>
     .manage-account-container {
@@ -45,6 +101,44 @@
 
     .manage-content-area {
         min-height: 300px;
+        transition: filter 0.3s ease, opacity 0.3s ease;
     }
 </style>
+
+@code {
+    private bool is2faEnabled = true;
+    private bool Show2FaOverlay => !is2faEnabled && !IsSecurityPage();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserStatus();
+    }
+
+    private async Task LoadUserStatus()
+    {
+        var authState = await AuthState.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            using var scope = ServiceProvider.CreateAsyncScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            
+            var appUser = await userManager.GetUserAsync(user);
+            if (appUser != null)
+            {
+                is2faEnabled = await userManager.GetTwoFactorEnabledAsync(appUser);
+            }
+        }
+    }
+
+    private bool IsSecurityPage()
+    {
+        var currentUri = NavManager.Uri.ToLowerInvariant();
+        return currentUri.Contains("/enableauthenticator") || 
+               currentUri.Contains("/twofactorauthentication") ||
+               currentUri.Contains("/generaterecoverycodes") ||
+               currentUri.Contains("/disable2fa") ||
+               currentUri.Contains("/resetauthenticator");
+    }
+}
 

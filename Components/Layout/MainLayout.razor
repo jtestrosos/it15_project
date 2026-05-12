@@ -155,18 +155,6 @@
             var appUser = await userManager.FindByNameAsync(_userEmail);
             if (appUser != null)
             {
-                // Enforce mandatory 2FA
-                if (!await userManager.GetTwoFactorEnabledAsync(appUser))
-                {
-                    var currentUri = new Uri(NavManager.Uri);
-                    if (!currentUri.AbsolutePath.Contains("/Account/Manage/EnableAuthenticator", StringComparison.OrdinalIgnoreCase) && 
-                        !currentUri.AbsolutePath.Contains("/Account/Logout", StringComparison.OrdinalIgnoreCase))
-                    {
-                        NavManager.NavigateTo("/Account/Manage/EnableAuthenticator", forceLoad: false);
-                        return;
-                    }
-                }
-
                 if (!string.IsNullOrWhiteSpace(appUser.FirstName) || !string.IsNullOrWhiteSpace(appUser.LastName))
                 {
                     _displayName = $"{appUser.FirstName} {appUser.LastName}".Trim();
